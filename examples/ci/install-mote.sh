@@ -78,6 +78,7 @@ case "$ext" in
     if command -v unzip >/dev/null 2>&1; then
       unzip -q -o "$work/$archive" "mote$exe" -d "$dest"
     else
+      # shellcheck disable=SC2016 # on purpose: PowerShell expands $env:…, not the shell
       MOTE_ZIP=$(cygpath -w "$work/$archive") MOTE_DEST=$(cygpath -w "$dest") \
         powershell -NoProfile -NonInteractive -Command \
         'Expand-Archive -Force -LiteralPath $env:MOTE_ZIP -DestinationPath $env:MOTE_DEST'
