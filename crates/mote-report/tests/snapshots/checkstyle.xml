@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<checkstyle version="4.3">
+  <file name="src/a/Order Service.java">
+    <error line="3" column="5" severity="error" message="Remove this self-assignment of `total` | it has no effect" source="java/self-assignment"/>
+    <error line="20" column="10" severity="warning" message="Reduce the cognitive complexity of `total` from 22 to 15" source="java/cognitive-complexity"/>
+    <error line="40" column="1" severity="warning" message="This block of 21 lines is duplicated in 1 other place" source="java/duplicated-block"/>
+  </file>
+  <file name="src/b/Legacy.java">
+    <error line="2" column="9" severity="warning" message="Remove this empty catch block or explain why the exception is ignored" source="java/empty-catch-block"/>
+  </file>
+  <file name="src/c/Util.java">
+    <error line="1" column="1" severity="info" message="Complete the task in this TODO comment" source="java/todo-comment"/>
+  </file>
+</checkstyle>

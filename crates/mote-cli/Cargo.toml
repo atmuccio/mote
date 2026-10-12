@@ -1,0 +1,68 @@
+[package]
+name = "mote-cli"
+description = "Mote, a fast, serverless code-quality scanner for Java and JavaScript/TypeScript: the `mote` command-line tool and MCP server"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+repository.workspace = true
+homepage.workspace = true
+readme.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[lib]
+name = "mote_cli"
+path = "src/lib.rs"
+
+[[bin]]
+name = "mote"
+path = "src/main.rs"
+
+[features]
+default = ["java", "js"]
+# Language plugins (compile-time, the Ruff/Oxlint pattern).
+java = ["dep:mote-lang-java"]
+js = [
+    "dep:mote-lang-js",
+    # The static reader of JavaScript ESLint configurations (`migrate --from eslint`).
+    "dep:oxc_allocator",
+    "dep:oxc_ast",
+    "dep:oxc_ast_visit",
+    "dep:oxc_parser",
+    "dep:oxc_span",
+]
+# A tiny line-oriented language (`.nt` files) for testing the CLI without real plugins.
+test-plugin = []
+
+[dependencies]
+mote-core.workspace = true
+mote-engine.workspace = true
+mote-report.workspace = true
+mote-lang-java = { workspace = true, optional = true }
+mote-lang-js = { workspace = true, optional = true }
+oxc_allocator = { workspace = true, optional = true }
+oxc_ast = { workspace = true, optional = true }
+oxc_ast_visit = { workspace = true, optional = true }
+oxc_parser = { workspace = true, optional = true }
+oxc_span = { workspace = true, optional = true }
+clap.workspace = true
+globset.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+serde_yaml_ng.workspace = true
+quick-xml.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+mimalloc.workspace = true
+
+[target.'cfg(windows)'.dependencies]
+anstyle-query.workspace = true
+
+[dev-dependencies]
+# Enables the `.tl` test plugin for this crate's own tests (a self dev-dependency: features unify
+# for test builds only, never for `cargo build`).
+mote-cli = { path = ".", default-features = false, features = ["test-plugin"] }
+tempfile.workspace = true

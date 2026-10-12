@@ -1,0 +1,91 @@
+# Mote plus the coverage-on-new-code condition.
+#
+# The scan needs no build, so the `mote` job runs in parallel with `build` for fast feedback.
+# Coverage needs test reports, so a tiny `mote-coverage` job runs after both and evaluates the
+# coverage condition from the saved results (the action's `mode: gate`, i.e.
+# `mote gate --only coverage --results ... --coverage ...`): no checkout of base blobs, no
+# re-analysis, seconds of work. Hand-off is by artifact (PR runs cannot write caches). The override
+# label waives a failed coverage gate the same way it waives the scan gate.
+#
+# Make both `mote` and `mote-coverage` required status checks.
+name: mote
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+  push:
+    branches: [main]
+
+concurrency:
+  group: mote-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
+jobs:
+  mote:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: atmuccio/mote@v0.1.0
+        with:
+          fail-on-gate: ${{ github.event_name == 'pull_request' }}
+          # artifact-name: mote-results   # default; downloaded by mote-coverage below
+
+  build:
+    # Your existing build + tests. It only has to upload its coverage report(s) as an artifact.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      # ... set up the toolchain, build and run the tests with coverage, e.g.:
+      # - run: ./mvnw -B verify            # JaCoCo -> target/site/jacoco/jacoco.xml
+      # - run: npm ci && npm test -- --coverage   # LCOV -> coverage/lcov.info
+      - uses: actions/upload-artifact@v7
+        with:
+          name: coverage
+          path: |
+            **/target/site/jacoco/jacoco.xml
+            coverage/lcov.info
+          if-no-files-found: warn
+
+  mote-coverage:
+    needs: [mote, build]
+    # Run even when the scan gate failed, so the coverage verdict is always reported.
+    if: ${{ !cancelled() && github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # Only the config is needed (gate thresholds); the scan results carry everything else.
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          sparse-checkout: .mote.yaml
+          sparse-checkout-cone-mode: false
+      - uses: actions/download-artifact@v8
+        with:
+          name: mote-results
+          path: mote-results
+      - uses: actions/download-artifact@v8
+        with:
+          name: coverage
+          path: coverage-reports
+      # mode: gate runs `mote gate --only coverage --results ... --coverage ...`: only the coverage
+      # condition is judged here (the severity findings are the `mote` job's verdict), and the
+      # override label is honored exactly as in the `mote` job (same label, same roles check).
+      - name: Coverage gate on new code
+        uses: atmuccio/mote@v0.1.0
+        with:
+          mode: gate
+          results: mote-results/results.json
+          coverage: |
+            coverage-reports/**/jacoco.xml
+            coverage-reports/**/lcov.info
+          # gate-only: coverage          # default; empty re-evaluates the whole gate

@@ -1,0 +1,16 @@
+# The TypeScript files extend typescript-eslint's recommended configuration; the JavaScript
+# files do not.
+root: true
+extends:
+  - eslint:recommended
+  - prettier
+rules:
+  no-var: error
+overrides:
+  - files: ["*.ts", "*.tsx"]
+    parser: "@typescript-eslint/parser"
+    extends:
+      - plugin:@typescript-eslint/recommended
+  - files: ["*.spec.ts"]
+    extends:
+      - plugin:@typescript-eslint/recommended-type-checked-only

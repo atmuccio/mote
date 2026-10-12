@@ -1,0 +1,28 @@
+[package]
+name = "mote-lang-js"
+description = "Mote JavaScript/TypeScript language plugin (Oxc)"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+repository.workspace = true
+homepage.workspace = true
+readme.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+mote-core.workspace = true
+oxc_allocator.workspace = true
+oxc_ast.workspace = true
+oxc_parser.workspace = true
+oxc_regular_expression.workspace = true
+oxc_semantic.workspace = true
+oxc_span.workspace = true
+oxc_syntax.workspace = true
+rustc-hash.workspace = true
+
+[dev-dependencies]
+rayon.workspace = true

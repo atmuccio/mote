@@ -1,0 +1,54 @@
+# Mote in GitLab CI: gate merge requests on their new code and fill GitLab's Code Quality widget.
+# Copy the `mote` job (and the MOTE_VERSION variable) into your .gitlab-ci.yml.
+#
+# GitLab compares a merge request's Code Quality report with the target branch's latest one, so
+# the job also runs on the default branch (without failing on existing debt). More recipes, such
+# as posting the Markdown summary as a merge-request note: docs/ci.md.
+
+variables:
+  MOTE_VERSION: "0.1.0"   # pin an exact release; 0.x releases may change rules and defaults
+
+mote:
+  stage: test
+  # Any image with git, curl and glibc 2.35 or newer. Alpine images need the static (musl) build.
+  image: buildpack-deps:bookworm-scm
+  variables:
+    GIT_DEPTH: "0"        # new-code analysis needs the merge base
+  cache:
+    key: mote-$MOTE_VERSION
+    paths: [.mote/cache/] # Mote's analysis cache: unchanged files are not analyzed again
+  before_script:
+    - |
+      # Release binary, checked against its SHA-256 before use.
+      archive="mote-$MOTE_VERSION-x86_64-unknown-linux-gnu.tar.gz"
+      url="https://github.com/atmuccio/mote/releases/download/v$MOTE_VERSION"
+      curl -fsSL --retry 3 -o "$archive" "$url/$archive" -o "$archive.sha256" "$url/$archive.sha256"
+      sha256sum -c "$archive.sha256"
+      mkdir -p .mote-bin && tar -xzf "$archive" -C .mote-bin mote && rm -f "$archive" "$archive.sha256"
+      export PATH="$PWD/.mote-bin:$PATH"
+      mote version
+  script:
+    - |
+      if [ -n "${CI_MERGE_REQUEST_TARGET_BRANCH_NAME:-}" ]; then
+        b="$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
+        git fetch --quiet --no-tags origin "+refs/heads/$b:refs/remotes/origin/$b"
+        set -- --base "origin/$b"
+      else
+        set -- --no-gate    # default branch: the reference report; existing debt doesn't fail it
+      fi
+      mote scan "$@" \
+        --gitlab-codequality gl-code-quality-report.json \
+        --junit mote-junit.xml \
+        --markdown mote-summary.md \
+        --html mote-report.html \
+        --json mote-results.json
+  artifacts:
+    when: always          # publish the reports when the gate fails too
+    reports:
+      codequality: gl-code-quality-report.json
+      junit: mote-junit.xml
+    paths: [mote-report.html, mote-summary.md, mote-results.json]
+    expire_in: 30 days
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH

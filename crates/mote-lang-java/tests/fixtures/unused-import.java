@@ -1,0 +1,36 @@
+package com.acme.demo;
+
+import java.util.List;                            // expect: unused-import
+import java.util.Map;
+import java.util.Map;                             // expect: unused-import
+import java.lang.String;                          // expect: unused-import
+import java.lang.reflect.Method;
+import com.acme.demo.Sibling;                     // expect: unused-import
+import com.acme.other.Helper;
+import java.util.concurrent.*;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singleton;    // expect: unused-import
+import static org.junit.Assert.*;
+import java.io.IOException;
+import java.util.function.Function;
+import java.util.Set;
+import javax.annotation.Nullable;
+import java.util.Optional;
+import java.util.Deque;
+
+/**
+ * Uses {@link Function} and {@link Set#contains(Object)}.
+ * Takes a {@link #accept(Deque, int)} callback.
+ * @see Optional
+ */
+class UnusedImports {
+    private Map<String, Integer> map;
+    private Method m;
+    @Nullable Object value;
+
+    /** @throws IOException when it fails */
+    void run() throws Exception {
+        Helper.help();
+        Object o = emptyList();
+    }
+}

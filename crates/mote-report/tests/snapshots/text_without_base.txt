@@ -1,0 +1,18 @@
+src/a/Order Service.java:3:5    HIGH    java/self-assignment       Remove this self-assignment of `total` | it has no effect
+src/a/Order Service.java:20:10  MEDIUM  java/cognitive-complexity  Reduce the cognitive complexity of `total` from 22 to 15
+src/a/Order Service.java:40:1   MEDIUM  java/duplicated-block      This block of 21 lines is duplicated in 1 other place
+
+src/b/Legacy.java:2:9  MEDIUM  java/empty-catch-block  Remove this empty catch block or explain why the exception is ignored
+
+src/c/Util.java:1:1  LOW     java/todo-comment  Complete the task in this TODO comment
+
+Files         2 analyzed, 1 cached, 1 skipped (240 lines of code)
+Findings      1 HIGH, 3 MEDIUM, 1 LOW (5 total, 1 suppressed)
+Complexity    57 cognitive, 80 cyclomatic (12 functions)
+Effort        0.9 h estimated (reliability < 0.1 h, maintainability 0.9 h)
+Grades        maintainability D (3.61 h per 1,000 lines), reliability E (41.67 per 10,000 lines)
+Duplication   14.0% overall
+Quality gate  FAILED
+  FAIL  Findings                  1 (<= 0)
+  skip  Duplication on new code   no base to compare with
+No --base given: the gate applies to all findings.

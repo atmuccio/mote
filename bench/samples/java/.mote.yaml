@@ -1,0 +1,33 @@
+# Mote configuration for the Java benchmark sample.
+# It doubles as an example of a realistic team configuration.
+mote: ">=0.1"
+extends: default
+
+exclude:
+  - "**/generated/**"
+
+rules:
+  # Two rules that are off by default, switched on as house style.
+  java/else-after-return: on
+  java/parameter-reassignment: on
+  # Report complexity from 12 instead of 10 once it's switched on.
+  java/cyclomatic-complexity: { params: { threshold: 12 } }
+  # Shorter methods than the default limit of 80 lines of code.
+  java/function-too-long: { params: { max_lines: 60 } }
+
+overrides:
+  # Order handling: thresholds and limits must be named constants.
+  - paths: ["src/main/java/com/example/shop/order/**"]
+    rules:
+      java/magic-number: { enabled: true, params: { ignore: "-1,0,1,2,100" } }
+  # The legacy importer is being rewritten; don't nag about its complexity in the meantime.
+  - paths: ["src/main/java/com/example/shop/legacyImport/**"]
+    rules:
+      java/cognitive-complexity: { params: { threshold: 30 } }
+
+gate:
+  fail_on: HIGH
+  new_duplication_pct: 3.0
+
+suppressions:
+  require_reason: true

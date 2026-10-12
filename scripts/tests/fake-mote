@@ -1,0 +1,168 @@
+#!/usr/bin/env bash
+# Stand-in for the mote binary, used by scripts/tests/run.sh to exercise the action scripts.
+# Emits outputs shaped like docs/cli.md describes. Knobs (env):
+#   FAKE_EXIT         exit code of `scan` (default 1 = gate failed)
+#   FAKE_ANNOTATIONS  number of annotations in the --github-checks payload (default 120)
+#   FAKE_ARGS_LOG     file that receives the argv, one argument per line
+#   FAKE_STDOUT       an extra line `scan` prints (e.g. text that looks like a workflow command)
+#   FAKE_GATE_EXIT    exit code of `gate` (default 0 = passed)
+set -euo pipefail
+
+if [ -n "${FAKE_ARGS_LOG:-}" ]; then printf '%s\n' "$@" >"$FAKE_ARGS_LOG"; fi
+
+cmd=${1:-}
+shift || true
+case "$cmd" in
+  version)
+    echo "mote 0.1.0"
+    exit 0
+    ;;
+  gate)
+    # mote gate --results <FILE> [--coverage <GLOB>...] [--config <FILE>]
+    #               [--only <CONDITION>...] [--format text|markdown|json]   (docs/cli.md)
+    # --only is repeatable or comma-separated: severity|duplication|coverage|worsened.
+    # Knob: FAKE_GATE_EXIT (default 0). Unknown options and bad values exit 2, like clap.
+    results="" format=text
+    while [ $# -gt 0 ]; do
+      case "$1" in
+        --results) results=${2:-}; shift ;;
+        --coverage | --config) shift ;;
+        --only)
+          only_ok=true
+          IFS=',' read -r -a only_vals <<<"${2:-}"
+          [ -n "${2:-}" ] || only_ok=false
+          for v in ${only_vals[@]+"${only_vals[@]}"}; do
+            case "$v" in severity | duplication | coverage | worsened) ;; *) only_ok=false ;; esac
+          done
+          if [ "$only_ok" != true ]; then
+            echo "error: invalid value '${2:-}' for '--only'" >&2
+            exit 2
+          fi
+          shift
+          ;;
+        --format)
+          format=${2:-}
+          case "$format" in text | markdown | json) ;; *)
+            echo "error: invalid value '$format' for '--format'" >&2
+            exit 2
+            ;;
+          esac
+          shift
+          ;;
+        --color) shift ;;
+        *)
+          echo "error: unexpected argument '$1'" >&2
+          exit 2
+          ;;
+      esac
+      shift
+    done
+    if [ -z "$results" ] || [ ! -f "$results" ]; then
+      echo "error: cannot read results file '$results'" >&2
+      exit 2
+    fi
+    grc=${FAKE_GATE_EXIT:-0}
+    verdict=$([ "$grc" = 0 ] && echo passed || echo failed)
+    echo "fake-mote: evaluating the gate (stderr)" >&2
+    if [ "$format" = markdown ]; then
+      printf '<!-- mote:summary -->\n## Mote: quality gate %s (coverage)\n\n| Condition | Value |\n|---|---:|\n| coverage on new code | 71%% |\n' "$verdict"
+    else
+      echo "Quality gate: $verdict (fake)"
+    fi
+    exit "$grc"
+    ;;
+  scan) ;;
+  *)
+    echo "fake-mote: unsupported command '$cmd'" >&2
+    exit 2
+    ;;
+esac
+
+json="" sarif="" md="" checks="" base=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --json) json=$2; shift ;;
+    --sarif) sarif=$2; shift ;;
+    --markdown) md=$2; shift ;;
+    --github-checks) checks=$2; shift ;;
+    --base) base=$2; shift ;;
+  esac
+  shift
+done
+
+rc=${FAKE_EXIT:-1}
+n=${FAKE_ANNOTATIONS:-120}
+if [ "$rc" -ge 2 ]; then
+  echo "error: invalid configuration (fake)" >&2
+  exit "$rc"
+fi
+status=$([ -n "$base" ] && echo new || echo unknown)
+
+if [ -n "$json" ]; then
+  cat >"$json" <<EOF
+{
+  "version": "0.1.0",
+  "findings": [
+    {"id": "a1", "rule_id": "java/self-assignment", "message": "Remove this self-assignment", "path": "src/A.java",
+     "range": {"start_line": 3, "start_col": 5, "end_line": 3, "end_col": 12}, "severity": "HIGH",
+     "quality": "reliability", "symbol": "A#run", "value": null, "fingerprint": "f1", "status": "$status",
+     "incubating": false, "suppressed": null, "secondary": []},
+    {"id": "a2", "rule_id": "java/empty-catch-block", "message": "Remove this empty catch block", "path": "src/B.java",
+     "range": {"start_line": 9, "start_col": 1, "end_line": 11, "end_col": 2}, "severity": "MEDIUM",
+     "quality": "maintainability", "symbol": "B#go", "value": null, "fingerprint": "f2", "status": "$status",
+     "incubating": false, "suppressed": null, "secondary": []},
+    {"id": "a3", "rule_id": "java/todo-comment", "message": "Complete the task in this TODO", "path": "src/C.java",
+     "range": {"start_line": 1, "start_col": 1, "end_line": 1, "end_col": 9}, "severity": "LOW",
+     "quality": "maintainability", "symbol": null, "value": null, "fingerprint": "f3", "status": "unchanged",
+     "incubating": false, "suppressed": null, "secondary": []},
+    {"id": "a4", "rule_id": "java/todo-comment", "message": "Complete the task in this TODO", "path": "src/D.java",
+     "range": {"start_line": 1, "start_col": 1, "end_line": 1, "end_col": 9}, "severity": "LOW",
+     "quality": "maintainability", "symbol": null, "value": null, "fingerprint": "f4", "status": "$status",
+     "incubating": false, "suppressed": {"kind": "inSource", "justification": "legacy"}, "secondary": []}
+  ],
+  "gate": {"passed": $([ "$rc" = 0 ] && echo true || echo false)}
+}
+EOF
+fi
+
+if [ -n "$sarif" ]; then
+  printf '{"version":"2.1.0","runs":[{"tool":{"driver":{"name":"mote"}},"results":[]}]}\n' >"$sarif"
+fi
+
+if [ -n "$md" ]; then
+  cat >"$md" <<'EOF'
+<!-- mote:summary -->
+## Mote: quality gate failed
+
+| | New | Total |
+|---|---:|---:|
+| HIGH | 1 | 1 |
+| MEDIUM | 1 | 1 |
+EOF
+fi
+
+if [ -n "$checks" ]; then
+  {
+    printf '{"name":"Mote","conclusion":"%s","title":"1 new HIGH, %s annotations","summary":"fake summary","annotations":[' \
+      "$([ "$rc" = 0 ] && echo success || echo failure)" "$n"
+    i=1
+    while [ "$i" -le "$n" ]; do
+      [ "$i" -gt 1 ] && printf ','
+      if [ "$i" -eq 2 ]; then
+        # multi-line range with columns: the action must strip the columns (API rejects them)
+        printf '{"path":"src/B.java","start_line":9,"end_line":11,"start_column":1,"end_column":2,"annotation_level":"warning","title":"java/empty-catch-block","message":"Remove this empty catch block"}'
+      else
+        lvl=$([ $((i % 3)) -eq 0 ] && echo failure || echo warning)
+        printf '{"path":"src/F%d.java","start_line":%d,"end_line":%d,"start_column":2,"end_column":7,"annotation_level":"%s","title":"rule-%d","message":"Message %d, with: special chars %%"}' \
+          "$i" "$i" "$i" "$lvl" "$i" "$i"
+      fi
+      i=$((i + 1))
+    done
+    printf ']}\n'
+  } >"$checks"
+fi
+
+echo "src/A.java:3:5 HIGH java/self-assignment Remove this self-assignment (fake)"
+# FAKE_STDOUT: an extra line, e.g. a crafted file name that looks like a workflow command.
+if [ -n "${FAKE_STDOUT:-}" ]; then printf '%s\n' "$FAKE_STDOUT"; fi
+exit "$rc"

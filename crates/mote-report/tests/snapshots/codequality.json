@@ -1,0 +1,7 @@
+[
+{"type":"issue","check_name":"java/self-assignment","description":"Remove this self-assignment of `total` | it has no effect","categories":["Bug Risk"],"severity":"critical","fingerprint":"fp-new000000001","location":{"path":"src/a/Order Service.java","lines":{"begin":3,"end":3}}},
+{"type":"issue","check_name":"java/cognitive-complexity","description":"Reduce the cognitive complexity of `total` from 22 to 15","categories":["Clarity"],"severity":"major","fingerprint":"fp-wrs000000001","location":{"path":"src/a/Order Service.java","lines":{"begin":20,"end":20}}},
+{"type":"issue","check_name":"java/duplicated-block","description":"This block of 21 lines is duplicated in 1 other place","categories":["Clarity"],"severity":"major","fingerprint":"fp-dup000000001","location":{"path":"src/a/Order Service.java","lines":{"begin":40,"end":60}}},
+{"type":"issue","check_name":"java/empty-catch-block","description":"Remove this empty catch block or explain why the exception is ignored","categories":["Clarity"],"severity":"major","fingerprint":"fp-unc000000001","location":{"path":"src/b/Legacy.java","lines":{"begin":2,"end":2}}},
+{"type":"issue","check_name":"java/todo-comment","description":"Complete the task in this TODO comment","categories":["Clarity"],"severity":"minor","fingerprint":"fp-new000000002","location":{"path":"src/c/Util.java","lines":{"begin":1,"end":1}}}
+]

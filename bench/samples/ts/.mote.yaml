@@ -1,0 +1,37 @@
+# Mote configuration for the TypeScript benchmark sample (bench/samples/ts).
+# Check it with `mote config validate --config bench/samples/ts/.mote.yaml`.
+mote: ">=0.1"
+extends: default
+
+exclude:
+  - "**/node_modules/**"
+  - "dist/**"
+
+rules:
+  # Off by default; this project opts in.
+  js/prefer-template: on
+  js/default-case: on
+  js/no-non-null-assertion: on
+  js/no-else-return: on
+  js/no-param-reassign: on
+  js/no-inferrable-types: on
+  js/no-namespace: on
+  js/no-return-assign: on
+  # A map value enables an off-by-default rule and sets its parameter.
+  js/cyclomatic-complexity: { params: { threshold: 12 } }
+  # House style: `any` is not allowed here (off by default), and treated as a real problem, not a nit.
+  js/no-explicit-any: MEDIUM
+
+overrides:
+  # Command-line scripts talk to the terminal and build messages with `+`.
+  - paths: ["scripts/**"]
+    rules:
+      js/no-console: off
+      js/prefer-template: off
+  # Legacy HTML/CSV builders are scheduled for a rewrite; don't nag about string style there.
+  - paths: ["src/server/legacy/**"]
+    rules:
+      js/prefer-template: off
+
+suppressions:
+  require_reason: true

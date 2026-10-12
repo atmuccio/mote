@@ -1,0 +1,10 @@
+{
+  // No shared configuration: the team turns the rule on by name.
+  "root": true,
+  "parser": "@typescript-eslint/parser",
+  "plugins": ["@typescript-eslint"],
+  "rules": {
+    "eqeqeq": "error",
+    "@typescript-eslint/no-explicit-any": "error"
+  }
+}

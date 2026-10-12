@@ -1,0 +1,25 @@
+[package]
+name = "mote-report"
+description = "Mote output formats: text, JSON, JSONL, SARIF 2.1.0, Markdown, GitHub Checks, GitLab Code Quality, Checkstyle, JUnit, HTML, rule catalog"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+repository.workspace = true
+homepage.workspace = true
+readme.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+mote-core.workspace = true
+mote-engine.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+rustc-hash.workspace = true
+
+[dev-dependencies]
+# Parses the Checkstyle and JUnit output in tests (well-formedness and escaping round trips).
+quick-xml.workspace = true

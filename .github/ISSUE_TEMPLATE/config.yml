@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/atmuccio/mote/security/advisories/new
+    about: Please report vulnerabilities privately, not as issues (see SECURITY.md).
+  - name: Documentation
+    url: https://github.com/atmuccio/mote#documentation
+    about: Usage, configuration, rules and CI setup.

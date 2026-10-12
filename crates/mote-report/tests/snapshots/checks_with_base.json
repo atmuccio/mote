@@ -1,0 +1,36 @@
+{
+  "name": "Mote",
+  "conclusion": "failure",
+  "title": "Quality gate failed: 1 new HIGH, 1 new MEDIUM, 1 new LOW, 1 worsened",
+  "summary": "<!-- mote:summary -->\n## :x: Mote: quality gate failed\n\nCompared with `origin/main` (merge base `fedcba987654`): **2** files changed, **38** new lines.\n\n| Condition | Result | Actual | Threshold |\n|---|---|---:|---:|\n| New findings | :x: failed | 1 | ≤ 0 |\n| Duplication on new code | :x: failed | 55.3% | ≤ 3.0% |\n| Coverage on new code | :white_check_mark: passed | 80.0% | ≥ 80.0% |\n| Maintainability grade on new code | :x: failed | E | B or better |\n\n### New findings\n\n| Severity | New | Worsened | Fixed | Total |\n|---|---:|---:|---:|---:|\n| HIGH | 1 | 0 | 0 | 1 |\n| MEDIUM | 1 | 1 | 2 | 3 |\n| LOW | 1 | 0 | 0 | 1 |\n\n### Top new findings (4 of 4)\n\n| Severity | Location | Rule | Message |\n|---|---|---|---|\n| HIGH | `src/a/Order Service.java:3` | `java/self-assignment` | Remove this self-assignment of `total` \\| it has no effect |\n| MEDIUM | `src/a/Order Service.java:20` | `java/cognitive-complexity` | Reduce the cognitive complexity of `total` from 22 to 15 _(worsened)_ |\n| MEDIUM | `src/a/Order Service.java:40` | `java/duplicated-block` | This block of 21 lines is duplicated in 1 other place |\n| LOW | `src/c/Util.java:1` | `java/todo-comment` | Complete the task in this TODO comment |\n\n### Measures\n\n| Measure | New code | Overall |\n|---|---:|---:|\n| Lines | 38 | 300 |\n| Duplication | 55.3% | 14.0% |\n| Coverage | 80.0% | – |\n| Estimated effort | 0.4 h | 0.9 h |\n| Cognitive complexity | – | 57 |\n| Cyclomatic complexity | – | 80 |\n| Maintainability grade | **E** (8.77) | **D** (3.61) |\n| Reliability grade | **E** (263.16) | **E** (41.67) |\n\n_Grades run from A (best) to E: maintainability by the estimated hours of fixes per 1,000 lines of code, reliability by weighted reliability findings per 10,000 lines._\n\n<details><summary>Totals</summary>\n\n| Total | Value |\n|---|---:|\n| Files | 4 (3 analyzed, 1 skipped) |\n| Lines of code | 240 |\n| Findings | 5 (1 HIGH, 3 MEDIUM, 1 LOW) |\n| Suppressed | 1 |\n| Estimated effort | 0.9 h (reliability < 0.1 h, maintainability 0.9 h) |\n| Duplicated blocks | 1 |\n\n</details>\n",
+  "annotations": [
+    {
+      "path": "src/a/Order Service.java",
+      "start_line": 3,
+      "end_line": 3,
+      "start_column": 5,
+      "end_column": 11,
+      "annotation_level": "failure",
+      "title": "java/self-assignment (HIGH)",
+      "message": "Remove this self-assignment of `total` | it has no effect"
+    },
+    {
+      "path": "src/a/Order Service.java",
+      "start_line": 20,
+      "end_line": 20,
+      "start_column": 10,
+      "end_column": 14,
+      "annotation_level": "warning",
+      "title": "java/cognitive-complexity (MEDIUM)",
+      "message": "Reduce the cognitive complexity of `total` from 22 to 15 (worsened)"
+    },
+    {
+      "path": "src/a/Order Service.java",
+      "start_line": 40,
+      "end_line": 60,
+      "annotation_level": "warning",
+      "title": "java/duplicated-block (MEDIUM)",
+      "message": "This block of 21 lines is duplicated in 1 other place"
+    }
+  ]
+}

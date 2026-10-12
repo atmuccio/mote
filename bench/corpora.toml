@@ -1,0 +1,38 @@
+# Speed benchmark corpora: public repositories pinned to exact commits.
+#
+# Used by scripts/bench.sh and scripts/bench.ps1 (see docs/benchmark.md). Each corpus is fetched
+# with `git init` + `git fetch --depth 1 origin <rev>` into bench/.corpora/<name>, then scanned
+# straight from the object database (`mote scan --rev <rev>`) and, when checked out, as a
+# working tree.
+#
+# Format: only [[corpus]] tables whose values are one-line strings. The scripts parse this file
+# without a TOML library, so keep it that simple. To move a pin, take the new commit from
+# `git ls-remote <url> HEAD` and update the numbers in docs/benchmark.md in the same change.
+
+[[corpus]]
+name = "spring-petclinic"
+url = "https://github.com/spring-projects/spring-petclinic"
+rev = "818c4136ea971c21674525f9053de0d9c7ad8cfe"
+language = "java"
+description = "Small Spring Boot sample application (Java)"
+
+[[corpus]]
+name = "symmetric-ds"
+url = "https://github.com/JumpMind/symmetric-ds"
+rev = "876594332b09568a238155f149a76ab6c3719b3e"
+language = "java"
+description = "Database replication server, ~330k lines of Java (branch release/3.18)"
+
+[[corpus]]
+name = "excalidraw"
+url = "https://github.com/excalidraw/excalidraw"
+rev = "438d89861f53d8a90ad566113ecac1b83761098f"
+language = "ts"
+description = "Mid-size React + TypeScript monorepo"
+
+[[corpus]]
+name = "vscode"
+url = "https://github.com/microsoft/vscode"
+rev = "987bbdddafd02cf06484f93957f29355b3fe113f"
+language = "ts"
+description = "Large TypeScript codebase, ~4M lines"

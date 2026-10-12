@@ -1,0 +1,16 @@
+[
+  {
+    "ignores": [
+      "*/**",
+      "!core/**",
+      "!src/**",
+      "!war/**",
+      "**/target/",
+      "**/node/",
+      "src/main/js/plugin-setup-wizard/bootstrap-detached.js"
+    ]
+  },
+  { "languageOptions": { "ecmaVersion": 2022, "sourceType": "module" } },
+  "js.configs.recommended",
+  { "rules": { "curly": "error" } }
+]

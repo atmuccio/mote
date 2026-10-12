@@ -1,0 +1,89 @@
+name: False positive or missed problem
+description: A rule reports code that is fine, or misses a problem it should report.
+title: "[rule] "
+labels: ["rule accuracy"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! A minimal snippet makes most rule problems quick to fix.
+        Please share only code you are allowed to share: reduce proprietary code to a neutral example.
+        While you wait, you can silence a false positive with `// mote-ignore[rule-id]: reason`.
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What kind of problem?
+      options:
+        - "False positive: a finding on code that is fine"
+        - "False negative: a problem that should be reported but isn't"
+        - "Wrong location, message or severity"
+    validations:
+      required: true
+  - type: input
+    id: rule
+    attributes:
+      label: Rule id
+      description: For a false negative, the rule you expected (or "none").
+      placeholder: java/string-reference-equality
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Mote version
+      description: The output of `mote version`.
+      placeholder: mote 0.1.0
+    validations:
+      required: true
+  - type: dropdown
+    id: language
+    attributes:
+      label: Language
+      options:
+        - Java
+        - JavaScript
+        - TypeScript
+        - JSX / TSX
+    validations:
+      required: true
+  - type: input
+    id: language-details
+    attributes:
+      label: Java release or file type (optional)
+      description: For Java, the release Mote used (`mote config explain <file>` prints it). For JS/TS, the file extension.
+      placeholder: "Java 21 / .tsx"
+  - type: textarea
+    id: code
+    attributes:
+      label: Minimal code
+      description: The smallest self-contained file that shows the problem, in a fenced code block (```java or ```ts). Mote analyzes one file at a time, so one file is usually enough.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected
+      description: What should Mote report (or not report), and why?
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What Mote reported (optional)
+      description: The finding as printed; `mote scan --format jsonl` gives one line per finding.
+      render: text
+  - type: textarea
+    id: config
+    attributes:
+      label: Relevant configuration (optional)
+      description: The parts of `.mote.yaml` that affect this rule, if any.
+      render: yaml
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I searched the existing issues and this is not a duplicate.
+          required: true
+        - label: The code above is mine to share (no confidential or proprietary code).
+          required: true

@@ -1,0 +1,23 @@
+{
+  "name": "orders-service",
+  "version": "1.4.0",
+  "private": true,
+  "description": "Mote benchmark sample: an order/inventory Node service with a small React front end. Deliberately contains bugs and smells; see bench/expected/ts.jsonl.",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server/app.js",
+    "test": "vitest run",
+    "seed": "node scripts/seed-db.js 50"
+  },
+  "dependencies": {
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.1.0",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0"
+  }
+}

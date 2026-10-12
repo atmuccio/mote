@@ -1,0 +1,23 @@
+[package]
+name = "mote-lang-java"
+description = "Mote Java language plugin (tree-sitter-java): rules, metrics, resolver"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+repository.workspace = true
+homepage.workspace = true
+readme.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+mote-core.workspace = true
+tree-sitter.workspace = true
+tree-sitter-java.workspace = true
+rustc-hash.workspace = true
+
+[dev-dependencies]
+rayon.workspace = true

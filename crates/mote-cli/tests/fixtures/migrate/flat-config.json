@@ -1,0 +1,7 @@
+[
+  { "ignores": ["build/**", "coverage/"] },
+  { "rules": { "no-debugger": "error", "no-var": "error" } },
+  { "files": ["scripts/**/*.js"], "rules": { "no-console": "off", "no-process-exit": "error" } },
+  { "rules": { "no-var": "off" } },
+  "eslint:recommended"
+]

@@ -1,0 +1,50 @@
+{
+  "data": [
+    {
+      "title": "New findings",
+      "type": "NUMBER",
+      "value": 4
+    },
+    {
+      "title": "New HIGH findings",
+      "type": "NUMBER",
+      "value": 1
+    },
+    {
+      "title": "Maintainability grade",
+      "type": "TEXT",
+      "value": "D"
+    },
+    {
+      "title": "Reliability grade",
+      "type": "TEXT",
+      "value": "E"
+    },
+    {
+      "title": "Duplication on new code",
+      "type": "PERCENTAGE",
+      "value": 55.3
+    },
+    {
+      "title": "Coverage on new code",
+      "type": "PERCENTAGE",
+      "value": 80.0
+    },
+    {
+      "title": "Estimated effort on new code",
+      "type": "TEXT",
+      "value": "0.4 h"
+    },
+    {
+      "title": "Lines of code",
+      "type": "NUMBER",
+      "value": 240
+    }
+  ],
+  "details": "Quality gate failed: New findings 1 (<= 0), Duplication on new code 55.3% (<= 3.0%), Maintainability grade on new code E (B or better). Compared with origin/main.",
+  "external_id": "mote",
+  "report_type": "BUG",
+  "reporter": "Mote",
+  "result": "FAILED",
+  "title": "Mote"
+}

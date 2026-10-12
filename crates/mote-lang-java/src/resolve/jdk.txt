@@ -1,0 +1,1625 @@
+# Mote curated JDK table (hand-written; only commonly used API surface).
+#
+# Format
+#   Header line (column 0):  [final|abstract] class|interface|enum|annotation FQN[<T, ...>] [: Super<Args>, ...]
+#   Member lines (indented): members separated by `;`
+#     method:  [static] [<T, ...>] name(Type, Type...) ReturnType     (`T...` = varargs)
+#     field:   [static] name: Type
+#   Types: primitives, void, simple names of classes in this file (`List`, `Map.Entry`),
+#   fully-qualified names, type variables in scope, `?`, `? extends T`, `? super T`, `T[]`.
+#   Overloads may repeat a name; the resolver picks by arity and argument types and gives up
+#   when the choice is ambiguous. Enums implicitly get `values()` / `valueOf(String)`.
+#   Interfaces and root classes implicitly extend java.lang.Object.
+
+# ------------------------------------------------------------------ java.lang
+class java.lang.Object
+  equals(Object) boolean; hashCode() int; toString() String; getClass() Class<?>
+  notify() void; notifyAll() void; wait() void; wait(long) void; clone() Object; finalize() void
+
+interface java.lang.CharSequence
+  length() int; charAt(int) char; isEmpty() boolean; subSequence(int, int) CharSequence; toString() String
+  chars() java.util.stream.IntStream
+
+interface java.lang.Comparable<T>
+  compareTo(T) int
+
+interface java.lang.Iterable<T>
+  iterator() Iterator<T>; forEach(Consumer<? super T>) void
+
+interface java.lang.AutoCloseable
+  close() void
+
+interface java.lang.Cloneable
+interface java.lang.Runnable
+  run() void
+
+interface java.lang.Appendable
+interface java.lang.Readable
+
+final class java.lang.String : CharSequence, Comparable<String>, java.io.Serializable
+  length() int; isEmpty() boolean; isBlank() boolean; charAt(int) char; codePointAt(int) int
+  substring(int) String; substring(int, int) String; subSequence(int, int) CharSequence
+  indexOf(String) int; indexOf(int) int; indexOf(String, int) int; indexOf(int, int) int
+  lastIndexOf(String) int; lastIndexOf(int) int; lastIndexOf(String, int) int; lastIndexOf(int, int) int
+  contains(CharSequence) boolean; startsWith(String) boolean; startsWith(String, int) boolean; endsWith(String) boolean
+  equals(Object) boolean; equalsIgnoreCase(String) boolean; contentEquals(CharSequence) boolean
+  compareTo(String) int; compareToIgnoreCase(String) int; hashCode() int
+  regionMatches(int, String, int, int) boolean; regionMatches(boolean, int, String, int, int) boolean
+  toLowerCase() String; toLowerCase(Locale) String; toUpperCase() String; toUpperCase(Locale) String
+  trim() String; strip() String; stripLeading() String; stripTrailing() String; intern() String
+  replace(CharSequence, CharSequence) String; replace(char, char) String; replaceAll(String, String) String; replaceFirst(String, String) String
+  split(String) String[]; split(String, int) String[]; toCharArray() char[]; chars() java.util.stream.IntStream
+  getBytes() byte[]; getBytes(String) byte[]; getBytes(java.nio.charset.Charset) byte[]
+  matches(String) boolean; concat(String) String; repeat(int) String; lines() Stream<String>; indent(int) String
+  formatted(Object...) String; toString() String
+  static format(String, Object...) String; static format(Locale, String, Object...) String
+  static valueOf(Object) String; static valueOf(char[]) String; static copyValueOf(char[]) String
+  static join(CharSequence, CharSequence...) String; static join(CharSequence, Iterable<? extends CharSequence>) String
+  static CASE_INSENSITIVE_ORDER: Comparator<String>
+
+final class java.lang.StringBuilder : CharSequence, Appendable, java.io.Serializable, Comparable<StringBuilder>
+  append(Object) StringBuilder; append(char[], int, int) StringBuilder; append(CharSequence, int, int) StringBuilder
+  insert(int, Object) StringBuilder; reverse() StringBuilder; delete(int, int) StringBuilder; deleteCharAt(int) StringBuilder
+  replace(int, int, String) StringBuilder; toString() String; length() int; charAt(int) char; isEmpty() boolean
+  setLength(int) void; setCharAt(int, char) void; indexOf(String) int; lastIndexOf(String) int
+  substring(int) String; substring(int, int) String; capacity() int; ensureCapacity(int) void; trimToSize() void
+
+final class java.lang.StringBuffer : CharSequence, Appendable, java.io.Serializable, Comparable<StringBuffer>
+  append(Object) StringBuffer; append(char[], int, int) StringBuffer; append(CharSequence, int, int) StringBuffer
+  insert(int, Object) StringBuffer; reverse() StringBuffer; delete(int, int) StringBuffer; deleteCharAt(int) StringBuffer
+  replace(int, int, String) StringBuffer; toString() String; length() int; charAt(int) char; isEmpty() boolean
+  setLength(int) void; setCharAt(int, char) void; indexOf(String) int; lastIndexOf(String) int
+  substring(int) String; substring(int, int) String
+
+abstract class java.lang.Number : java.io.Serializable
+  intValue() int; longValue() long; doubleValue() double; floatValue() float; shortValue() short; byteValue() byte
+
+final class java.lang.Integer : Number, Comparable<Integer>
+  static parseInt(String) int; static parseInt(String, int) int; static valueOf(String) Integer; static valueOf(int) Integer; static valueOf(String, int) Integer
+  static toString(int) String; static toString(int, int) String; static toHexString(int) String; static toBinaryString(int) String; static toOctalString(int) String
+  static compare(int, int) int; static max(int, int) int; static min(int, int) int; static sum(int, int) int; static signum(int) int
+  static bitCount(int) int; static hashCode(int) int; static decode(String) Integer; static parseUnsignedInt(String) int
+  compareTo(Integer) int; equals(Object) boolean; hashCode() int; toString() String
+  static MAX_VALUE: int; static MIN_VALUE: int; static SIZE: int; static BYTES: int
+
+final class java.lang.Long : Number, Comparable<Long>
+  static parseLong(String) long; static parseLong(String, int) long; static valueOf(String) Long; static valueOf(long) Long
+  static toString(long) String; static toHexString(long) String; static toBinaryString(long) String
+  static compare(long, long) int; static max(long, long) long; static min(long, long) long; static sum(long, long) long; static signum(long) int
+  static hashCode(long) int; static decode(String) Long; static bitCount(long) int
+  compareTo(Long) int; equals(Object) boolean; hashCode() int; toString() String
+  static MAX_VALUE: long; static MIN_VALUE: long; static SIZE: int; static BYTES: int
+
+final class java.lang.Short : Number, Comparable<Short>
+  static parseShort(String) short; static valueOf(String) Short; static valueOf(short) Short; static toString(short) String
+  static compare(short, short) int; compareTo(Short) int
+  static MAX_VALUE: short; static MIN_VALUE: short
+
+final class java.lang.Byte : Number, Comparable<Byte>
+  static parseByte(String) byte; static valueOf(String) Byte; static valueOf(byte) Byte; static toString(byte) String
+  static compare(byte, byte) int; static toUnsignedInt(byte) int; compareTo(Byte) int
+  static MAX_VALUE: byte; static MIN_VALUE: byte
+
+final class java.lang.Double : Number, Comparable<Double>
+  static parseDouble(String) double; static valueOf(String) Double; static valueOf(double) Double; static toString(double) String
+  static compare(double, double) int; static isNaN(double) boolean; static isInfinite(double) boolean; static isFinite(double) boolean
+  static max(double, double) double; static min(double, double) double; static sum(double, double) double
+  static doubleToLongBits(double) long; static longBitsToDouble(long) double; static hashCode(double) int
+  isNaN() boolean; isInfinite() boolean; compareTo(Double) int; equals(Object) boolean; hashCode() int; toString() String
+  static MAX_VALUE: double; static MIN_VALUE: double; static NaN: double; static POSITIVE_INFINITY: double; static NEGATIVE_INFINITY: double
+
+final class java.lang.Float : Number, Comparable<Float>
+  static parseFloat(String) float; static valueOf(String) Float; static valueOf(float) Float; static toString(float) String
+  static compare(float, float) int; static isNaN(float) boolean; static isInfinite(float) boolean; static isFinite(float) boolean
+  static max(float, float) float; static min(float, float) float; static floatToIntBits(float) int; static intBitsToFloat(int) float
+  isNaN() boolean; isInfinite() boolean; compareTo(Float) int; equals(Object) boolean; hashCode() int
+  static MAX_VALUE: float; static MIN_VALUE: float; static NaN: float
+
+final class java.lang.Boolean : java.io.Serializable, Comparable<Boolean>
+  static parseBoolean(String) boolean; static valueOf(String) Boolean; static valueOf(boolean) Boolean; static toString(boolean) String
+  static compare(boolean, boolean) int; static logicalAnd(boolean, boolean) boolean; static logicalOr(boolean, boolean) boolean
+  static getBoolean(String) boolean
+  booleanValue() boolean; compareTo(Boolean) int; equals(Object) boolean; hashCode() int; toString() String
+  static TRUE: Boolean; static FALSE: Boolean
+
+final class java.lang.Character : java.io.Serializable, Comparable<Character>
+  static isDigit(char) boolean; static isDigit(int) boolean; static isLetter(char) boolean; static isLetter(int) boolean
+  static isLetterOrDigit(char) boolean; static isLetterOrDigit(int) boolean; static isAlphabetic(int) boolean
+  static isWhitespace(char) boolean; static isWhitespace(int) boolean; static isSpaceChar(char) boolean
+  static isUpperCase(char) boolean; static isUpperCase(int) boolean; static isLowerCase(char) boolean; static isLowerCase(int) boolean
+  static toUpperCase(char) char; static toUpperCase(int) int; static toLowerCase(char) char; static toLowerCase(int) int
+  static getNumericValue(char) int; static digit(char, int) int; static valueOf(char) Character; static toString(char) String
+  static isJavaIdentifierStart(char) boolean; static isJavaIdentifierPart(char) boolean; static compare(char, char) int
+  charValue() char; compareTo(Character) int; equals(Object) boolean; hashCode() int
+  static MAX_VALUE: char; static MIN_VALUE: char
+
+final class java.lang.Void
+
+final class java.lang.Math
+  static abs(int) int; static abs(long) long; static abs(float) float; static abs(double) double
+  static max(int, int) int; static max(long, long) long; static max(float, float) float; static max(double, double) double
+  static min(int, int) int; static min(long, long) long; static min(float, float) float; static min(double, double) double
+  static round(float) int; static round(double) long; static floor(double) double; static ceil(double) double; static rint(double) double
+  static pow(double, double) double; static sqrt(double) double; static cbrt(double) double; static exp(double) double
+  static log(double) double; static log10(double) double; static sin(double) double; static cos(double) double; static tan(double) double
+  static atan(double) double; static atan2(double, double) double; static hypot(double, double) double; static random() double
+  static signum(double) double; static signum(float) float; static toRadians(double) double; static toDegrees(double) double
+  static floorDiv(int, int) int; static floorDiv(long, long) long; static floorMod(int, int) int; static floorMod(long, long) long
+  static addExact(int, int) int; static addExact(long, long) long; static subtractExact(int, int) int; static subtractExact(long, long) long
+  static multiplyExact(int, int) int; static multiplyExact(long, long) long; static toIntExact(long) int; static negateExact(int) int
+  static PI: double; static E: double
+
+final class java.lang.System
+  static currentTimeMillis() long; static nanoTime() long; static getProperty(String) String; static getProperty(String, String) String
+  static setProperty(String, String) String; static clearProperty(String) String; static getenv(String) String; static getenv() Map<String, String>
+  static arraycopy(Object, int, Object, int, int) void; static exit(int) void; static gc() void; static lineSeparator() String
+  static identityHashCode(Object) int; static getProperties() java.util.Properties
+  static out: java.io.PrintStream; static err: java.io.PrintStream; static in: java.io.InputStream
+
+class java.lang.Runtime
+  static getRuntime() Runtime; availableProcessors() int; totalMemory() long; freeMemory() long; maxMemory() long; gc() void
+  exec(String) Process; exec(String[]) Process; addShutdownHook(Thread) void; halt(int) void; exit(int) void
+
+abstract class java.lang.Process
+  waitFor() int; exitValue() int; destroy() void; isAlive() boolean
+  getInputStream() java.io.InputStream; getErrorStream() java.io.InputStream; getOutputStream() java.io.OutputStream
+
+class java.lang.Thread : Runnable
+  static currentThread() Thread; static sleep(long) void; static sleep(long, int) void; static interrupted() boolean; static yield() void; static onSpinWait() void
+  start() void; run() void; join() void; join(long) void; interrupt() void; isInterrupted() boolean; isAlive() boolean
+  getName() String; setName(String) void; isDaemon() boolean; setDaemon(boolean) void; getId() long; threadId() long
+  getPriority() int; setPriority(int) void; getStackTrace() StackTraceElement[]; getContextClassLoader() ClassLoader
+  setContextClassLoader(ClassLoader) void; isVirtual() boolean
+
+interface java.lang.Thread.UncaughtExceptionHandler
+  uncaughtException(Thread, Throwable) void
+
+class java.lang.ThreadLocal<T>
+  initialValue() T; get() T; set(T) void; remove() void; static <S> withInitial(java.util.function.Supplier<? extends S>) ThreadLocal<S>
+
+abstract class java.lang.ClassLoader
+  loadClass(String) Class<?>; getResource(String) java.net.URL; getResourceAsStream(String) java.io.InputStream; getParent() ClassLoader
+  getResources(String) java.util.Enumeration<java.net.URL>
+  static getSystemClassLoader() ClassLoader
+  # protected, overridable
+  loadClass(String, boolean) Class<?>; findClass(String) Class<?>; findClass(String, String) Class<?>
+  findResource(String) java.net.URL; findResource(String, String) java.net.URL
+  findResources(String) java.util.Enumeration<java.net.URL>; findLibrary(String) String
+class java.security.SecureClassLoader : ClassLoader
+class java.net.URLClassLoader : java.security.SecureClassLoader, java.io.Closeable
+  getURLs() java.net.URL[]; close() void; addURL(java.net.URL) void
+
+final class java.lang.StackTraceElement : java.io.Serializable
+  getClassName() String; getMethodName() String; getFileName() String; getLineNumber() int
+
+abstract class java.lang.Enum<E> : Comparable<E>, java.io.Serializable
+  name() String; ordinal() int; compareTo(E) int; toString() String; getDeclaringClass() Class<E>; equals(Object) boolean; hashCode() int
+
+abstract class java.lang.Record
+
+final class java.lang.Class<T> : java.io.Serializable
+  getName() String; getSimpleName() String; getCanonicalName() String; getTypeName() String; getPackageName() String
+  isInstance(Object) boolean; cast(Object) T; isAssignableFrom(Class<?>) boolean; isInterface() boolean; isArray() boolean
+  isEnum() boolean; isRecord() boolean; isPrimitive() boolean; isAnnotation() boolean; isAnonymousClass() boolean
+  getSuperclass() Class<? super T>; getInterfaces() Class<?>[]; getComponentType() Class<?>; getEnumConstants() T[]
+  getModifiers() int; isAnnotationPresent(Class<?>) boolean; desiredAssertionStatus() boolean
+  getResourceAsStream(String) java.io.InputStream; getResource(String) java.net.URL; getClassLoader() ClassLoader
+  static forName(String) Class<?>
+
+annotation java.lang.Override
+annotation java.lang.Deprecated
+annotation java.lang.SuppressWarnings
+annotation java.lang.FunctionalInterface
+annotation java.lang.SafeVarargs
+
+class java.lang.Throwable : java.io.Serializable
+  getMessage() String; getLocalizedMessage() String; getCause() Throwable; initCause(Throwable) Throwable
+  printStackTrace() void; printStackTrace(java.io.PrintStream) void; printStackTrace(java.io.PrintWriter) void
+  getStackTrace() StackTraceElement[]; setStackTrace(StackTraceElement[]) void; fillInStackTrace() Throwable
+  addSuppressed(Throwable) void; getSuppressed() Throwable[]; toString() String
+
+class java.lang.Exception : Throwable
+class java.lang.RuntimeException : Exception
+class java.lang.Error : Throwable
+class java.lang.IllegalArgumentException : RuntimeException
+class java.lang.IllegalStateException : RuntimeException
+class java.lang.NullPointerException : RuntimeException
+class java.lang.UnsupportedOperationException : RuntimeException
+class java.lang.IndexOutOfBoundsException : RuntimeException
+class java.lang.ArrayIndexOutOfBoundsException : IndexOutOfBoundsException
+class java.lang.StringIndexOutOfBoundsException : IndexOutOfBoundsException
+class java.lang.ClassCastException : RuntimeException
+class java.lang.ArithmeticException : RuntimeException
+class java.lang.NegativeArraySizeException : RuntimeException
+class java.lang.ArrayStoreException : RuntimeException
+class java.lang.NumberFormatException : IllegalArgumentException
+class java.lang.SecurityException : RuntimeException
+class java.lang.InterruptedException : Exception
+class java.lang.CloneNotSupportedException : Exception
+class java.lang.ReflectiveOperationException : Exception
+class java.lang.ClassNotFoundException : ReflectiveOperationException
+class java.lang.NoSuchMethodException : ReflectiveOperationException
+class java.lang.NoSuchFieldException : ReflectiveOperationException
+class java.lang.InstantiationException : ReflectiveOperationException
+class java.lang.IllegalAccessException : ReflectiveOperationException
+class java.lang.VirtualMachineError : Error
+class java.lang.OutOfMemoryError : VirtualMachineError
+class java.lang.StackOverflowError : VirtualMachineError
+class java.lang.LinkageError : Error
+class java.lang.NoClassDefFoundError : LinkageError
+class java.lang.ExceptionInInitializerError : LinkageError
+class java.lang.AssertionError : Error
+
+# ------------------------------------------------------------------ java.util
+interface java.util.Collection<E> : Iterable<E>
+  size() int; isEmpty() boolean; contains(Object) boolean; containsAll(Collection<?>) boolean
+  add(E) boolean; addAll(Collection<? extends E>) boolean; remove(Object) boolean; removeAll(Collection<?>) boolean
+  retainAll(Collection<?>) boolean; removeIf(java.util.function.Predicate<? super E>) boolean; clear() void
+  iterator() Iterator<E>; stream() Stream<E>; parallelStream() Stream<E>; toArray() Object[]; <T> toArray(T[]) T[]
+
+interface java.util.SequencedCollection<E> : Collection<E>
+  getFirst() E; getLast() E; removeFirst() E; removeLast() E; addFirst(E) void; addLast(E) void
+
+interface java.util.List<E> : SequencedCollection<E>, Collection<E>
+  get(int) E; set(int, E) E; add(int, E) void; remove(int) E; indexOf(Object) int; lastIndexOf(Object) int
+  subList(int, int) List<E>; listIterator() ListIterator<E>; listIterator(int) ListIterator<E>
+  sort(Comparator<? super E>) void; replaceAll(java.util.function.UnaryOperator<E>) void; addAll(int, Collection<? extends E>) boolean
+  reversed() List<E>
+  static <T> of(T...) List<T>; static <T> copyOf(Collection<? extends T>) List<T>
+
+interface java.util.RandomAccess
+abstract class java.util.AbstractCollection<E> : Collection<E>
+abstract class java.util.AbstractList<E> : java.util.AbstractCollection<E>, List<E>
+abstract class java.util.AbstractSequentialList<E> : java.util.AbstractList<E>
+abstract class java.util.AbstractSet<E> : java.util.AbstractCollection<E>, Set<E>
+abstract class java.util.AbstractQueue<E> : java.util.AbstractCollection<E>, Queue<E>
+abstract class java.util.AbstractMap<K, V> : Map<K, V>
+class java.util.ArrayList<E> : java.util.AbstractList<E>, List<E>, RandomAccess, Cloneable, java.io.Serializable
+  ensureCapacity(int) void; trimToSize() void; clone() Object
+class java.util.LinkedList<E> : java.util.AbstractSequentialList<E>, List<E>, Deque<E>, Cloneable, java.io.Serializable
+class java.util.Vector<E> : java.util.AbstractList<E>, List<E>, RandomAccess, Cloneable, java.io.Serializable
+  elementAt(int) E; firstElement() E; lastElement() E; addElement(E) void; elements() Enumeration<E>
+class java.util.Stack<E> : Vector<E>
+  push(E) E; pop() E; peek() E; empty() boolean; search(Object) int
+class java.util.concurrent.CopyOnWriteArrayList<E> : List<E>, RandomAccess, Cloneable, java.io.Serializable
+  addIfAbsent(E) boolean
+
+interface java.util.Set<E> : Collection<E>
+  static <T> of(T...) Set<T>; static <T> copyOf(Collection<? extends T>) Set<T>
+interface java.util.SortedSet<E> : Set<E>, SequencedCollection<E>
+  first() E; last() E; headSet(E) SortedSet<E>; tailSet(E) SortedSet<E>; subSet(E, E) SortedSet<E>; comparator() Comparator<? super E>
+interface java.util.NavigableSet<E> : SortedSet<E>
+  ceiling(E) E; floor(E) E; higher(E) E; lower(E) E; pollFirst() E; pollLast() E
+  descendingSet() NavigableSet<E>; descendingIterator() Iterator<E>
+class java.util.HashSet<E> : java.util.AbstractSet<E>, Set<E>, Cloneable, java.io.Serializable
+class java.util.LinkedHashSet<E> : HashSet<E>, Set<E>, SequencedCollection<E>
+class java.util.TreeSet<E> : java.util.AbstractSet<E>, NavigableSet<E>, Cloneable, java.io.Serializable
+class java.util.EnumSet<E> : java.util.AbstractSet<E>, Set<E>, Cloneable, java.io.Serializable
+  static <T> noneOf(Class<T>) EnumSet<T>; static <T> allOf(Class<T>) EnumSet<T>; static <T> of(T, T...) EnumSet<T>
+class java.util.concurrent.CopyOnWriteArraySet<E> : java.util.AbstractSet<E>, Set<E>, java.io.Serializable
+
+interface java.util.Map<K, V>
+  size() int; isEmpty() boolean; get(Object) V; put(K, V) V; remove(Object) V; remove(Object, Object) boolean
+  containsKey(Object) boolean; containsValue(Object) boolean; keySet() Set<K>; values() Collection<V>
+  entrySet() Set<Map.Entry<K, V>>; putAll(Map<? extends K, ? extends V>) void; clear() void
+  getOrDefault(Object, V) V; putIfAbsent(K, V) V; replace(K, V) V; replace(K, V, V) boolean
+  computeIfAbsent(K, java.util.function.Function<? super K, ? extends V>) V
+  computeIfPresent(K, java.util.function.BiFunction<? super K, ? super V, ? extends V>) V
+  compute(K, java.util.function.BiFunction<? super K, ? super V, ? extends V>) V
+  merge(K, V, java.util.function.BiFunction<? super V, ? super V, ? extends V>) V
+  forEach(java.util.function.BiConsumer<? super K, ? super V>) void
+  replaceAll(java.util.function.BiFunction<? super K, ? super V, ? extends V>) void
+  static <A, B> of() Map<A, B>; static <A, B> of(A, B) Map<A, B>; static <A, B> of(A, B, A, B) Map<A, B>
+  static <A, B> of(A, B, A, B, A, B) Map<A, B>; static <A, B> entry(A, B) Map.Entry<A, B>
+  static <A, B> copyOf(Map<? extends A, ? extends B>) Map<A, B>; static <A, B> ofEntries(Map.Entry<? extends A, ? extends B>...) Map<A, B>
+interface java.util.Map.Entry<K, V>
+  getKey() K; getValue() V; setValue(V) V
+interface java.util.SequencedMap<K, V> : Map<K, V>
+  firstEntry() Map.Entry<K, V>; lastEntry() Map.Entry<K, V>; pollFirstEntry() Map.Entry<K, V>; pollLastEntry() Map.Entry<K, V>
+interface java.util.SortedMap<K, V> : SequencedMap<K, V>
+  firstKey() K; lastKey() K; headMap(K) SortedMap<K, V>; tailMap(K) SortedMap<K, V>; subMap(K, K) SortedMap<K, V>
+  comparator() Comparator<? super K>
+interface java.util.NavigableMap<K, V> : SortedMap<K, V>
+  ceilingKey(K) K; floorKey(K) K; higherKey(K) K; lowerKey(K) K
+  ceilingEntry(K) Map.Entry<K, V>; floorEntry(K) Map.Entry<K, V>; higherEntry(K) Map.Entry<K, V>; lowerEntry(K) Map.Entry<K, V>
+  descendingMap() NavigableMap<K, V>; navigableKeySet() NavigableSet<K>; descendingKeySet() NavigableSet<K>
+class java.util.HashMap<K, V> : java.util.AbstractMap<K, V>, Map<K, V>, Cloneable, java.io.Serializable
+class java.util.LinkedHashMap<K, V> : HashMap<K, V>, SequencedMap<K, V>
+class java.util.TreeMap<K, V> : java.util.AbstractMap<K, V>, NavigableMap<K, V>, Cloneable, java.io.Serializable
+class java.util.IdentityHashMap<K, V> : java.util.AbstractMap<K, V>, Map<K, V>, Cloneable, java.io.Serializable
+class java.util.WeakHashMap<K, V> : java.util.AbstractMap<K, V>, Map<K, V>
+class java.util.EnumMap<K, V> : java.util.AbstractMap<K, V>, Map<K, V>, Cloneable, java.io.Serializable
+class java.util.Dictionary<K, V>
+  size() int; isEmpty() boolean; get(Object) V; put(K, V) V; remove(Object) V; keys() Enumeration<K>; elements() Enumeration<V>
+class java.util.Hashtable<K, V> : Dictionary<K, V>, Map<K, V>, Cloneable, java.io.Serializable
+  contains(Object) boolean
+class java.util.Properties : Hashtable<Object, Object>
+  getProperty(String) String; getProperty(String, String) String; setProperty(String, String) Object
+  stringPropertyNames() Set<String>; load(java.io.InputStream) void; load(java.io.Reader) void
+  store(java.io.OutputStream, String) void; store(java.io.Writer, String) void
+
+interface java.util.concurrent.ConcurrentMap<K, V> : Map<K, V>
+class java.util.concurrent.ConcurrentHashMap<K, V> : java.util.AbstractMap<K, V>, ConcurrentMap<K, V>, java.io.Serializable
+  mappingCount() long; static <T> newKeySet() Set<T>
+class java.util.concurrent.ConcurrentSkipListMap<K, V> : java.util.AbstractMap<K, V>, ConcurrentMap<K, V>, NavigableMap<K, V>, Cloneable, java.io.Serializable
+
+interface java.util.Queue<E> : Collection<E>
+  offer(E) boolean; poll() E; peek() E; element() E; remove() E
+interface java.util.Deque<E> : Queue<E>, SequencedCollection<E>
+  push(E) void; pop() E; offerFirst(E) boolean; offerLast(E) boolean; pollFirst() E; pollLast() E
+  peekFirst() E; peekLast() E; descendingIterator() Iterator<E>
+class java.util.ArrayDeque<E> : java.util.AbstractCollection<E>, Deque<E>, Cloneable, java.io.Serializable
+class java.util.PriorityQueue<E> : java.util.AbstractQueue<E>, Queue<E>, java.io.Serializable
+  comparator() Comparator<? super E>
+interface java.util.concurrent.BlockingQueue<E> : Queue<E>
+  put(E) void; take() E; offer(E, long, TimeUnit) boolean; poll(long, TimeUnit) E; remainingCapacity() int
+  drainTo(Collection<? super E>) int
+interface java.util.concurrent.BlockingDeque<E> : BlockingQueue<E>, Deque<E>
+class java.util.concurrent.LinkedBlockingQueue<E> : java.util.AbstractQueue<E>, BlockingQueue<E>, java.io.Serializable
+class java.util.concurrent.ArrayBlockingQueue<E> : java.util.AbstractQueue<E>, BlockingQueue<E>, java.io.Serializable
+class java.util.concurrent.LinkedBlockingDeque<E> : java.util.AbstractQueue<E>, BlockingDeque<E>, java.io.Serializable
+class java.util.concurrent.ConcurrentLinkedQueue<E> : java.util.AbstractQueue<E>, Queue<E>, java.io.Serializable
+class java.util.concurrent.PriorityBlockingQueue<E> : java.util.AbstractQueue<E>, BlockingQueue<E>, java.io.Serializable
+class java.util.concurrent.DelayQueue<E> : java.util.AbstractQueue<E>, BlockingQueue<E>
+
+interface java.util.Iterator<E>
+  hasNext() boolean; next() E; remove() void; forEachRemaining(Consumer<? super E>) void
+interface java.util.ListIterator<E> : Iterator<E>
+  hasPrevious() boolean; previous() E; nextIndex() int; previousIndex() int; set(E) void; add(E) void
+interface java.util.Enumeration<E>
+  hasMoreElements() boolean; nextElement() E; asIterator() Iterator<E>
+
+interface java.util.Comparator<T>
+  compare(T, T) int; reversed() Comparator<T>; thenComparing(Comparator<? super T>) Comparator<T>
+  thenComparing(java.util.function.Function<? super T, ?>) Comparator<T>
+  thenComparingInt(java.util.function.ToIntFunction<? super T>) Comparator<T>
+  thenComparingLong(java.util.function.ToLongFunction<? super T>) Comparator<T>
+  static <A> comparing(java.util.function.Function<? super A, ?>) Comparator<A>
+  static <A> comparingInt(java.util.function.ToIntFunction<? super A>) Comparator<A>
+  static <A> comparingLong(java.util.function.ToLongFunction<? super A>) Comparator<A>
+  static <A> naturalOrder() Comparator<A>; static <A> reverseOrder() Comparator<A>
+  static <A> nullsFirst(Comparator<? super A>) Comparator<A>; static <A> nullsLast(Comparator<? super A>) Comparator<A>
+
+final class java.util.Optional<T>
+  static <A> of(A) Optional<A>; static <A> ofNullable(A) Optional<A>; static <A> empty() Optional<A>
+  isPresent() boolean; isEmpty() boolean; get() T; orElse(T) T; orElseGet(java.util.function.Supplier<? extends T>) T
+  orElseThrow() T; <X> orElseThrow(java.util.function.Supplier<? extends X>) T
+  ifPresent(Consumer<? super T>) void; ifPresentOrElse(Consumer<? super T>, Runnable) void
+  filter(java.util.function.Predicate<? super T>) Optional<T>; <U> map(java.util.function.Function<? super T, ? extends U>) Optional<U>
+  <U> flatMap(java.util.function.Function<? super T, ?>) Optional<U>; or(java.util.function.Supplier<?>) Optional<T>
+  stream() Stream<T>
+final class java.util.OptionalInt
+  static of(int) OptionalInt; static empty() OptionalInt; isPresent() boolean; isEmpty() boolean
+  getAsInt() int; orElse(int) int; orElseThrow() int
+final class java.util.OptionalLong
+  static of(long) OptionalLong; static empty() OptionalLong; isPresent() boolean; isEmpty() boolean
+  getAsLong() long; orElse(long) long; orElseThrow() long
+final class java.util.OptionalDouble
+  static of(double) OptionalDouble; static empty() OptionalDouble; isPresent() boolean; isEmpty() boolean
+  getAsDouble() double; orElse(double) double; orElseThrow() double
+
+final class java.util.Arrays
+  static <T> asList(T...) List<T>; static toString(Object) String; static deepToString(Object[]) String
+  static equals(Object, Object) boolean; static deepEquals(Object[], Object[]) boolean; static hashCode(Object) int; static deepHashCode(Object[]) int
+  static sort(Object) void; static sort(Object, int, int) void; static <T> sort(T[], Comparator<? super T>) void
+  static fill(Object, Object) void; static binarySearch(Object, Object) int
+  static <T> copyOf(T[], int) T[]; static <T> copyOfRange(T[], int, int) T[]
+  static <T> stream(T[]) Stream<T>
+
+final class java.util.Collections
+  static <T> emptyList() List<T>; static <T> emptySet() Set<T>; static <A, B> emptyMap() Map<A, B>
+  static <T> singletonList(T) List<T>; static <T> singleton(T) Set<T>; static <A, B> singletonMap(A, B) Map<A, B>
+  static <T> unmodifiableList(List<? extends T>) List<T>; static <T> unmodifiableSet(Set<? extends T>) Set<T>
+  static <A, B> unmodifiableMap(Map<? extends A, ? extends B>) Map<A, B>; static <T> unmodifiableCollection(Collection<? extends T>) Collection<T>
+  static <T> synchronizedList(List<T>) List<T>; static <T> synchronizedSet(Set<T>) Set<T>; static <A, B> synchronizedMap(Map<A, B>) Map<A, B>
+  static <T> sort(List<T>) void; static <T> sort(List<T>, Comparator<? super T>) void; static reverse(List<?>) void; static shuffle(List<?>) void
+  static <T> max(Collection<? extends T>) T; static <T> min(Collection<? extends T>) T; static <T> nCopies(int, T) List<T>
+  static frequency(Collection<?>, Object) int; static <T> addAll(Collection<? super T>, T...) boolean
+  static <T> reverseOrder() Comparator<T>; static disjoint(Collection<?>, Collection<?>) boolean
+  static <T> emptyIterator() Iterator<T>; static swap(List<?>, int, int) void
+
+final class java.util.Objects
+  static equals(Object, Object) boolean; static deepEquals(Object, Object) boolean; static hashCode(Object) int; static hash(Object...) int
+  static toString(Object) String; static toString(Object, String) String; static isNull(Object) boolean; static nonNull(Object) boolean
+  static <T> requireNonNull(T) T; static <T> requireNonNull(T, String) T; static <T> requireNonNull(T, java.util.function.Supplier<String>) T
+  static <T> requireNonNullElse(T, T) T; static <T> requireNonNullElseGet(T, java.util.function.Supplier<? extends T>) T
+  static <T> compare(T, T, Comparator<? super T>) int; static checkIndex(int, int) int
+
+class java.util.Random : java.io.Serializable
+  nextInt() int; nextInt(int) int; nextInt(int, int) int; nextLong() long; nextDouble() double; nextFloat() float
+  nextBoolean() boolean; nextGaussian() double; nextBytes(byte[]) void; setSeed(long) void
+  ints() java.util.stream.IntStream
+class java.security.SecureRandom : Random
+  static getInstanceStrong() java.security.SecureRandom
+class java.util.concurrent.ThreadLocalRandom : Random
+  static current() java.util.concurrent.ThreadLocalRandom
+
+class java.util.Date : java.io.Serializable, Cloneable, Comparable<Date>
+  getTime() long; setTime(long) void; before(Date) boolean; after(Date) boolean; compareTo(Date) int; toInstant() java.time.Instant
+  static from(java.time.Instant) Date
+abstract class java.util.Calendar : java.io.Serializable, Cloneable, Comparable<Calendar>
+  static getInstance() Calendar; static getInstance(TimeZone) Calendar; static getInstance(Locale) Calendar
+  get(int) int; set(int, int) void; set(int, int, int) void; add(int, int) void; getTime() Date; setTime(Date) void
+  getTimeInMillis() long; setTimeInMillis(long) void; getTimeZone() TimeZone; setTimeZone(TimeZone) void
+  before(Object) boolean; after(Object) boolean; clear() void; getActualMaximum(int) int
+  static YEAR: int; static MONTH: int; static DAY_OF_MONTH: int; static DATE: int; static HOUR: int; static HOUR_OF_DAY: int
+  static MINUTE: int; static SECOND: int; static MILLISECOND: int; static DAY_OF_WEEK: int; static DAY_OF_YEAR: int
+class java.util.GregorianCalendar : Calendar
+abstract class java.util.TimeZone : java.io.Serializable, Cloneable
+  static getTimeZone(String) TimeZone; static getDefault() TimeZone; getID() String; getOffset(long) int; toZoneId() java.time.ZoneId
+final class java.util.Locale : java.io.Serializable, Cloneable
+  static getDefault() Locale; getLanguage() String; getCountry() String; toLanguageTag() String; static forLanguageTag(String) Locale
+  static ROOT: Locale; static ENGLISH: Locale; static US: Locale; static UK: Locale; static GERMAN: Locale; static FRENCH: Locale
+final class java.util.UUID : java.io.Serializable, Comparable<UUID>
+  static randomUUID() UUID; static fromString(String) UUID; static nameUUIDFromBytes(byte[]) UUID
+  toString() String; getMostSignificantBits() long; getLeastSignificantBits() long; version() int
+final class java.util.Scanner : Iterator<String>, java.io.Closeable
+  next() String; nextLine() String; nextInt() int; nextLong() long; nextDouble() double; nextBoolean() boolean
+  hasNext() boolean; hasNextLine() boolean; hasNextInt() boolean; useDelimiter(String) Scanner; close() void
+final class java.util.StringJoiner
+  add(CharSequence) StringJoiner; setEmptyValue(CharSequence) StringJoiner; length() int; toString() String
+class java.util.StringTokenizer : Enumeration<Object>
+  hasMoreTokens() boolean; nextToken() String; nextToken(String) String; countTokens() int
+class java.util.BitSet : Cloneable, java.io.Serializable
+  get(int) boolean; set(int) void; set(int, boolean) void; clear(int) void; cardinality() int; nextSetBit(int) int; length() int; size() int; isEmpty() boolean
+class java.util.Timer
+  schedule(TimerTask, long) void; schedule(TimerTask, long, long) void; scheduleAtFixedRate(TimerTask, long, long) void; cancel() void
+abstract class java.util.TimerTask : Runnable
+  cancel() boolean; scheduledExecutionTime() long
+
+class java.util.ConcurrentModificationException : RuntimeException
+class java.util.NoSuchElementException : RuntimeException
+class java.util.MissingResourceException : RuntimeException
+
+# ------------------------------------------------------------------ java.util.concurrent
+interface java.util.concurrent.Executor
+  execute(Runnable) void
+interface java.util.concurrent.ExecutorService : Executor, AutoCloseable
+  shutdown() void; shutdownNow() List<Runnable>; isShutdown() boolean; isTerminated() boolean
+  awaitTermination(long, TimeUnit) boolean; submit(Runnable) Future<?>; <T> submit(Callable<T>) Future<T>
+  <T> invokeAll(Collection<? extends Callable<T>>) List<Future<T>>; <T> invokeAny(Collection<? extends Callable<T>>) T
+  close() void
+interface java.util.concurrent.ScheduledExecutorService : ExecutorService
+  schedule(Runnable, long, TimeUnit) ScheduledFuture<?>; <V> schedule(Callable<V>, long, TimeUnit) ScheduledFuture<V>
+  scheduleAtFixedRate(Runnable, long, long, TimeUnit) ScheduledFuture<?>; scheduleWithFixedDelay(Runnable, long, long, TimeUnit) ScheduledFuture<?>
+class java.util.concurrent.ThreadPoolExecutor : ExecutorService
+  getActiveCount() int; getPoolSize() int; getQueue() BlockingQueue<Runnable>; setCorePoolSize(int) void; getCompletedTaskCount() long
+class java.util.concurrent.ScheduledThreadPoolExecutor : ThreadPoolExecutor, ScheduledExecutorService
+class java.util.concurrent.ForkJoinPool : ExecutorService
+  static commonPool() ForkJoinPool
+final class java.util.concurrent.Executors
+  static newFixedThreadPool(int) ExecutorService; static newFixedThreadPool(int, ThreadFactory) ExecutorService
+  static newCachedThreadPool() ExecutorService; static newCachedThreadPool(ThreadFactory) ExecutorService
+  static newSingleThreadExecutor() ExecutorService; static newSingleThreadExecutor(ThreadFactory) ExecutorService
+  static newScheduledThreadPool(int) ScheduledExecutorService; static newScheduledThreadPool(int, ThreadFactory) ScheduledExecutorService
+  static newSingleThreadScheduledExecutor() ScheduledExecutorService; static newWorkStealingPool() ExecutorService
+  static newVirtualThreadPerTaskExecutor() ExecutorService; static defaultThreadFactory() ThreadFactory
+interface java.util.concurrent.ThreadFactory
+  newThread(Runnable) Thread
+interface java.util.concurrent.Callable<V>
+  call() V
+interface java.util.concurrent.Future<V>
+  get() V; get(long, TimeUnit) V; isDone() boolean; isCancelled() boolean; cancel(boolean) boolean
+interface java.util.concurrent.RunnableFuture<V> : Runnable, java.util.concurrent.Future<V>
+class java.util.concurrent.FutureTask<V> : java.util.concurrent.RunnableFuture<V>
+interface java.util.concurrent.Delayed : Comparable<Delayed>
+  getDelay(TimeUnit) long
+interface java.util.concurrent.ScheduledFuture<V> : Future<V>, Delayed
+interface java.util.concurrent.CompletionStage<T>
+  <U> thenApply(java.util.function.Function<? super T, ? extends U>) CompletionStage<U>
+  thenAccept(Consumer<? super T>) CompletionStage<Void>; thenRun(Runnable) CompletionStage<Void>
+  toCompletableFuture() CompletableFuture<T>
+class java.util.concurrent.CompletableFuture<T> : Future<T>, CompletionStage<T>
+  static <U> supplyAsync(java.util.function.Supplier<U>) CompletableFuture<U>; static <U> supplyAsync(java.util.function.Supplier<U>, Executor) CompletableFuture<U>
+  static runAsync(Runnable) CompletableFuture<Void>; static runAsync(Runnable, Executor) CompletableFuture<Void>
+  static <U> completedFuture(U) CompletableFuture<U>; static allOf(CompletableFuture<?>...) CompletableFuture<Void>
+  static anyOf(CompletableFuture<?>...) CompletableFuture<Object>
+  <U> thenApply(java.util.function.Function<? super T, ? extends U>) CompletableFuture<U>
+  thenAccept(Consumer<? super T>) CompletableFuture<Void>; thenRun(Runnable) CompletableFuture<Void>
+  <U> thenCompose(java.util.function.Function<? super T, ?>) CompletableFuture<U>
+  exceptionally(java.util.function.Function<Throwable, ? extends T>) CompletableFuture<T>
+  whenComplete(java.util.function.BiConsumer<? super T, ? super Throwable>) CompletableFuture<T>
+  join() T; getNow(T) T; complete(T) boolean; completeExceptionally(Throwable) boolean; isCompletedExceptionally() boolean
+  orTimeout(long, TimeUnit) CompletableFuture<T>
+enum java.util.concurrent.TimeUnit
+  toNanos(long) long; toMicros(long) long; toMillis(long) long; toSeconds(long) long; toMinutes(long) long; toHours(long) long; toDays(long) long
+  convert(long, TimeUnit) long; sleep(long) void; toChronoUnit() java.time.temporal.ChronoUnit
+  static NANOSECONDS: TimeUnit; static MICROSECONDS: TimeUnit; static MILLISECONDS: TimeUnit; static SECONDS: TimeUnit
+  static MINUTES: TimeUnit; static HOURS: TimeUnit; static DAYS: TimeUnit
+class java.util.concurrent.CountDownLatch
+  await() void; await(long, TimeUnit) boolean; countDown() void; getCount() long
+class java.util.concurrent.CyclicBarrier
+  await() int; getParties() int; reset() void
+class java.util.concurrent.Semaphore : java.io.Serializable
+  acquire() void; acquire(int) void; tryAcquire() boolean; tryAcquire(long, TimeUnit) boolean; release() void; release(int) void; availablePermits() int
+class java.util.concurrent.ExecutionException : Exception
+class java.util.concurrent.TimeoutException : Exception
+class java.util.concurrent.CancellationException : IllegalStateException
+class java.util.concurrent.CompletionException : RuntimeException
+class java.util.concurrent.RejectedExecutionException : RuntimeException
+
+class java.util.concurrent.atomic.AtomicInteger : Number
+  get() int; set(int) void; lazySet(int) void; getAndSet(int) int; compareAndSet(int, int) boolean
+  incrementAndGet() int; decrementAndGet() int; getAndIncrement() int; getAndDecrement() int; addAndGet(int) int; getAndAdd(int) int
+  updateAndGet(java.util.function.IntUnaryOperator) int; getAndUpdate(java.util.function.IntUnaryOperator) int
+  accumulateAndGet(int, java.util.function.IntBinaryOperator) int; intValue() int
+class java.util.concurrent.atomic.AtomicLong : Number
+  get() long; set(long) void; lazySet(long) void; getAndSet(long) long; compareAndSet(long, long) boolean
+  incrementAndGet() long; decrementAndGet() long; getAndIncrement() long; getAndDecrement() long; addAndGet(long) long; getAndAdd(long) long
+  updateAndGet(java.util.function.LongUnaryOperator) long; getAndUpdate(java.util.function.LongUnaryOperator) long; longValue() long
+class java.util.concurrent.atomic.AtomicBoolean : java.io.Serializable
+  get() boolean; set(boolean) void; lazySet(boolean) void; getAndSet(boolean) boolean; compareAndSet(boolean, boolean) boolean
+class java.util.concurrent.atomic.AtomicReference<V> : java.io.Serializable
+  get() V; set(V) void; lazySet(V) void; getAndSet(V) V; compareAndSet(V, V) boolean
+  updateAndGet(java.util.function.UnaryOperator<V>) V; getAndUpdate(java.util.function.UnaryOperator<V>) V
+  accumulateAndGet(V, java.util.function.BinaryOperator<V>) V
+class java.util.concurrent.atomic.LongAdder : Number
+  add(long) void; increment() void; decrement() void; sum() long; reset() void; sumThenReset() long
+
+interface java.util.concurrent.locks.Lock
+  lock() void; unlock() void; tryLock() boolean; tryLock(long, TimeUnit) boolean; lockInterruptibly() void; newCondition() java.util.concurrent.locks.Condition
+interface java.util.concurrent.locks.Condition
+  await() void; await(long, TimeUnit) boolean; signal() void; signalAll() void; awaitNanos(long) long
+interface java.util.concurrent.locks.ReadWriteLock
+  readLock() java.util.concurrent.locks.Lock; writeLock() java.util.concurrent.locks.Lock
+class java.util.concurrent.locks.ReentrantLock : java.util.concurrent.locks.Lock, java.io.Serializable
+  isLocked() boolean; isHeldByCurrentThread() boolean; getHoldCount() int; isFair() boolean
+class java.util.concurrent.locks.ReentrantReadWriteLock : java.util.concurrent.locks.ReadWriteLock, java.io.Serializable
+  readLock() ReentrantReadWriteLock.ReadLock; writeLock() ReentrantReadWriteLock.WriteLock
+class java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock : java.util.concurrent.locks.Lock, java.io.Serializable
+class java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock : java.util.concurrent.locks.Lock, java.io.Serializable
+class java.util.concurrent.locks.StampedLock : java.io.Serializable
+  writeLock() long; readLock() long; tryOptimisticRead() long; validate(long) boolean; unlockWrite(long) void; unlockRead(long) void; unlock(long) void
+
+# ------------------------------------------------------------------ java.util.function
+interface java.util.function.Function<T, R>
+  apply(T) R; <V> andThen(java.util.function.Function<? super R, ? extends V>) java.util.function.Function<T, V>
+  <V> compose(java.util.function.Function<? super V, ? extends T>) java.util.function.Function<V, R>
+  static <A> identity() java.util.function.Function<A, A>
+interface java.util.function.BiFunction<T, U, R>
+  apply(T, U) R
+interface java.util.function.UnaryOperator<T> : java.util.function.Function<T, T>
+  static <A> identity() java.util.function.UnaryOperator<A>
+interface java.util.function.BinaryOperator<T> : java.util.function.BiFunction<T, T, T>
+interface java.util.function.Supplier<T>
+  get() T
+interface java.util.function.Consumer<T>
+  accept(T) void; andThen(Consumer<? super T>) Consumer<T>
+interface java.util.function.BiConsumer<T, U>
+  accept(T, U) void
+interface java.util.function.Predicate<T>
+  test(T) boolean; and(java.util.function.Predicate<? super T>) java.util.function.Predicate<T>
+  or(java.util.function.Predicate<? super T>) java.util.function.Predicate<T>; negate() java.util.function.Predicate<T>
+  static <A> not(java.util.function.Predicate<? super A>) java.util.function.Predicate<A>
+  static <A> isEqual(Object) java.util.function.Predicate<A>
+interface java.util.function.BiPredicate<T, U>
+  test(T, U) boolean
+interface java.util.function.BooleanSupplier
+  getAsBoolean() boolean
+interface java.util.function.IntSupplier
+  getAsInt() int
+interface java.util.function.LongSupplier
+  getAsLong() long
+interface java.util.function.IntFunction<R>
+  apply(int) R
+interface java.util.function.IntPredicate
+  test(int) boolean
+interface java.util.function.IntUnaryOperator
+  applyAsInt(int) int
+interface java.util.function.IntBinaryOperator
+  applyAsInt(int, int) int
+interface java.util.function.LongUnaryOperator
+  applyAsLong(long) long
+interface java.util.function.IntConsumer
+  accept(int) void
+interface java.util.function.ToIntFunction<T>
+  applyAsInt(T) int
+interface java.util.function.ToLongFunction<T>
+  applyAsLong(T) long
+interface java.util.function.ToDoubleFunction<T>
+  applyAsDouble(T) double
+
+# ------------------------------------------------------------------ java.util.stream
+interface java.util.stream.BaseStream<T, S> : AutoCloseable
+  close() void; isParallel() boolean; iterator() Iterator<T>
+interface java.util.stream.Stream<T> : java.util.stream.BaseStream<T, Stream<T>>
+  filter(java.util.function.Predicate<? super T>) Stream<T>; <R> map(java.util.function.Function<? super T, ? extends R>) Stream<R>
+  mapToInt(java.util.function.ToIntFunction<? super T>) java.util.stream.IntStream
+  mapToLong(java.util.function.ToLongFunction<? super T>) java.util.stream.LongStream
+  mapToDouble(java.util.function.ToDoubleFunction<? super T>) java.util.stream.DoubleStream
+  <R> flatMap(java.util.function.Function<? super T, ?>) Stream<R>
+  distinct() Stream<T>; sorted() Stream<T>; sorted(Comparator<? super T>) Stream<T>; peek(Consumer<? super T>) Stream<T>
+  limit(long) Stream<T>; skip(long) Stream<T>; takeWhile(java.util.function.Predicate<? super T>) Stream<T>
+  dropWhile(java.util.function.Predicate<? super T>) Stream<T>; parallel() Stream<T>; sequential() Stream<T>; unordered() Stream<T>
+  forEach(Consumer<? super T>) void; forEachOrdered(Consumer<? super T>) void
+  <R> collect(java.util.stream.Collector<? super T, ?, R>) R; toList() List<T>; toArray() Object[]; <A> toArray(java.util.function.IntFunction<A[]>) A[]
+  count() long; anyMatch(java.util.function.Predicate<? super T>) boolean; allMatch(java.util.function.Predicate<? super T>) boolean
+  noneMatch(java.util.function.Predicate<? super T>) boolean; findFirst() Optional<T>; findAny() Optional<T>
+  min(Comparator<? super T>) Optional<T>; max(Comparator<? super T>) Optional<T>
+  reduce(T, java.util.function.BinaryOperator<T>) T; reduce(java.util.function.BinaryOperator<T>) Optional<T>
+  static <A> of(A...) Stream<A>; static <A> empty() Stream<A>; static <A> ofNullable(A) Stream<A>
+  static <A> concat(Stream<? extends A>, Stream<? extends A>) Stream<A>
+  static <A> generate(java.util.function.Supplier<? extends A>) Stream<A>; static <A> iterate(A, java.util.function.UnaryOperator<A>) Stream<A>
+interface java.util.stream.IntStream : java.util.stream.BaseStream<Integer, java.util.stream.IntStream>
+  static range(int, int) java.util.stream.IntStream; static rangeClosed(int, int) java.util.stream.IntStream
+  static of(int...) java.util.stream.IntStream; static empty() java.util.stream.IntStream
+  filter(java.util.function.IntPredicate) java.util.stream.IntStream; map(java.util.function.IntUnaryOperator) java.util.stream.IntStream
+  <U> mapToObj(java.util.function.IntFunction<? extends U>) Stream<U>; boxed() Stream<Integer>; distinct() java.util.stream.IntStream
+  sorted() java.util.stream.IntStream; limit(long) java.util.stream.IntStream; skip(long) java.util.stream.IntStream
+  sum() int; count() long; average() OptionalDouble; max() OptionalInt; min() OptionalInt; toArray() int[]
+  forEach(java.util.function.IntConsumer) void; anyMatch(java.util.function.IntPredicate) boolean; allMatch(java.util.function.IntPredicate) boolean
+  noneMatch(java.util.function.IntPredicate) boolean; findFirst() OptionalInt; asLongStream() java.util.stream.LongStream
+interface java.util.stream.LongStream : java.util.stream.BaseStream<Long, java.util.stream.LongStream>
+  static range(long, long) java.util.stream.LongStream; static rangeClosed(long, long) java.util.stream.LongStream
+  sum() long; count() long; average() OptionalDouble; max() OptionalLong; min() OptionalLong; toArray() long[]; boxed() Stream<Long>
+interface java.util.stream.DoubleStream : java.util.stream.BaseStream<Double, java.util.stream.DoubleStream>
+  sum() double; count() long; average() OptionalDouble; max() OptionalDouble; min() OptionalDouble; toArray() double[]; boxed() Stream<Double>
+interface java.util.stream.Collector<T, A, R>
+final class java.util.stream.Collectors
+  static <T> toList() java.util.stream.Collector<T, ?, List<T>>; static <T> toSet() java.util.stream.Collector<T, ?, Set<T>>
+  static <T> toUnmodifiableList() java.util.stream.Collector<T, ?, List<T>>; static <T> toUnmodifiableSet() java.util.stream.Collector<T, ?, Set<T>>
+  static joining() java.util.stream.Collector<CharSequence, ?, String>; static joining(CharSequence) java.util.stream.Collector<CharSequence, ?, String>
+  static joining(CharSequence, CharSequence, CharSequence) java.util.stream.Collector<CharSequence, ?, String>
+  static <T, A, B> toMap(java.util.function.Function<? super T, ? extends A>, java.util.function.Function<? super T, ? extends B>) java.util.stream.Collector<T, ?, Map<A, B>>
+  static <T, A> groupingBy(java.util.function.Function<? super T, ? extends A>) java.util.stream.Collector<T, ?, Map<A, List<T>>>
+  static <T> partitioningBy(java.util.function.Predicate<? super T>) java.util.stream.Collector<T, ?, Map<Boolean, List<T>>>
+  static <T> counting() java.util.stream.Collector<T, ?, Long>
+  static <T, C> toCollection(java.util.function.Supplier<C>) java.util.stream.Collector<T, ?, C>
+
+# ------------------------------------------------------------------ java.util.regex / logging
+final class java.util.regex.Pattern : java.io.Serializable
+  static compile(String) java.util.regex.Pattern; static compile(String, int) java.util.regex.Pattern
+  static matches(String, CharSequence) boolean; static quote(String) String
+  matcher(CharSequence) java.util.regex.Matcher; pattern() String; split(CharSequence) String[]; flags() int
+  asPredicate() java.util.function.Predicate<String>; toString() String
+  static CASE_INSENSITIVE: int; static MULTILINE: int; static DOTALL: int
+final class java.util.regex.Matcher
+  matches() boolean; find() boolean; find(int) boolean; lookingAt() boolean; group() String; group(int) String; group(String) String
+  groupCount() int; start() int; start(int) int; end() int; end(int) int; replaceAll(String) String; replaceFirst(String) String
+  reset() java.util.regex.Matcher; reset(CharSequence) java.util.regex.Matcher; hitEnd() boolean
+  static quoteReplacement(String) String
+class java.util.regex.PatternSyntaxException : IllegalArgumentException
+
+class java.util.logging.Logger
+  static getLogger(String) java.util.logging.Logger; static getGlobal() java.util.logging.Logger; static getAnonymousLogger() java.util.logging.Logger
+  severe(String) void; warning(String) void; info(String) void; config(String) void; fine(String) void; finer(String) void; finest(String) void
+  log(java.util.logging.Level, String) void; log(java.util.logging.Level, String, Throwable) void; log(java.util.logging.Level, String, Object) void
+  isLoggable(java.util.logging.Level) boolean; getName() String; setLevel(java.util.logging.Level) void; getLevel() java.util.logging.Level
+class java.util.logging.Level : java.io.Serializable
+  getName() String; intValue() int; static parse(String) java.util.logging.Level
+  static SEVERE: java.util.logging.Level; static WARNING: java.util.logging.Level; static INFO: java.util.logging.Level
+  static CONFIG: java.util.logging.Level; static FINE: java.util.logging.Level; static FINER: java.util.logging.Level
+  static FINEST: java.util.logging.Level; static ALL: java.util.logging.Level; static OFF: java.util.logging.Level
+
+# ------------------------------------------------------------------ java.io
+interface java.io.Serializable
+interface java.io.Closeable : AutoCloseable
+  close() void
+interface java.io.Flushable
+  flush() void
+abstract class java.io.InputStream : java.io.Closeable
+  read() int; read(byte[]) int; read(byte[], int, int) int; readAllBytes() byte[]; readNBytes(int) byte[]
+  skip(long) long; available() int; close() void; mark(int) void; reset() void; markSupported() boolean
+  transferTo(java.io.OutputStream) long
+abstract class java.io.OutputStream : java.io.Closeable, java.io.Flushable
+  write(int) void; write(byte[]) void; write(byte[], int, int) void; flush() void; close() void
+class java.io.FileInputStream : java.io.InputStream
+class java.io.RandomAccessFile : java.io.Closeable
+  length() long; seek(long) void; getFilePointer() long; read() int; readLine() String; write(int) void
+class java.util.zip.ZipFile : java.io.Closeable
+  size() int; getName() String
+class java.io.FileOutputStream : java.io.OutputStream
+class java.io.ByteArrayInputStream : java.io.InputStream
+class java.io.ByteArrayOutputStream : java.io.OutputStream
+  toByteArray() byte[]; toString() String; toString(String) String; toString(java.nio.charset.Charset) String; size() int; reset() void
+  writeTo(java.io.OutputStream) void
+class java.io.FilterInputStream : java.io.InputStream
+class java.io.FilterOutputStream : java.io.OutputStream
+class java.io.BufferedInputStream : java.io.FilterInputStream
+class java.io.BufferedOutputStream : java.io.FilterOutputStream
+class java.io.DataInputStream : java.io.FilterInputStream
+  readInt() int; readLong() long; readUTF() String; readBoolean() boolean; readByte() byte; readFully(byte[]) void
+class java.io.DataOutputStream : java.io.FilterOutputStream
+  writeInt(int) void; writeLong(long) void; writeUTF(String) void; writeBoolean(boolean) void
+class java.io.ObjectInputStream : java.io.InputStream
+  readObject() Object; defaultReadObject() void
+class java.io.ObjectOutputStream : java.io.OutputStream
+  writeObject(Object) void; defaultWriteObject() void
+class java.io.PrintStream : java.io.FilterOutputStream, Appendable
+  print(Object) void; println() void; println(Object) void; printf(String, Object...) java.io.PrintStream
+  format(String, Object...) java.io.PrintStream; checkError() boolean
+abstract class java.io.Reader : Readable, java.io.Closeable
+  read() int; read(char[]) int; read(char[], int, int) int; skip(long) long; ready() boolean; close() void; transferTo(java.io.Writer) long
+abstract class java.io.Writer : Appendable, java.io.Closeable, java.io.Flushable
+  write(int) void; write(String) void; write(char[]) void; write(String, int, int) void; write(char[], int, int) void
+  append(CharSequence) java.io.Writer; flush() void; close() void
+class java.io.InputStreamReader : java.io.Reader
+  getEncoding() String
+class java.io.OutputStreamWriter : java.io.Writer
+  getEncoding() String
+class java.io.BufferedReader : java.io.Reader
+  readLine() String; lines() Stream<String>
+class java.io.BufferedWriter : java.io.Writer
+  newLine() void
+class java.io.FileReader : java.io.InputStreamReader
+class java.io.FileWriter : java.io.OutputStreamWriter
+class java.io.StringReader : java.io.Reader
+class java.io.StringWriter : java.io.Writer
+  toString() String; getBuffer() StringBuffer
+class java.io.PrintWriter : java.io.Writer
+  print(Object) void; println() void; println(Object) void; printf(String, Object...) java.io.PrintWriter
+  format(String, Object...) java.io.PrintWriter; checkError() boolean
+class java.io.File : java.io.Serializable, Comparable<java.io.File>
+  getName() String; getPath() String; getAbsolutePath() String; getCanonicalPath() String; getParent() String
+  getParentFile() java.io.File; getAbsoluteFile() java.io.File; getCanonicalFile() java.io.File; exists() boolean
+  isFile() boolean; isDirectory() boolean; isHidden() boolean; canRead() boolean; canWrite() boolean; canExecute() boolean
+  length() long; lastModified() long; setLastModified(long) boolean; delete() boolean; deleteOnExit() void
+  mkdir() boolean; mkdirs() boolean; createNewFile() boolean; renameTo(java.io.File) boolean
+  list() String[]; listFiles() java.io.File[]; toPath() java.nio.file.Path; toURI() java.net.URI
+  setReadable(boolean) boolean; setWritable(boolean) boolean; setExecutable(boolean) boolean
+  static createTempFile(String, String) java.io.File; static separator: String; static pathSeparator: String
+class java.io.IOException : Exception
+class java.io.FileNotFoundException : java.io.IOException
+class java.io.EOFException : java.io.IOException
+class java.io.UnsupportedEncodingException : java.io.IOException
+class java.io.InterruptedIOException : java.io.IOException
+class java.io.UncheckedIOException : RuntimeException
+  getCause() java.io.IOException
+
+# ------------------------------------------------------------------ java.nio
+interface java.nio.file.Path : Comparable<java.nio.file.Path>, Iterable<java.nio.file.Path>
+  getFileName() java.nio.file.Path; getParent() java.nio.file.Path; getRoot() java.nio.file.Path
+  resolve(String) java.nio.file.Path; resolve(java.nio.file.Path) java.nio.file.Path
+  resolveSibling(String) java.nio.file.Path; relativize(java.nio.file.Path) java.nio.file.Path
+  normalize() java.nio.file.Path; toAbsolutePath() java.nio.file.Path; isAbsolute() boolean
+  startsWith(String) boolean; endsWith(String) boolean; toFile() java.io.File; toUri() java.net.URI; getNameCount() int
+  toString() String; static of(String, String...) java.nio.file.Path
+final class java.nio.file.Paths
+  static get(String, String...) java.nio.file.Path
+final class java.nio.file.Files
+  static exists(java.nio.file.Path, java.nio.file.LinkOption...) boolean; static notExists(java.nio.file.Path, java.nio.file.LinkOption...) boolean
+  static isDirectory(java.nio.file.Path, java.nio.file.LinkOption...) boolean; static isRegularFile(java.nio.file.Path, java.nio.file.LinkOption...) boolean
+  static isReadable(java.nio.file.Path) boolean; static isWritable(java.nio.file.Path) boolean; static size(java.nio.file.Path) long
+  static readAllBytes(java.nio.file.Path) byte[]; static readAllLines(java.nio.file.Path) List<String>
+  static readAllLines(java.nio.file.Path, java.nio.charset.Charset) List<String>; static readString(java.nio.file.Path) String
+  static lines(java.nio.file.Path) Stream<String>; static list(java.nio.file.Path) Stream<java.nio.file.Path>
+  static walk(java.nio.file.Path, java.nio.file.FileVisitOption...) Stream<java.nio.file.Path>
+  static write(java.nio.file.Path, byte[], java.nio.file.OpenOption...) java.nio.file.Path
+  static writeString(java.nio.file.Path, CharSequence, java.nio.file.OpenOption...) java.nio.file.Path
+  static createDirectories(java.nio.file.Path, java.nio.file.attribute.FileAttribute<?>...) java.nio.file.Path
+  static createDirectory(java.nio.file.Path, java.nio.file.attribute.FileAttribute<?>...) java.nio.file.Path
+  static createFile(java.nio.file.Path, java.nio.file.attribute.FileAttribute<?>...) java.nio.file.Path
+  static createTempFile(String, String, java.nio.file.attribute.FileAttribute<?>...) java.nio.file.Path
+  static createTempDirectory(String, java.nio.file.attribute.FileAttribute<?>...) java.nio.file.Path
+  static delete(java.nio.file.Path) void; static deleteIfExists(java.nio.file.Path) boolean
+  static copy(java.nio.file.Path, java.nio.file.Path, java.nio.file.CopyOption...) java.nio.file.Path
+  static move(java.nio.file.Path, java.nio.file.Path, java.nio.file.CopyOption...) java.nio.file.Path
+  static newInputStream(java.nio.file.Path, java.nio.file.OpenOption...) java.io.InputStream
+  static newOutputStream(java.nio.file.Path, java.nio.file.OpenOption...) java.io.OutputStream
+  static newBufferedReader(java.nio.file.Path) java.io.BufferedReader; static newBufferedReader(java.nio.file.Path, java.nio.charset.Charset) java.io.BufferedReader
+  static newBufferedWriter(java.nio.file.Path, java.nio.file.OpenOption...) java.io.BufferedWriter
+interface java.nio.file.OpenOption
+interface java.nio.file.CopyOption
+enum java.nio.file.LinkOption : java.nio.file.OpenOption, java.nio.file.CopyOption
+enum java.nio.file.FileVisitOption
+enum java.nio.file.StandardOpenOption : java.nio.file.OpenOption
+  static READ: java.nio.file.StandardOpenOption; static WRITE: java.nio.file.StandardOpenOption; static APPEND: java.nio.file.StandardOpenOption
+  static CREATE: java.nio.file.StandardOpenOption; static CREATE_NEW: java.nio.file.StandardOpenOption; static TRUNCATE_EXISTING: java.nio.file.StandardOpenOption
+enum java.nio.file.StandardCopyOption : java.nio.file.CopyOption
+  static REPLACE_EXISTING: java.nio.file.StandardCopyOption; static ATOMIC_MOVE: java.nio.file.StandardCopyOption; static COPY_ATTRIBUTES: java.nio.file.StandardCopyOption
+interface java.nio.file.attribute.FileAttribute<T>
+class java.nio.file.FileSystemException : java.io.IOException
+class java.nio.file.NoSuchFileException : java.nio.file.FileSystemException
+class java.nio.file.FileAlreadyExistsException : java.nio.file.FileSystemException
+abstract class java.nio.charset.Charset : Comparable<java.nio.charset.Charset>
+  static forName(String) java.nio.charset.Charset; static defaultCharset() java.nio.charset.Charset; name() String; displayName() String
+final class java.nio.charset.StandardCharsets
+  static UTF_8: java.nio.charset.Charset; static US_ASCII: java.nio.charset.Charset; static ISO_8859_1: java.nio.charset.Charset
+  static UTF_16: java.nio.charset.Charset
+
+# ------------------------------------------------------------------ java.net
+final class java.net.URL : java.io.Serializable
+  openStream() java.io.InputStream; getProtocol() String; getHost() String; getPort() int; getPath() String; getQuery() String
+  getFile() String; toURI() java.net.URI; toExternalForm() String; toString() String
+final class java.net.URI : Comparable<java.net.URI>, java.io.Serializable
+  static create(String) java.net.URI; getScheme() String; getHost() String; getPort() int; getPath() String; getQuery() String
+  toURL() java.net.URL; resolve(String) java.net.URI; toString() String; toASCIIString() String
+class java.net.MalformedURLException : java.io.IOException
+class java.net.URISyntaxException : Exception
+
+# ------------------------------------------------------------------ java.math
+class java.math.BigDecimal : Number, Comparable<java.math.BigDecimal>
+  add(java.math.BigDecimal) java.math.BigDecimal; subtract(java.math.BigDecimal) java.math.BigDecimal
+  multiply(java.math.BigDecimal) java.math.BigDecimal; divide(java.math.BigDecimal) java.math.BigDecimal
+  divide(java.math.BigDecimal, java.math.RoundingMode) java.math.BigDecimal; divide(java.math.BigDecimal, int, java.math.RoundingMode) java.math.BigDecimal
+  remainder(java.math.BigDecimal) java.math.BigDecimal; pow(int) java.math.BigDecimal; abs() java.math.BigDecimal; negate() java.math.BigDecimal
+  setScale(int) java.math.BigDecimal; setScale(int, java.math.RoundingMode) java.math.BigDecimal; scale() int; precision() int; signum() int
+  compareTo(java.math.BigDecimal) int; equals(Object) boolean; hashCode() int; max(java.math.BigDecimal) java.math.BigDecimal
+  min(java.math.BigDecimal) java.math.BigDecimal; stripTrailingZeros() java.math.BigDecimal; toPlainString() String; toString() String
+  toBigInteger() java.math.BigInteger; intValueExact() int; longValueExact() long; unscaledValue() java.math.BigInteger
+  static valueOf(long) java.math.BigDecimal; static valueOf(double) java.math.BigDecimal; static valueOf(long, int) java.math.BigDecimal
+  static ZERO: java.math.BigDecimal; static ONE: java.math.BigDecimal; static TEN: java.math.BigDecimal
+class java.math.BigInteger : Number, Comparable<java.math.BigInteger>
+  add(java.math.BigInteger) java.math.BigInteger; subtract(java.math.BigInteger) java.math.BigInteger
+  multiply(java.math.BigInteger) java.math.BigInteger; divide(java.math.BigInteger) java.math.BigInteger
+  mod(java.math.BigInteger) java.math.BigInteger; remainder(java.math.BigInteger) java.math.BigInteger; pow(int) java.math.BigInteger
+  abs() java.math.BigInteger; negate() java.math.BigInteger; signum() int; bitLength() int; testBit(int) boolean
+  shiftLeft(int) java.math.BigInteger; shiftRight(int) java.math.BigInteger; gcd(java.math.BigInteger) java.math.BigInteger
+  modPow(java.math.BigInteger, java.math.BigInteger) java.math.BigInteger; compareTo(java.math.BigInteger) int
+  equals(Object) boolean; hashCode() int; toString() String; toString(int) String; toByteArray() byte[]
+  static valueOf(long) java.math.BigInteger; static ZERO: java.math.BigInteger; static ONE: java.math.BigInteger
+  static TWO: java.math.BigInteger; static TEN: java.math.BigInteger
+enum java.math.RoundingMode
+  static UP: java.math.RoundingMode; static DOWN: java.math.RoundingMode; static CEILING: java.math.RoundingMode
+  static FLOOR: java.math.RoundingMode; static HALF_UP: java.math.RoundingMode; static HALF_DOWN: java.math.RoundingMode
+  static HALF_EVEN: java.math.RoundingMode; static UNNECESSARY: java.math.RoundingMode
+
+# ------------------------------------------------------------------ java.time
+interface java.time.temporal.Temporal
+interface java.time.temporal.TemporalAmount
+interface java.time.temporal.TemporalUnit
+enum java.time.temporal.ChronoUnit : java.time.temporal.TemporalUnit
+  getDuration() java.time.Duration; between(java.time.temporal.Temporal, java.time.temporal.Temporal) long
+  static NANOS: java.time.temporal.ChronoUnit; static MILLIS: java.time.temporal.ChronoUnit; static SECONDS: java.time.temporal.ChronoUnit
+  static MINUTES: java.time.temporal.ChronoUnit; static HOURS: java.time.temporal.ChronoUnit; static DAYS: java.time.temporal.ChronoUnit
+  static WEEKS: java.time.temporal.ChronoUnit; static MONTHS: java.time.temporal.ChronoUnit; static YEARS: java.time.temporal.ChronoUnit
+final class java.time.LocalDate : java.time.temporal.Temporal, Comparable<java.time.LocalDate>, java.io.Serializable
+  static now() java.time.LocalDate; static of(int, int, int) java.time.LocalDate; static parse(CharSequence) java.time.LocalDate
+  static parse(CharSequence, java.time.format.DateTimeFormatter) java.time.LocalDate; static ofEpochDay(long) java.time.LocalDate
+  getYear() int; getMonthValue() int; getDayOfMonth() int; getDayOfYear() int; lengthOfMonth() int; isLeapYear() boolean
+  plusDays(long) java.time.LocalDate; plusWeeks(long) java.time.LocalDate; plusMonths(long) java.time.LocalDate; plusYears(long) java.time.LocalDate
+  minusDays(long) java.time.LocalDate; minusWeeks(long) java.time.LocalDate; minusMonths(long) java.time.LocalDate; minusYears(long) java.time.LocalDate
+  withDayOfMonth(int) java.time.LocalDate; isBefore(java.time.LocalDate) boolean; isAfter(java.time.LocalDate) boolean; isEqual(java.time.LocalDate) boolean
+  atStartOfDay() java.time.LocalDateTime; atTime(int, int) java.time.LocalDateTime; format(java.time.format.DateTimeFormatter) String
+  toEpochDay() long; compareTo(java.time.LocalDate) int; toString() String
+final class java.time.LocalTime : java.time.temporal.Temporal, Comparable<java.time.LocalTime>, java.io.Serializable
+  static now() java.time.LocalTime; static of(int, int) java.time.LocalTime; static parse(CharSequence) java.time.LocalTime
+  getHour() int; getMinute() int; getSecond() int; isBefore(java.time.LocalTime) boolean; isAfter(java.time.LocalTime) boolean
+  format(java.time.format.DateTimeFormatter) String; toString() String
+final class java.time.LocalDateTime : java.time.temporal.Temporal, Comparable<java.time.LocalDateTime>, java.io.Serializable
+  static now() java.time.LocalDateTime; static of(int, int, int, int, int) java.time.LocalDateTime; static of(int, int, int, int, int, int) java.time.LocalDateTime
+  static parse(CharSequence) java.time.LocalDateTime; static parse(CharSequence, java.time.format.DateTimeFormatter) java.time.LocalDateTime
+  static ofInstant(java.time.Instant, java.time.ZoneId) java.time.LocalDateTime
+  getYear() int; getMonthValue() int; getDayOfMonth() int; getHour() int; getMinute() int; getSecond() int
+  plusDays(long) java.time.LocalDateTime; plusHours(long) java.time.LocalDateTime; plusMinutes(long) java.time.LocalDateTime
+  plusSeconds(long) java.time.LocalDateTime; minusDays(long) java.time.LocalDateTime; minusHours(long) java.time.LocalDateTime
+  minusMinutes(long) java.time.LocalDateTime; toLocalDate() java.time.LocalDate; toLocalTime() java.time.LocalTime
+  atZone(java.time.ZoneId) java.time.ZonedDateTime; isBefore(java.time.LocalDateTime) boolean; isAfter(java.time.LocalDateTime) boolean
+  format(java.time.format.DateTimeFormatter) String; compareTo(java.time.LocalDateTime) int; toString() String
+final class java.time.ZonedDateTime : java.time.temporal.Temporal, Comparable<java.time.ZonedDateTime>, java.io.Serializable
+  static now() java.time.ZonedDateTime; static now(java.time.ZoneId) java.time.ZonedDateTime
+  static of(java.time.LocalDateTime, java.time.ZoneId) java.time.ZonedDateTime; static ofInstant(java.time.Instant, java.time.ZoneId) java.time.ZonedDateTime
+  static parse(CharSequence) java.time.ZonedDateTime; toInstant() java.time.Instant; toLocalDate() java.time.LocalDate
+  toLocalDateTime() java.time.LocalDateTime; getZone() java.time.ZoneId; withZoneSameInstant(java.time.ZoneId) java.time.ZonedDateTime
+  plusDays(long) java.time.ZonedDateTime; minusDays(long) java.time.ZonedDateTime; toEpochSecond() long
+  format(java.time.format.DateTimeFormatter) String; isBefore(java.time.ZonedDateTime) boolean; isAfter(java.time.ZonedDateTime) boolean
+final class java.time.OffsetDateTime : java.time.temporal.Temporal, Comparable<java.time.OffsetDateTime>, java.io.Serializable
+  static now() java.time.OffsetDateTime; toInstant() java.time.Instant; toLocalDateTime() java.time.LocalDateTime
+  format(java.time.format.DateTimeFormatter) String
+final class java.time.Instant : java.time.temporal.Temporal, Comparable<java.time.Instant>, java.io.Serializable
+  static now() java.time.Instant; static ofEpochMilli(long) java.time.Instant; static ofEpochSecond(long) java.time.Instant
+  static parse(CharSequence) java.time.Instant; toEpochMilli() long; getEpochSecond() long; getNano() int
+  plus(java.time.Duration) java.time.Instant; minus(java.time.Duration) java.time.Instant; plusMillis(long) java.time.Instant
+  plusSeconds(long) java.time.Instant; minusMillis(long) java.time.Instant; minusSeconds(long) java.time.Instant
+  isBefore(java.time.Instant) boolean; isAfter(java.time.Instant) boolean; compareTo(java.time.Instant) int
+  atZone(java.time.ZoneId) java.time.ZonedDateTime; toString() String
+  static EPOCH: java.time.Instant
+final class java.time.Duration : java.time.temporal.TemporalAmount, Comparable<java.time.Duration>, java.io.Serializable
+  static ofMillis(long) java.time.Duration; static ofSeconds(long) java.time.Duration; static ofMinutes(long) java.time.Duration
+  static ofHours(long) java.time.Duration; static ofDays(long) java.time.Duration; static ofNanos(long) java.time.Duration
+  static between(java.time.temporal.Temporal, java.time.temporal.Temporal) java.time.Duration; static parse(CharSequence) java.time.Duration
+  toMillis() long; toNanos() long; toSeconds() long; getSeconds() long; toMinutes() long; toHours() long; toDays() long
+  plus(java.time.Duration) java.time.Duration; minus(java.time.Duration) java.time.Duration; multipliedBy(long) java.time.Duration
+  isNegative() boolean; isZero() boolean; compareTo(java.time.Duration) int; toString() String
+  static ZERO: java.time.Duration
+final class java.time.Period : java.time.temporal.TemporalAmount, java.io.Serializable
+  static ofDays(int) java.time.Period; static ofMonths(int) java.time.Period; static ofYears(int) java.time.Period
+  static between(java.time.LocalDate, java.time.LocalDate) java.time.Period; getDays() int; getMonths() int; getYears() int
+abstract class java.time.ZoneId : java.io.Serializable
+  static of(String) java.time.ZoneId; static systemDefault() java.time.ZoneId; getId() String
+final class java.time.ZoneOffset : java.time.ZoneId, Comparable<java.time.ZoneOffset>
+  static UTC: java.time.ZoneOffset
+abstract class java.time.Clock
+  static systemUTC() java.time.Clock; static systemDefaultZone() java.time.Clock; millis() long; instant() java.time.Instant
+final class java.time.format.DateTimeFormatter
+  static ofPattern(String) java.time.format.DateTimeFormatter; static ofPattern(String, Locale) java.time.format.DateTimeFormatter
+  format(java.time.temporal.Temporal) String; withZone(java.time.ZoneId) java.time.format.DateTimeFormatter
+  withLocale(Locale) java.time.format.DateTimeFormatter
+  static ISO_LOCAL_DATE: java.time.format.DateTimeFormatter; static ISO_LOCAL_DATE_TIME: java.time.format.DateTimeFormatter
+  static ISO_INSTANT: java.time.format.DateTimeFormatter; static ISO_DATE_TIME: java.time.format.DateTimeFormatter
+class java.time.DateTimeException : RuntimeException
+class java.time.format.DateTimeParseException : java.time.DateTimeException
+
+# ------------------------------------------------------------------ java.text
+abstract class java.text.Format : java.io.Serializable, Cloneable
+  format(Object) String; parseObject(String) Object
+abstract class java.text.DateFormat : java.text.Format
+  format(Date) String; parse(String) Date; setLenient(boolean) void; isLenient() boolean; setTimeZone(TimeZone) void
+  getTimeZone() TimeZone; static getDateInstance() java.text.DateFormat; static getDateTimeInstance() java.text.DateFormat
+  static getTimeInstance() java.text.DateFormat
+class java.text.SimpleDateFormat : java.text.DateFormat
+  toPattern() String; applyPattern(String) void
+abstract class java.text.NumberFormat : java.text.Format
+  format(long) String; format(double) String; parse(String) Number; setMaximumFractionDigits(int) void
+  setMinimumFractionDigits(int) void; setGroupingUsed(boolean) void; setParseIntegerOnly(boolean) void
+  static getInstance() java.text.NumberFormat; static getInstance(Locale) java.text.NumberFormat
+  static getNumberInstance() java.text.NumberFormat; static getNumberInstance(Locale) java.text.NumberFormat
+  static getIntegerInstance() java.text.NumberFormat; static getCurrencyInstance() java.text.NumberFormat
+  static getPercentInstance() java.text.NumberFormat
+class java.text.DecimalFormat : java.text.NumberFormat
+  toPattern() String; applyPattern(String) void
+class java.text.MessageFormat : java.text.Format
+  static format(String, Object...) String
+class java.text.ParseException : Exception
+  getErrorOffset() int
+
+# ------------------------------------------------------------------ java.sql / javax.sql
+# The JDBC interfaces are listed in full (JDBC 4.3, Java 9+; the `Large*`, `SQLType` and sharding
+# methods are defaults added in Java 8 / 9), so that wrapper and driver classes are understood.
+interface java.sql.Wrapper
+  <T> unwrap(Class<T>) T; isWrapperFor(Class<?>) boolean
+interface java.sql.Connection : java.sql.Wrapper, AutoCloseable
+  createStatement() java.sql.Statement; createStatement(int, int) java.sql.Statement; createStatement(int, int, int) java.sql.Statement
+  prepareStatement(String) java.sql.PreparedStatement; prepareStatement(String, int) java.sql.PreparedStatement
+  prepareStatement(String, int[]) java.sql.PreparedStatement; prepareStatement(String, String[]) java.sql.PreparedStatement
+  prepareStatement(String, int, int) java.sql.PreparedStatement; prepareStatement(String, int, int, int) java.sql.PreparedStatement
+  prepareCall(String) java.sql.CallableStatement; prepareCall(String, int, int) java.sql.CallableStatement
+  prepareCall(String, int, int, int) java.sql.CallableStatement; nativeSQL(String) String
+  setAutoCommit(boolean) void; getAutoCommit() boolean; commit() void; rollback() void; close() void; isClosed() boolean
+  getMetaData() java.sql.DatabaseMetaData; setReadOnly(boolean) void; isReadOnly() boolean
+  setCatalog(String) void; getCatalog() String; setTransactionIsolation(int) void; getTransactionIsolation() int
+  getWarnings() java.sql.SQLWarning; clearWarnings() void
+  getTypeMap() java.util.Map<String, Class<?>>; setTypeMap(java.util.Map<String, Class<?>>) void
+  setHoldability(int) void; getHoldability() int; setSavepoint() java.sql.Savepoint; setSavepoint(String) java.sql.Savepoint
+  rollback(java.sql.Savepoint) void; releaseSavepoint(java.sql.Savepoint) void
+  createClob() java.sql.Clob; createBlob() java.sql.Blob; createNClob() java.sql.NClob; createSQLXML() java.sql.SQLXML
+  isValid(int) boolean; setClientInfo(String, String) void; setClientInfo(java.util.Properties) void
+  getClientInfo(String) String; getClientInfo() java.util.Properties
+  createArrayOf(String, Object[]) java.sql.Array; createStruct(String, Object[]) java.sql.Struct
+  setSchema(String) void; getSchema() String; abort(java.util.concurrent.Executor) void
+  setNetworkTimeout(java.util.concurrent.Executor, int) void; getNetworkTimeout() int
+  beginRequest() void; endRequest() void
+  setShardingKeyIfValid(java.sql.ShardingKey, java.sql.ShardingKey, int) boolean; setShardingKeyIfValid(java.sql.ShardingKey, int) boolean
+  setShardingKey(java.sql.ShardingKey, java.sql.ShardingKey) void; setShardingKey(java.sql.ShardingKey) void
+  static TRANSACTION_NONE: int; static TRANSACTION_READ_UNCOMMITTED: int; static TRANSACTION_READ_COMMITTED: int
+  static TRANSACTION_REPEATABLE_READ: int; static TRANSACTION_SERIALIZABLE: int
+interface java.sql.Statement : java.sql.Wrapper, AutoCloseable
+  executeQuery(String) java.sql.ResultSet; executeUpdate(String) int; close() void
+  getMaxFieldSize() int; setMaxFieldSize(int) void; getMaxRows() int; setMaxRows(int) void; setEscapeProcessing(boolean) void
+  getQueryTimeout() int; setQueryTimeout(int) void; cancel() void; getWarnings() java.sql.SQLWarning; clearWarnings() void
+  setCursorName(String) void; execute(String) boolean; getResultSet() java.sql.ResultSet; getUpdateCount() int
+  getMoreResults() boolean; getMoreResults(int) boolean; setFetchDirection(int) void; getFetchDirection() int
+  setFetchSize(int) void; getFetchSize() int; getResultSetConcurrency() int; getResultSetType() int
+  addBatch(String) void; clearBatch() void; executeBatch() int[]; getConnection() java.sql.Connection
+  getGeneratedKeys() java.sql.ResultSet; executeUpdate(String, int) int; executeUpdate(String, int[]) int
+  executeUpdate(String, String[]) int; execute(String, int) boolean; execute(String, int[]) boolean
+  execute(String, String[]) boolean; getResultSetHoldability() int; isClosed() boolean
+  setPoolable(boolean) void; isPoolable() boolean; closeOnCompletion() void; isCloseOnCompletion() boolean
+  getLargeUpdateCount() long; setLargeMaxRows(long) void; getLargeMaxRows() long; executeLargeBatch() long[]
+  executeLargeUpdate(String) long; executeLargeUpdate(String, int) long; executeLargeUpdate(String, int[]) long
+  executeLargeUpdate(String, String[]) long; enquoteLiteral(String) String; enquoteIdentifier(String, boolean) String
+  isSimpleIdentifier(String) boolean; enquoteNCharLiteral(String) String
+  static CLOSE_CURRENT_RESULT: int; static KEEP_CURRENT_RESULT: int; static CLOSE_ALL_RESULTS: int
+  static SUCCESS_NO_INFO: int; static EXECUTE_FAILED: int; static RETURN_GENERATED_KEYS: int; static NO_GENERATED_KEYS: int
+interface java.sql.PreparedStatement : java.sql.Statement
+  executeQuery() java.sql.ResultSet; executeUpdate() int; execute() boolean; addBatch() void; clearParameters() void
+  setNull(int, int) void; setNull(int, int, String) void; setBoolean(int, boolean) void; setByte(int, byte) void
+  setShort(int, short) void; setInt(int, int) void; setLong(int, long) void; setFloat(int, float) void
+  setDouble(int, double) void; setBigDecimal(int, java.math.BigDecimal) void; setString(int, String) void
+  setBytes(int, byte[]) void; setDate(int, java.sql.Date) void; setTime(int, java.sql.Time) void
+  setTimestamp(int, java.sql.Timestamp) void; setDate(int, java.sql.Date, java.util.Calendar) void
+  setTime(int, java.sql.Time, java.util.Calendar) void; setTimestamp(int, java.sql.Timestamp, java.util.Calendar) void
+  setAsciiStream(int, java.io.InputStream, int) void; setUnicodeStream(int, java.io.InputStream, int) void
+  setBinaryStream(int, java.io.InputStream, int) void; setCharacterStream(int, java.io.Reader, int) void
+  setAsciiStream(int, java.io.InputStream, long) void; setBinaryStream(int, java.io.InputStream, long) void
+  setCharacterStream(int, java.io.Reader, long) void; setAsciiStream(int, java.io.InputStream) void
+  setBinaryStream(int, java.io.InputStream) void; setCharacterStream(int, java.io.Reader) void
+  setObject(int, Object) void; setObject(int, Object, int) void; setObject(int, Object, int, int) void
+  setObject(int, Object, java.sql.SQLType) void; setObject(int, Object, java.sql.SQLType, int) void
+  setRef(int, java.sql.Ref) void; setBlob(int, java.sql.Blob) void; setClob(int, java.sql.Clob) void
+  setArray(int, java.sql.Array) void; getMetaData() java.sql.ResultSetMetaData; setURL(int, java.net.URL) void
+  getParameterMetaData() java.sql.ParameterMetaData; setRowId(int, java.sql.RowId) void; setNString(int, String) void
+  setNCharacterStream(int, java.io.Reader, long) void; setNCharacterStream(int, java.io.Reader) void
+  setNClob(int, java.sql.NClob) void; setNClob(int, java.io.Reader, long) void; setNClob(int, java.io.Reader) void
+  setClob(int, java.io.Reader, long) void; setClob(int, java.io.Reader) void
+  setBlob(int, java.io.InputStream, long) void; setBlob(int, java.io.InputStream) void
+  setSQLXML(int, java.sql.SQLXML) void; executeLargeUpdate() long
+interface java.sql.CallableStatement : java.sql.PreparedStatement
+  registerOutParameter(int, int) void; registerOutParameter(int, int, int) void; registerOutParameter(int, int, String) void
+  registerOutParameter(String, int) void; registerOutParameter(String, int, int) void; registerOutParameter(String, int, String) void
+  registerOutParameter(int, java.sql.SQLType) void; registerOutParameter(int, java.sql.SQLType, int) void
+  registerOutParameter(int, java.sql.SQLType, String) void; registerOutParameter(String, java.sql.SQLType) void
+  registerOutParameter(String, java.sql.SQLType, int) void; registerOutParameter(String, java.sql.SQLType, String) void
+  wasNull() boolean
+  getString(int) String; getBoolean(int) boolean; getByte(int) byte; getShort(int) short; getInt(int) int
+  getLong(int) long; getFloat(int) float; getDouble(int) double; getBigDecimal(int, int) java.math.BigDecimal
+  getBigDecimal(int) java.math.BigDecimal; getBytes(int) byte[]; getDate(int) java.sql.Date; getTime(int) java.sql.Time
+  getTimestamp(int) java.sql.Timestamp; getObject(int) Object; getObject(int, java.util.Map<String, Class<?>>) Object
+  <T> getObject(int, Class<T>) T; getRef(int) java.sql.Ref; getBlob(int) java.sql.Blob; getClob(int) java.sql.Clob
+  getArray(int) java.sql.Array; getDate(int, java.util.Calendar) java.sql.Date; getTime(int, java.util.Calendar) java.sql.Time
+  getTimestamp(int, java.util.Calendar) java.sql.Timestamp; getURL(int) java.net.URL; getRowId(int) java.sql.RowId
+  getNClob(int) java.sql.NClob; getSQLXML(int) java.sql.SQLXML; getNString(int) String
+  getNCharacterStream(int) java.io.Reader; getCharacterStream(int) java.io.Reader
+  getString(String) String; getBoolean(String) boolean; getByte(String) byte; getShort(String) short; getInt(String) int
+  getLong(String) long; getFloat(String) float; getDouble(String) double; getBigDecimal(String) java.math.BigDecimal
+  getBytes(String) byte[]; getDate(String) java.sql.Date; getTime(String) java.sql.Time; getTimestamp(String) java.sql.Timestamp
+  getObject(String) Object; getObject(String, java.util.Map<String, Class<?>>) Object; <T> getObject(String, Class<T>) T
+  getRef(String) java.sql.Ref; getBlob(String) java.sql.Blob; getClob(String) java.sql.Clob; getArray(String) java.sql.Array
+  getDate(String, java.util.Calendar) java.sql.Date; getTime(String, java.util.Calendar) java.sql.Time
+  getTimestamp(String, java.util.Calendar) java.sql.Timestamp; getURL(String) java.net.URL; getRowId(String) java.sql.RowId
+  getNClob(String) java.sql.NClob; getSQLXML(String) java.sql.SQLXML; getNString(String) String
+  getNCharacterStream(String) java.io.Reader; getCharacterStream(String) java.io.Reader
+  setURL(String, java.net.URL) void; setNull(String, int) void; setNull(String, int, String) void
+  setBoolean(String, boolean) void; setByte(String, byte) void; setShort(String, short) void; setInt(String, int) void
+  setLong(String, long) void; setFloat(String, float) void; setDouble(String, double) void
+  setBigDecimal(String, java.math.BigDecimal) void; setString(String, String) void; setBytes(String, byte[]) void
+  setDate(String, java.sql.Date) void; setTime(String, java.sql.Time) void; setTimestamp(String, java.sql.Timestamp) void
+  setDate(String, java.sql.Date, java.util.Calendar) void; setTime(String, java.sql.Time, java.util.Calendar) void
+  setTimestamp(String, java.sql.Timestamp, java.util.Calendar) void
+  setAsciiStream(String, java.io.InputStream, int) void; setBinaryStream(String, java.io.InputStream, int) void
+  setCharacterStream(String, java.io.Reader, int) void; setAsciiStream(String, java.io.InputStream, long) void
+  setBinaryStream(String, java.io.InputStream, long) void; setCharacterStream(String, java.io.Reader, long) void
+  setAsciiStream(String, java.io.InputStream) void; setBinaryStream(String, java.io.InputStream) void
+  setCharacterStream(String, java.io.Reader) void
+  setObject(String, Object) void; setObject(String, Object, int) void; setObject(String, Object, int, int) void
+  setObject(String, Object, java.sql.SQLType) void; setObject(String, Object, java.sql.SQLType, int) void
+  setRowId(String, java.sql.RowId) void; setNString(String, String) void
+  setNCharacterStream(String, java.io.Reader, long) void; setNCharacterStream(String, java.io.Reader) void
+  setNClob(String, java.sql.NClob) void; setNClob(String, java.io.Reader, long) void; setNClob(String, java.io.Reader) void
+  setClob(String, java.sql.Clob) void; setClob(String, java.io.Reader, long) void; setClob(String, java.io.Reader) void
+  setBlob(String, java.sql.Blob) void; setBlob(String, java.io.InputStream, long) void; setBlob(String, java.io.InputStream) void
+  setSQLXML(String, java.sql.SQLXML) void
+interface java.sql.ResultSet : java.sql.Wrapper, AutoCloseable
+  next() boolean; close() void; wasNull() boolean; isClosed() boolean
+  getString(int) String; getString(String) String; getBoolean(int) boolean; getBoolean(String) boolean
+  getByte(int) byte; getByte(String) byte; getShort(int) short; getShort(String) short; getInt(int) int; getInt(String) int
+  getLong(int) long; getLong(String) long; getFloat(int) float; getFloat(String) float; getDouble(int) double; getDouble(String) double
+  getBigDecimal(int, int) java.math.BigDecimal; getBigDecimal(String, int) java.math.BigDecimal
+  getBigDecimal(int) java.math.BigDecimal; getBigDecimal(String) java.math.BigDecimal; getBytes(int) byte[]; getBytes(String) byte[]
+  getDate(int) java.sql.Date; getDate(String) java.sql.Date; getTime(int) java.sql.Time; getTime(String) java.sql.Time
+  getTimestamp(int) java.sql.Timestamp; getTimestamp(String) java.sql.Timestamp
+  getDate(int, java.util.Calendar) java.sql.Date; getDate(String, java.util.Calendar) java.sql.Date
+  getTime(int, java.util.Calendar) java.sql.Time; getTime(String, java.util.Calendar) java.sql.Time
+  getTimestamp(int, java.util.Calendar) java.sql.Timestamp; getTimestamp(String, java.util.Calendar) java.sql.Timestamp
+  getAsciiStream(int) java.io.InputStream; getAsciiStream(String) java.io.InputStream
+  getUnicodeStream(int) java.io.InputStream; getUnicodeStream(String) java.io.InputStream
+  getBinaryStream(int) java.io.InputStream; getBinaryStream(String) java.io.InputStream
+  getCharacterStream(int) java.io.Reader; getCharacterStream(String) java.io.Reader
+  getNCharacterStream(int) java.io.Reader; getNCharacterStream(String) java.io.Reader
+  getObject(int) Object; getObject(String) Object; getObject(int, java.util.Map<String, Class<?>>) Object
+  getObject(String, java.util.Map<String, Class<?>>) Object; <T> getObject(int, Class<T>) T; <T> getObject(String, Class<T>) T
+  getRef(int) java.sql.Ref; getRef(String) java.sql.Ref; getBlob(int) java.sql.Blob; getBlob(String) java.sql.Blob
+  getClob(int) java.sql.Clob; getClob(String) java.sql.Clob; getArray(int) java.sql.Array; getArray(String) java.sql.Array
+  getURL(int) java.net.URL; getURL(String) java.net.URL; getRowId(int) java.sql.RowId; getRowId(String) java.sql.RowId
+  getNClob(int) java.sql.NClob; getNClob(String) java.sql.NClob; getSQLXML(int) java.sql.SQLXML; getSQLXML(String) java.sql.SQLXML
+  getNString(int) String; getNString(String) String
+  getWarnings() java.sql.SQLWarning; clearWarnings() void; getCursorName() String; getMetaData() java.sql.ResultSetMetaData
+  findColumn(String) int; isBeforeFirst() boolean; isAfterLast() boolean; isFirst() boolean; isLast() boolean
+  beforeFirst() void; afterLast() void; first() boolean; last() boolean; getRow() int; absolute(int) boolean
+  relative(int) boolean; previous() boolean; setFetchDirection(int) void; getFetchDirection() int
+  setFetchSize(int) void; getFetchSize() int; getType() int; getConcurrency() int; getHoldability() int
+  rowUpdated() boolean; rowInserted() boolean; rowDeleted() boolean
+  insertRow() void; updateRow() void; deleteRow() void; refreshRow() void; cancelRowUpdates() void
+  moveToInsertRow() void; moveToCurrentRow() void; getStatement() java.sql.Statement
+  updateNull(int) void; updateNull(String) void; updateBoolean(int, boolean) void; updateBoolean(String, boolean) void
+  updateByte(int, byte) void; updateByte(String, byte) void; updateShort(int, short) void; updateShort(String, short) void
+  updateInt(int, int) void; updateInt(String, int) void; updateLong(int, long) void; updateLong(String, long) void
+  updateFloat(int, float) void; updateFloat(String, float) void; updateDouble(int, double) void; updateDouble(String, double) void
+  updateBigDecimal(int, java.math.BigDecimal) void; updateBigDecimal(String, java.math.BigDecimal) void
+  updateString(int, String) void; updateString(String, String) void; updateBytes(int, byte[]) void; updateBytes(String, byte[]) void
+  updateDate(int, java.sql.Date) void; updateDate(String, java.sql.Date) void
+  updateTime(int, java.sql.Time) void; updateTime(String, java.sql.Time) void
+  updateTimestamp(int, java.sql.Timestamp) void; updateTimestamp(String, java.sql.Timestamp) void
+  updateAsciiStream(int, java.io.InputStream, int) void; updateAsciiStream(String, java.io.InputStream, int) void
+  updateBinaryStream(int, java.io.InputStream, int) void; updateBinaryStream(String, java.io.InputStream, int) void
+  updateCharacterStream(int, java.io.Reader, int) void; updateCharacterStream(String, java.io.Reader, int) void
+  updateAsciiStream(int, java.io.InputStream, long) void; updateAsciiStream(String, java.io.InputStream, long) void
+  updateBinaryStream(int, java.io.InputStream, long) void; updateBinaryStream(String, java.io.InputStream, long) void
+  updateCharacterStream(int, java.io.Reader, long) void; updateCharacterStream(String, java.io.Reader, long) void
+  updateAsciiStream(int, java.io.InputStream) void; updateAsciiStream(String, java.io.InputStream) void
+  updateBinaryStream(int, java.io.InputStream) void; updateBinaryStream(String, java.io.InputStream) void
+  updateCharacterStream(int, java.io.Reader) void; updateCharacterStream(String, java.io.Reader) void
+  updateNCharacterStream(int, java.io.Reader, long) void; updateNCharacterStream(String, java.io.Reader, long) void
+  updateNCharacterStream(int, java.io.Reader) void; updateNCharacterStream(String, java.io.Reader) void
+  updateObject(int, Object, int) void; updateObject(String, Object, int) void; updateObject(int, Object) void
+  updateObject(String, Object) void; updateObject(int, Object, java.sql.SQLType, int) void
+  updateObject(String, Object, java.sql.SQLType, int) void; updateObject(int, Object, java.sql.SQLType) void
+  updateObject(String, Object, java.sql.SQLType) void
+  updateRef(int, java.sql.Ref) void; updateRef(String, java.sql.Ref) void
+  updateBlob(int, java.sql.Blob) void; updateBlob(String, java.sql.Blob) void
+  updateBlob(int, java.io.InputStream, long) void; updateBlob(String, java.io.InputStream, long) void
+  updateBlob(int, java.io.InputStream) void; updateBlob(String, java.io.InputStream) void
+  updateClob(int, java.sql.Clob) void; updateClob(String, java.sql.Clob) void
+  updateClob(int, java.io.Reader, long) void; updateClob(String, java.io.Reader, long) void
+  updateClob(int, java.io.Reader) void; updateClob(String, java.io.Reader) void
+  updateNClob(int, java.sql.NClob) void; updateNClob(String, java.sql.NClob) void
+  updateNClob(int, java.io.Reader, long) void; updateNClob(String, java.io.Reader, long) void
+  updateNClob(int, java.io.Reader) void; updateNClob(String, java.io.Reader) void
+  updateArray(int, java.sql.Array) void; updateArray(String, java.sql.Array) void
+  updateRowId(int, java.sql.RowId) void; updateRowId(String, java.sql.RowId) void
+  updateNString(int, String) void; updateNString(String, String) void
+  updateSQLXML(int, java.sql.SQLXML) void; updateSQLXML(String, java.sql.SQLXML) void
+  static FETCH_FORWARD: int; static FETCH_REVERSE: int; static FETCH_UNKNOWN: int; static TYPE_FORWARD_ONLY: int
+  static TYPE_SCROLL_INSENSITIVE: int; static TYPE_SCROLL_SENSITIVE: int; static CONCUR_READ_ONLY: int
+  static CONCUR_UPDATABLE: int; static HOLD_CURSORS_OVER_COMMIT: int; static CLOSE_CURSORS_AT_COMMIT: int
+interface java.sql.ResultSetMetaData : java.sql.Wrapper
+  getColumnCount() int; isAutoIncrement(int) boolean; isCaseSensitive(int) boolean; isSearchable(int) boolean
+  isCurrency(int) boolean; isNullable(int) int; isSigned(int) boolean; getColumnDisplaySize(int) int
+  getColumnLabel(int) String; getColumnName(int) String; getSchemaName(int) String; getPrecision(int) int
+  getScale(int) int; getTableName(int) String; getCatalogName(int) String; getColumnType(int) int
+  getColumnTypeName(int) String; isReadOnly(int) boolean; isWritable(int) boolean; isDefinitelyWritable(int) boolean
+  getColumnClassName(int) String
+  static columnNoNulls: int; static columnNullable: int; static columnNullableUnknown: int
+interface java.sql.ParameterMetaData : java.sql.Wrapper
+  getParameterCount() int; isNullable(int) int; isSigned(int) boolean; getPrecision(int) int; getScale(int) int
+  getParameterType(int) int; getParameterTypeName(int) String; getParameterClassName(int) String; getParameterMode(int) int
+interface java.sql.DatabaseMetaData : java.sql.Wrapper
+  allProceduresAreCallable() boolean; allTablesAreSelectable() boolean; getURL() String; getUserName() String
+  isReadOnly() boolean; nullsAreSortedHigh() boolean; nullsAreSortedLow() boolean; nullsAreSortedAtStart() boolean
+  nullsAreSortedAtEnd() boolean; getDatabaseProductName() String; getDatabaseProductVersion() String
+  getDriverName() String; getDriverVersion() String; getDriverMajorVersion() int; getDriverMinorVersion() int
+  usesLocalFiles() boolean; usesLocalFilePerTable() boolean; supportsMixedCaseIdentifiers() boolean
+  storesUpperCaseIdentifiers() boolean; storesLowerCaseIdentifiers() boolean; storesMixedCaseIdentifiers() boolean
+  supportsMixedCaseQuotedIdentifiers() boolean; storesUpperCaseQuotedIdentifiers() boolean
+  storesLowerCaseQuotedIdentifiers() boolean; storesMixedCaseQuotedIdentifiers() boolean
+  getIdentifierQuoteString() String; getSQLKeywords() String; getNumericFunctions() String; getStringFunctions() String
+  getSystemFunctions() String; getTimeDateFunctions() String; getSearchStringEscape() String; getExtraNameCharacters() String
+  supportsAlterTableWithAddColumn() boolean; supportsAlterTableWithDropColumn() boolean; supportsColumnAliasing() boolean
+  nullPlusNonNullIsNull() boolean; supportsConvert() boolean; supportsConvert(int, int) boolean
+  supportsTableCorrelationNames() boolean; supportsDifferentTableCorrelationNames() boolean
+  supportsExpressionsInOrderBy() boolean; supportsOrderByUnrelated() boolean; supportsGroupBy() boolean
+  supportsGroupByUnrelated() boolean; supportsGroupByBeyondSelect() boolean; supportsLikeEscapeClause() boolean
+  supportsMultipleResultSets() boolean; supportsMultipleTransactions() boolean; supportsNonNullableColumns() boolean
+  supportsMinimumSQLGrammar() boolean; supportsCoreSQLGrammar() boolean; supportsExtendedSQLGrammar() boolean
+  supportsANSI92EntryLevelSQL() boolean; supportsANSI92IntermediateSQL() boolean; supportsANSI92FullSQL() boolean
+  supportsIntegrityEnhancementFacility() boolean; supportsOuterJoins() boolean; supportsFullOuterJoins() boolean
+  supportsLimitedOuterJoins() boolean; getSchemaTerm() String; getProcedureTerm() String; getCatalogTerm() String
+  isCatalogAtStart() boolean; getCatalogSeparator() String; supportsSchemasInDataManipulation() boolean
+  supportsSchemasInProcedureCalls() boolean; supportsSchemasInTableDefinitions() boolean
+  supportsSchemasInIndexDefinitions() boolean; supportsSchemasInPrivilegeDefinitions() boolean
+  supportsCatalogsInDataManipulation() boolean; supportsCatalogsInProcedureCalls() boolean
+  supportsCatalogsInTableDefinitions() boolean; supportsCatalogsInIndexDefinitions() boolean
+  supportsCatalogsInPrivilegeDefinitions() boolean; supportsPositionedDelete() boolean; supportsPositionedUpdate() boolean
+  supportsSelectForUpdate() boolean; supportsStoredProcedures() boolean; supportsSubqueriesInComparisons() boolean
+  supportsSubqueriesInExists() boolean; supportsSubqueriesInIns() boolean; supportsSubqueriesInQuantifieds() boolean
+  supportsCorrelatedSubqueries() boolean; supportsUnion() boolean; supportsUnionAll() boolean
+  supportsOpenCursorsAcrossCommit() boolean; supportsOpenCursorsAcrossRollback() boolean
+  supportsOpenStatementsAcrossCommit() boolean; supportsOpenStatementsAcrossRollback() boolean
+  getMaxBinaryLiteralLength() int; getMaxCharLiteralLength() int; getMaxColumnNameLength() int
+  getMaxColumnsInGroupBy() int; getMaxColumnsInIndex() int; getMaxColumnsInOrderBy() int; getMaxColumnsInSelect() int
+  getMaxColumnsInTable() int; getMaxConnections() int; getMaxCursorNameLength() int; getMaxIndexLength() int
+  getMaxSchemaNameLength() int; getMaxProcedureNameLength() int; getMaxCatalogNameLength() int; getMaxRowSize() int
+  doesMaxRowSizeIncludeBlobs() boolean; getMaxStatementLength() int; getMaxStatements() int
+  getMaxTableNameLength() int; getMaxTablesInSelect() int; getMaxUserNameLength() int
+  getDefaultTransactionIsolation() int; supportsTransactions() boolean; supportsTransactionIsolationLevel(int) boolean
+  supportsDataDefinitionAndDataManipulationTransactions() boolean; supportsDataManipulationTransactionsOnly() boolean
+  dataDefinitionCausesTransactionCommit() boolean; dataDefinitionIgnoredInTransactions() boolean
+  getProcedures(String, String, String) java.sql.ResultSet; getProcedureColumns(String, String, String, String) java.sql.ResultSet
+  getTables(String, String, String, String[]) java.sql.ResultSet; getSchemas() java.sql.ResultSet
+  getSchemas(String, String) java.sql.ResultSet; getCatalogs() java.sql.ResultSet; getTableTypes() java.sql.ResultSet
+  getColumns(String, String, String, String) java.sql.ResultSet; getColumnPrivileges(String, String, String, String) java.sql.ResultSet
+  getTablePrivileges(String, String, String) java.sql.ResultSet
+  getBestRowIdentifier(String, String, String, int, boolean) java.sql.ResultSet
+  getVersionColumns(String, String, String) java.sql.ResultSet; getPrimaryKeys(String, String, String) java.sql.ResultSet
+  getImportedKeys(String, String, String) java.sql.ResultSet; getExportedKeys(String, String, String) java.sql.ResultSet
+  getCrossReference(String, String, String, String, String, String) java.sql.ResultSet; getTypeInfo() java.sql.ResultSet
+  getIndexInfo(String, String, String, boolean, boolean) java.sql.ResultSet; supportsResultSetType(int) boolean
+  supportsResultSetConcurrency(int, int) boolean; ownUpdatesAreVisible(int) boolean; ownDeletesAreVisible(int) boolean
+  ownInsertsAreVisible(int) boolean; othersUpdatesAreVisible(int) boolean; othersDeletesAreVisible(int) boolean
+  othersInsertsAreVisible(int) boolean; updatesAreDetected(int) boolean; deletesAreDetected(int) boolean
+  insertsAreDetected(int) boolean; supportsBatchUpdates() boolean; getUDTs(String, String, String, int[]) java.sql.ResultSet
+  getConnection() java.sql.Connection; supportsSavepoints() boolean; supportsNamedParameters() boolean
+  supportsMultipleOpenResults() boolean; supportsGetGeneratedKeys() boolean
+  getSuperTypes(String, String, String) java.sql.ResultSet; getSuperTables(String, String, String) java.sql.ResultSet
+  getAttributes(String, String, String, String) java.sql.ResultSet; supportsResultSetHoldability(int) boolean
+  getResultSetHoldability() int; getDatabaseMajorVersion() int; getDatabaseMinorVersion() int
+  getJDBCMajorVersion() int; getJDBCMinorVersion() int; getSQLStateType() int; locatorsUpdateCopy() boolean
+  supportsStatementPooling() boolean; getRowIdLifetime() java.sql.RowIdLifetime
+  supportsStoredFunctionsUsingCallSyntax() boolean; autoCommitFailureClosesAllResultSets() boolean
+  getClientInfoProperties() java.sql.ResultSet; getFunctions(String, String, String) java.sql.ResultSet
+  getFunctionColumns(String, String, String, String) java.sql.ResultSet
+  getPseudoColumns(String, String, String, String) java.sql.ResultSet; generatedKeyAlwaysReturned() boolean
+  getMaxLogicalLobSize() long; supportsRefCursors() boolean; supportsSharding() boolean
+interface java.sql.Driver
+  connect(String, java.util.Properties) java.sql.Connection; acceptsURL(String) boolean
+  getPropertyInfo(String, java.util.Properties) java.sql.DriverPropertyInfo[]; getMajorVersion() int; getMinorVersion() int
+  jdbcCompliant() boolean; getParentLogger() java.util.logging.Logger
+class java.sql.DriverPropertyInfo
+  name: String; description: String; required: boolean; value: String; choices: String[]
+interface java.sql.Blob
+  length() long; getBytes(long, int) byte[]; getBinaryStream() java.io.InputStream; getBinaryStream(long, long) java.io.InputStream
+  position(byte[], long) long; position(java.sql.Blob, long) long; setBytes(long, byte[]) int; setBytes(long, byte[], int, int) int
+  setBinaryStream(long) java.io.OutputStream; truncate(long) void; free() void
+interface java.sql.Clob
+  length() long; getSubString(long, int) String; getCharacterStream() java.io.Reader; getCharacterStream(long, long) java.io.Reader
+  getAsciiStream() java.io.InputStream; position(String, long) long; position(java.sql.Clob, long) long
+  setString(long, String) int; setString(long, String, int, int) int; setAsciiStream(long) java.io.OutputStream
+  setCharacterStream(long) java.io.Writer; truncate(long) void; free() void
+interface java.sql.NClob : java.sql.Clob
+interface java.sql.Array
+  getBaseTypeName() String; getBaseType() int; getArray() Object; getArray(java.util.Map<String, Class<?>>) Object
+  getArray(long, int) Object; getArray(long, int, java.util.Map<String, Class<?>>) Object; getResultSet() java.sql.ResultSet
+  getResultSet(java.util.Map<String, Class<?>>) java.sql.ResultSet; getResultSet(long, int) java.sql.ResultSet
+  getResultSet(long, int, java.util.Map<String, Class<?>>) java.sql.ResultSet; free() void
+interface java.sql.Struct
+  getSQLTypeName() String; getAttributes() Object[]; getAttributes(java.util.Map<String, Class<?>>) Object[]
+interface java.sql.Ref
+  getBaseTypeName() String; getObject() Object; getObject(java.util.Map<String, Class<?>>) Object; setObject(Object) void
+interface java.sql.SQLXML
+  free() void; getBinaryStream() java.io.InputStream; setBinaryStream() java.io.OutputStream
+  getCharacterStream() java.io.Reader; setCharacterStream() java.io.Writer; getString() String; setString(String) void
+  <T> getSource(Class<T>) T; <T> setResult(Class<T>) T
+interface java.sql.RowId
+  getBytes() byte[]
+interface java.sql.Savepoint
+  getSavepointId() int; getSavepointName() String
+interface java.sql.SQLData
+  getSQLTypeName() String; readSQL(java.sql.SQLInput, String) void; writeSQL(java.sql.SQLOutput) void
+interface java.sql.SQLInput
+  readString() String; readBoolean() boolean; readByte() byte; readShort() short; readInt() int; readLong() long
+  readFloat() float; readDouble() double; readBigDecimal() java.math.BigDecimal; readBytes() byte[]
+  readDate() java.sql.Date; readTime() java.sql.Time; readTimestamp() java.sql.Timestamp
+  readCharacterStream() java.io.Reader; readAsciiStream() java.io.InputStream; readBinaryStream() java.io.InputStream
+  readObject() Object; <T> readObject(Class<T>) T; readRef() java.sql.Ref; readBlob() java.sql.Blob; readClob() java.sql.Clob
+  readArray() java.sql.Array; wasNull() boolean; readURL() java.net.URL; readNClob() java.sql.NClob; readNString() String
+  readSQLXML() java.sql.SQLXML; readRowId() java.sql.RowId
+interface java.sql.SQLOutput
+  writeString(String) void; writeBoolean(boolean) void; writeByte(byte) void; writeShort(short) void; writeInt(int) void
+  writeLong(long) void; writeFloat(float) void; writeDouble(double) void; writeBigDecimal(java.math.BigDecimal) void
+  writeBytes(byte[]) void; writeDate(java.sql.Date) void; writeTime(java.sql.Time) void; writeTimestamp(java.sql.Timestamp) void
+  writeCharacterStream(java.io.Reader) void; writeAsciiStream(java.io.InputStream) void; writeBinaryStream(java.io.InputStream) void
+  writeObject(java.sql.SQLData) void; writeObject(Object, java.sql.SQLType) void; writeRef(java.sql.Ref) void
+  writeBlob(java.sql.Blob) void; writeClob(java.sql.Clob) void; writeStruct(java.sql.Struct) void; writeArray(java.sql.Array) void
+  writeURL(java.net.URL) void; writeNString(String) void; writeNClob(java.sql.NClob) void; writeRowId(java.sql.RowId) void
+  writeSQLXML(java.sql.SQLXML) void
+interface java.sql.SQLType
+  getName() String; getVendor() String; getVendorTypeNumber() Integer
+enum java.sql.JDBCType : java.sql.SQLType
+  static valueOf(int) java.sql.JDBCType
+interface java.sql.ShardingKey
+interface java.sql.ShardingKeyBuilder
+  subkey(Object, java.sql.SQLType) java.sql.ShardingKeyBuilder; build() java.sql.ShardingKey
+interface java.sql.ConnectionBuilder
+  user(String) java.sql.ConnectionBuilder; password(String) java.sql.ConnectionBuilder
+  shardingKey(java.sql.ShardingKey) java.sql.ConnectionBuilder; superShardingKey(java.sql.ShardingKey) java.sql.ConnectionBuilder
+  build() java.sql.Connection
+enum java.sql.RowIdLifetime
+enum java.sql.ClientInfoStatus
+final class java.sql.DriverManager
+  static getConnection(String) java.sql.Connection; static getConnection(String, String, String) java.sql.Connection
+  static getConnection(String, java.util.Properties) java.sql.Connection
+class java.sql.Timestamp : java.util.Date
+  getNanos() int; setNanos(int) void; toLocalDateTime() java.time.LocalDateTime; static valueOf(String) java.sql.Timestamp
+  static valueOf(java.time.LocalDateTime) java.sql.Timestamp
+class java.sql.Date : java.util.Date
+  toLocalDate() java.time.LocalDate; static valueOf(String) java.sql.Date; static valueOf(java.time.LocalDate) java.sql.Date
+class java.sql.Time : java.util.Date
+  toLocalTime() java.time.LocalTime; static valueOf(String) java.sql.Time
+class java.sql.Types
+  static VARCHAR: int; static CHAR: int; static INTEGER: int; static BIGINT: int; static SMALLINT: int; static TINYINT: int
+  static NUMERIC: int; static DECIMAL: int; static DOUBLE: int; static FLOAT: int; static REAL: int; static DATE: int
+  static TIME: int; static TIMESTAMP: int; static BOOLEAN: int; static BIT: int; static BLOB: int; static CLOB: int
+  static BINARY: int; static VARBINARY: int; static LONGVARBINARY: int; static LONGVARCHAR: int; static NULL: int; static OTHER: int
+class java.sql.SQLException : Exception, Iterable<Throwable>
+  getSQLState() String; getErrorCode() int; getNextException() java.sql.SQLException; setNextException(java.sql.SQLException) void
+class java.sql.SQLWarning : java.sql.SQLException
+  getNextWarning() java.sql.SQLWarning
+class java.sql.SQLNonTransientException : java.sql.SQLException
+class java.sql.SQLFeatureNotSupportedException : java.sql.SQLNonTransientException
+class java.sql.SQLClientInfoException : java.sql.SQLException
+class java.sql.SQLIntegrityConstraintViolationException : java.sql.SQLNonTransientException
+class java.sql.SQLTransientException : java.sql.SQLException
+class java.sql.SQLTimeoutException : java.sql.SQLTransientException
+class java.sql.BatchUpdateException : java.sql.SQLException
+  getUpdateCounts() int[]
+interface javax.sql.CommonDataSource
+  getLogWriter() java.io.PrintWriter; setLogWriter(java.io.PrintWriter) void; setLoginTimeout(int) void
+  getLoginTimeout() int; getParentLogger() java.util.logging.Logger; createShardingKeyBuilder() java.sql.ShardingKeyBuilder
+interface javax.sql.DataSource : javax.sql.CommonDataSource, java.sql.Wrapper
+  getConnection() java.sql.Connection; getConnection(String, String) java.sql.Connection
+  createConnectionBuilder() java.sql.ConnectionBuilder
+
+# ------------------------------------------------------------------ java.util events, java.beans
+interface java.util.EventListener
+class java.util.EventObject : java.io.Serializable
+  getSource() Object
+interface java.beans.PropertyChangeListener : java.util.EventListener
+  propertyChange(java.beans.PropertyChangeEvent) void
+class java.beans.PropertyChangeEvent : java.util.EventObject
+  getPropertyName() String; getOldValue() Object; getNewValue() Object
+
+# ------------------------------------------------------------------ java.io filters, java.lang.reflect
+interface java.io.FileFilter
+  accept(java.io.File) boolean
+interface java.io.FilenameFilter
+  accept(java.io.File, String) boolean
+interface java.lang.reflect.AnnotatedElement
+interface java.lang.reflect.Member
+  getName() String; getModifiers() int; getDeclaringClass() Class<?>
+interface java.lang.reflect.GenericDeclaration : java.lang.reflect.AnnotatedElement
+class java.lang.reflect.AccessibleObject : java.lang.reflect.AnnotatedElement
+  setAccessible(boolean) void; trySetAccessible() boolean
+abstract class java.lang.reflect.Executable : java.lang.reflect.AccessibleObject, java.lang.reflect.Member, java.lang.reflect.GenericDeclaration
+  getParameterCount() int; getParameterTypes() Class<?>[]
+final class java.lang.reflect.Method : java.lang.reflect.Executable
+  getName() String; getReturnType() Class<?>; invoke(Object, Object...) Object; getModifiers() int; getDeclaringClass() Class<?>
+interface java.lang.reflect.InvocationHandler
+  invoke(Object, java.lang.reflect.Method, Object[]) Object
+
+# ------------------------------------------------------------------ java.awt.event, javax.swing (listeners and models)
+abstract class java.awt.AWTEvent : java.util.EventObject
+  getID() int
+class java.awt.event.ActionEvent : java.awt.AWTEvent
+  getActionCommand() String; getModifiers() int; getWhen() long
+class java.awt.event.ItemEvent : java.awt.AWTEvent
+  getItem() Object; getStateChange() int
+class java.awt.event.ComponentEvent : java.awt.AWTEvent
+class java.awt.event.FocusEvent : java.awt.event.ComponentEvent
+class java.awt.event.WindowEvent : java.awt.event.ComponentEvent
+  getNewState() int; getOldState() int
+abstract class java.awt.event.InputEvent : java.awt.event.ComponentEvent
+  isShiftDown() boolean; isControlDown() boolean; isAltDown() boolean; consume() void; getModifiersEx() int
+class java.awt.event.MouseEvent : java.awt.event.InputEvent
+  getX() int; getY() int; getClickCount() int; getButton() int; isPopupTrigger() boolean
+class java.awt.event.MouseWheelEvent : java.awt.event.MouseEvent
+  getWheelRotation() int
+class java.awt.event.KeyEvent : java.awt.event.InputEvent
+  getKeyCode() int; getKeyChar() char
+interface java.awt.event.ActionListener : java.util.EventListener
+  actionPerformed(java.awt.event.ActionEvent) void
+interface java.awt.event.ItemListener : java.util.EventListener
+  itemStateChanged(java.awt.event.ItemEvent) void
+interface java.awt.event.FocusListener : java.util.EventListener
+  focusGained(java.awt.event.FocusEvent) void; focusLost(java.awt.event.FocusEvent) void
+interface java.awt.event.WindowListener : java.util.EventListener
+  windowOpened(java.awt.event.WindowEvent) void; windowClosing(java.awt.event.WindowEvent) void; windowClosed(java.awt.event.WindowEvent) void
+  windowIconified(java.awt.event.WindowEvent) void; windowDeiconified(java.awt.event.WindowEvent) void
+  windowActivated(java.awt.event.WindowEvent) void; windowDeactivated(java.awt.event.WindowEvent) void
+interface java.awt.event.WindowStateListener : java.util.EventListener
+  windowStateChanged(java.awt.event.WindowEvent) void
+interface java.awt.event.WindowFocusListener : java.util.EventListener
+  windowGainedFocus(java.awt.event.WindowEvent) void; windowLostFocus(java.awt.event.WindowEvent) void
+interface java.awt.event.MouseListener : java.util.EventListener
+  mouseClicked(java.awt.event.MouseEvent) void; mousePressed(java.awt.event.MouseEvent) void; mouseReleased(java.awt.event.MouseEvent) void
+  mouseEntered(java.awt.event.MouseEvent) void; mouseExited(java.awt.event.MouseEvent) void
+interface java.awt.event.MouseMotionListener : java.util.EventListener
+  mouseDragged(java.awt.event.MouseEvent) void; mouseMoved(java.awt.event.MouseEvent) void
+interface java.awt.event.MouseWheelListener : java.util.EventListener
+  mouseWheelMoved(java.awt.event.MouseWheelEvent) void
+interface java.awt.event.KeyListener : java.util.EventListener
+  keyTyped(java.awt.event.KeyEvent) void; keyPressed(java.awt.event.KeyEvent) void; keyReleased(java.awt.event.KeyEvent) void
+abstract class java.awt.event.WindowAdapter : java.awt.event.WindowListener, java.awt.event.WindowStateListener, java.awt.event.WindowFocusListener
+abstract class java.awt.event.MouseAdapter : java.awt.event.MouseListener, java.awt.event.MouseWheelListener, java.awt.event.MouseMotionListener
+abstract class java.awt.event.KeyAdapter : java.awt.event.KeyListener
+abstract class java.awt.event.FocusAdapter : java.awt.event.FocusListener
+interface javax.swing.Action : java.awt.event.ActionListener
+  getValue(String) Object; putValue(String, Object) void; setEnabled(boolean) void; isEnabled() boolean
+abstract class javax.swing.AbstractAction : javax.swing.Action, Cloneable, java.io.Serializable
+abstract class javax.swing.SwingWorker<T, V> : java.util.concurrent.RunnableFuture<T>
+  doInBackground() T; done() void; process(List<V>) void; execute() void
+class javax.swing.event.ListSelectionEvent : java.util.EventObject
+  getValueIsAdjusting() boolean; getFirstIndex() int; getLastIndex() int
+interface javax.swing.event.ListSelectionListener : java.util.EventListener
+  valueChanged(javax.swing.event.ListSelectionEvent) void
+class javax.swing.event.ChangeEvent : java.util.EventObject
+interface javax.swing.event.ChangeListener : java.util.EventListener
+  stateChanged(javax.swing.event.ChangeEvent) void
+interface javax.swing.event.DocumentEvent
+interface javax.swing.event.DocumentListener : java.util.EventListener
+  insertUpdate(javax.swing.event.DocumentEvent) void; removeUpdate(javax.swing.event.DocumentEvent) void; changedUpdate(javax.swing.event.DocumentEvent) void
+class javax.swing.event.TableModelEvent : java.util.EventObject
+  getFirstRow() int; getLastRow() int; getColumn() int; getType() int
+interface javax.swing.event.TableModelListener : java.util.EventListener
+  tableChanged(javax.swing.event.TableModelEvent) void
+interface javax.swing.table.TableModel
+  getRowCount() int; getColumnCount() int; getColumnName(int) String; getColumnClass(int) Class<?>
+  isCellEditable(int, int) boolean; getValueAt(int, int) Object; setValueAt(Object, int, int) void
+  addTableModelListener(javax.swing.event.TableModelListener) void; removeTableModelListener(javax.swing.event.TableModelListener) void
+abstract class javax.swing.table.AbstractTableModel : javax.swing.table.TableModel, java.io.Serializable
+  fireTableDataChanged() void; fireTableStructureChanged() void; fireTableRowsInserted(int, int) void
+  fireTableRowsUpdated(int, int) void; fireTableRowsDeleted(int, int) void; fireTableCellUpdated(int, int) void; findColumn(String) int
+
+# ------------------------------------------------------------------ org.xml.sax (handlers)
+interface org.xml.sax.Attributes
+  getLength() int; getValue(String) String; getValue(int) String; getQName(int) String; getLocalName(int) String
+  getIndex(String) int; getType(int) String
+interface org.xml.sax.Locator
+  getLineNumber() int; getColumnNumber() int; getSystemId() String; getPublicId() String
+class org.xml.sax.InputSource
+class org.xml.sax.SAXException : Exception
+  getException() Exception
+class org.xml.sax.SAXParseException : org.xml.sax.SAXException
+  getLineNumber() int; getColumnNumber() int; getSystemId() String; getPublicId() String
+interface org.xml.sax.ContentHandler
+  setDocumentLocator(org.xml.sax.Locator) void; startDocument() void; endDocument() void
+  startPrefixMapping(String, String) void; endPrefixMapping(String) void
+  startElement(String, String, String, org.xml.sax.Attributes) void; endElement(String, String, String) void
+  characters(char[], int, int) void; ignorableWhitespace(char[], int, int) void
+  processingInstruction(String, String) void; skippedEntity(String) void
+interface org.xml.sax.ErrorHandler
+  warning(org.xml.sax.SAXParseException) void; error(org.xml.sax.SAXParseException) void; fatalError(org.xml.sax.SAXParseException) void
+interface org.xml.sax.EntityResolver
+  resolveEntity(String, String) org.xml.sax.InputSource
+interface org.xml.sax.DTDHandler
+  notationDecl(String, String, String) void; unparsedEntityDecl(String, String, String, String) void
+class org.xml.sax.helpers.DefaultHandler : org.xml.sax.EntityResolver, org.xml.sax.DTDHandler, org.xml.sax.ContentHandler, org.xml.sax.ErrorHandler
+
+# ------------------------------------------------------------------ org.w3c.dom (DOM Level 3 core, java.xml)
+interface org.w3c.dom.Node
+  getNodeName() String; getNodeValue() String; setNodeValue(String) void; getNodeType() short
+  getParentNode() org.w3c.dom.Node; getChildNodes() org.w3c.dom.NodeList; getFirstChild() org.w3c.dom.Node
+  getLastChild() org.w3c.dom.Node; getPreviousSibling() org.w3c.dom.Node; getNextSibling() org.w3c.dom.Node
+  getAttributes() org.w3c.dom.NamedNodeMap; getOwnerDocument() org.w3c.dom.Document
+  insertBefore(org.w3c.dom.Node, org.w3c.dom.Node) org.w3c.dom.Node; replaceChild(org.w3c.dom.Node, org.w3c.dom.Node) org.w3c.dom.Node
+  removeChild(org.w3c.dom.Node) org.w3c.dom.Node; appendChild(org.w3c.dom.Node) org.w3c.dom.Node; hasChildNodes() boolean
+  cloneNode(boolean) org.w3c.dom.Node; normalize() void; isSupported(String, String) boolean; getNamespaceURI() String
+  getPrefix() String; setPrefix(String) void; getLocalName() String; hasAttributes() boolean; getBaseURI() String
+  compareDocumentPosition(org.w3c.dom.Node) short; getTextContent() String; setTextContent(String) void
+  isSameNode(org.w3c.dom.Node) boolean; lookupPrefix(String) String; isDefaultNamespace(String) boolean
+  lookupNamespaceURI(String) String; isEqualNode(org.w3c.dom.Node) boolean; getFeature(String, String) Object
+  setUserData(String, Object, org.w3c.dom.UserDataHandler) Object; getUserData(String) Object
+  static ELEMENT_NODE: short; static ATTRIBUTE_NODE: short; static TEXT_NODE: short; static CDATA_SECTION_NODE: short
+  static ENTITY_REFERENCE_NODE: short; static ENTITY_NODE: short; static PROCESSING_INSTRUCTION_NODE: short
+  static COMMENT_NODE: short; static DOCUMENT_NODE: short; static DOCUMENT_TYPE_NODE: short
+  static DOCUMENT_FRAGMENT_NODE: short; static NOTATION_NODE: short
+interface org.w3c.dom.NodeList
+  item(int) org.w3c.dom.Node; getLength() int
+interface org.w3c.dom.NamedNodeMap
+  getNamedItem(String) org.w3c.dom.Node; setNamedItem(org.w3c.dom.Node) org.w3c.dom.Node; removeNamedItem(String) org.w3c.dom.Node
+  item(int) org.w3c.dom.Node; getLength() int; getNamedItemNS(String, String) org.w3c.dom.Node
+  setNamedItemNS(org.w3c.dom.Node) org.w3c.dom.Node; removeNamedItemNS(String, String) org.w3c.dom.Node
+interface org.w3c.dom.Element : org.w3c.dom.Node
+  getTagName() String; getAttribute(String) String; setAttribute(String, String) void; removeAttribute(String) void
+  getAttributeNode(String) org.w3c.dom.Attr; setAttributeNode(org.w3c.dom.Attr) org.w3c.dom.Attr
+  removeAttributeNode(org.w3c.dom.Attr) org.w3c.dom.Attr; getElementsByTagName(String) org.w3c.dom.NodeList
+  getAttributeNS(String, String) String; setAttributeNS(String, String, String) void; removeAttributeNS(String, String) void
+  getAttributeNodeNS(String, String) org.w3c.dom.Attr; setAttributeNodeNS(org.w3c.dom.Attr) org.w3c.dom.Attr
+  getElementsByTagNameNS(String, String) org.w3c.dom.NodeList; hasAttribute(String) boolean
+  hasAttributeNS(String, String) boolean; getSchemaTypeInfo() org.w3c.dom.TypeInfo; setIdAttribute(String, boolean) void
+  setIdAttributeNS(String, String, boolean) void; setIdAttributeNode(org.w3c.dom.Attr, boolean) void
+interface org.w3c.dom.Attr : org.w3c.dom.Node
+  getName() String; getSpecified() boolean; getValue() String; setValue(String) void
+  getOwnerElement() org.w3c.dom.Element; getSchemaTypeInfo() org.w3c.dom.TypeInfo; isId() boolean
+interface org.w3c.dom.CharacterData : org.w3c.dom.Node
+  getData() String; setData(String) void; getLength() int; substringData(int, int) String; appendData(String) void
+  insertData(int, String) void; deleteData(int, int) void; replaceData(int, int, String) void
+interface org.w3c.dom.Text : org.w3c.dom.CharacterData
+  splitText(int) org.w3c.dom.Text; isElementContentWhitespace() boolean; getWholeText() String
+  replaceWholeText(String) org.w3c.dom.Text
+interface org.w3c.dom.Comment : org.w3c.dom.CharacterData
+interface org.w3c.dom.CDATASection : org.w3c.dom.Text
+interface org.w3c.dom.Document : org.w3c.dom.Node
+  getDoctype() org.w3c.dom.DocumentType; getImplementation() org.w3c.dom.DOMImplementation
+  getDocumentElement() org.w3c.dom.Element; createElement(String) org.w3c.dom.Element
+  createDocumentFragment() org.w3c.dom.DocumentFragment; createTextNode(String) org.w3c.dom.Text
+  createComment(String) org.w3c.dom.Comment; createCDATASection(String) org.w3c.dom.CDATASection
+  createProcessingInstruction(String, String) org.w3c.dom.ProcessingInstruction; createAttribute(String) org.w3c.dom.Attr
+  createEntityReference(String) org.w3c.dom.EntityReference; getElementsByTagName(String) org.w3c.dom.NodeList
+  importNode(org.w3c.dom.Node, boolean) org.w3c.dom.Node; createElementNS(String, String) org.w3c.dom.Element
+  createAttributeNS(String, String) org.w3c.dom.Attr; getElementsByTagNameNS(String, String) org.w3c.dom.NodeList
+  getElementById(String) org.w3c.dom.Element; getInputEncoding() String; getXmlEncoding() String
+  getXmlStandalone() boolean; setXmlStandalone(boolean) void; getXmlVersion() String; setXmlVersion(String) void
+  getStrictErrorChecking() boolean; setStrictErrorChecking(boolean) void; getDocumentURI() String
+  setDocumentURI(String) void; adoptNode(org.w3c.dom.Node) org.w3c.dom.Node; getDomConfig() org.w3c.dom.DOMConfiguration
+  normalizeDocument() void; renameNode(org.w3c.dom.Node, String, String) org.w3c.dom.Node
+interface org.w3c.dom.DocumentFragment : org.w3c.dom.Node
+interface org.w3c.dom.DocumentType : org.w3c.dom.Node
+  getName() String; getEntities() org.w3c.dom.NamedNodeMap; getNotations() org.w3c.dom.NamedNodeMap
+  getPublicId() String; getSystemId() String; getInternalSubset() String
+interface org.w3c.dom.ProcessingInstruction : org.w3c.dom.Node
+  getTarget() String; getData() String; setData(String) void
+interface org.w3c.dom.EntityReference : org.w3c.dom.Node
+interface org.w3c.dom.Entity : org.w3c.dom.Node
+  getPublicId() String; getSystemId() String; getNotationName() String; getInputEncoding() String
+  getXmlEncoding() String; getXmlVersion() String
+interface org.w3c.dom.Notation : org.w3c.dom.Node
+  getPublicId() String; getSystemId() String
+interface org.w3c.dom.DOMImplementation
+  hasFeature(String, String) boolean; createDocumentType(String, String, String) org.w3c.dom.DocumentType
+  createDocument(String, String, org.w3c.dom.DocumentType) org.w3c.dom.Document; getFeature(String, String) Object
+interface org.w3c.dom.TypeInfo
+  getTypeName() String; getTypeNamespace() String; isDerivedFrom(String, String, int) boolean
+interface org.w3c.dom.UserDataHandler
+  handle(short, String, Object, org.w3c.dom.Node, org.w3c.dom.Node) void
+interface org.w3c.dom.DOMConfiguration
+  setParameter(String, Object) void; getParameter(String) Object; canSetParameter(String, Object) boolean
+  getParameterNames() org.w3c.dom.DOMStringList
+interface org.w3c.dom.DOMStringList
+  item(int) String; getLength() int; contains(String) boolean
+class org.w3c.dom.DOMException : RuntimeException
+  code: short
+
+# ------------------------------------------------------------------ javax.xml.transform (callbacks)
+interface javax.xml.transform.Source
+  setSystemId(String) void; getSystemId() String
+interface javax.xml.transform.Result
+  setSystemId(String) void; getSystemId() String
+class javax.xml.transform.TransformerException : Exception
+  getMessageAndLocation() String; getLocationAsString() String
+interface javax.xml.transform.ErrorListener
+  warning(javax.xml.transform.TransformerException) void; error(javax.xml.transform.TransformerException) void
+  fatalError(javax.xml.transform.TransformerException) void
+interface javax.xml.transform.URIResolver
+  resolve(String, String) javax.xml.transform.Source
+
+# ------------------------------------------------------------------ javax.net.ssl, java.security (callbacks)
+abstract class java.security.cert.Certificate : java.io.Serializable
+  getType() String; getEncoded() byte[]
+abstract class java.security.cert.X509Certificate : java.security.cert.Certificate
+  getNotAfter() java.util.Date; getNotBefore() java.util.Date
+interface javax.net.ssl.TrustManager
+interface javax.net.ssl.X509TrustManager : javax.net.ssl.TrustManager
+  checkClientTrusted(java.security.cert.X509Certificate[], String) void
+  checkServerTrusted(java.security.cert.X509Certificate[], String) void
+  getAcceptedIssuers() java.security.cert.X509Certificate[]
+interface javax.net.ssl.SSLSession
+  getPeerHost() String; getProtocol() String; getCipherSuite() String
+interface javax.net.ssl.HostnameVerifier
+  verify(String, javax.net.ssl.SSLSession) boolean
+abstract class java.security.Provider : java.util.Properties
+  getName() String; getInfo() String; getVersionStr() String
+
+# ------------------------------------------------------------------ java.util.jar, javax.tools
+class java.util.jar.Attributes : Map<Object, Object>, Cloneable
+  getValue(String) String; putValue(String, String) String
+enum javax.tools.JavaFileObject.Kind
+enum javax.lang.model.element.NestingKind
+enum javax.lang.model.element.Modifier
+interface javax.tools.FileObject
+  toUri() java.net.URI; getName() String; openInputStream() java.io.InputStream; openOutputStream() java.io.OutputStream
+  openReader(boolean) java.io.Reader; getCharContent(boolean) CharSequence; openWriter() java.io.Writer
+  getLastModified() long; delete() boolean
+interface javax.tools.JavaFileObject : javax.tools.FileObject
+  getKind() javax.tools.JavaFileObject.Kind; isNameCompatible(String, javax.tools.JavaFileObject.Kind) boolean
+  getNestingKind() javax.lang.model.element.NestingKind; getAccessLevel() javax.lang.model.element.Modifier
+class javax.tools.SimpleJavaFileObject : javax.tools.JavaFileObject
+
+# ------------------------------------------------------------------ java.lang.reflect / javax.management exceptions
+class java.lang.reflect.InvocationTargetException : ReflectiveOperationException
+  getTargetException() Throwable
+class java.lang.reflect.UndeclaredThrowableException : RuntimeException
+  getUndeclaredThrowable() Throwable
+class javax.management.JMException : Exception
+class javax.management.OperationsException : javax.management.JMException
+class javax.management.MBeanException : javax.management.JMException
+  getTargetException() Exception
+class javax.management.MBeanRegistrationException : javax.management.MBeanException
+class javax.management.ReflectionException : javax.management.JMException
+  getTargetException() Exception
+class javax.management.InstanceNotFoundException : javax.management.OperationsException
+class javax.management.InstanceAlreadyExistsException : javax.management.OperationsException
+class javax.management.AttributeNotFoundException : javax.management.OperationsException
+class javax.management.MalformedObjectNameException : javax.management.OperationsException
+class javax.management.NotCompliantMBeanException : javax.management.OperationsException
+class javax.management.IntrospectionException : javax.management.OperationsException
+class javax.management.JMRuntimeException : RuntimeException
+class javax.management.RuntimeMBeanException : javax.management.JMRuntimeException
+  getTargetException() RuntimeException
+class javax.management.RuntimeOperationsException : javax.management.JMRuntimeException
+  getTargetException() RuntimeException
+class javax.management.RuntimeErrorException : javax.management.JMRuntimeException
+  getTargetError() Error
+
+# ------------------------------------------------------------------ java.lang.management
+interface java.lang.management.PlatformManagedObject
+enum java.lang.management.MemoryType
+  static HEAP: java.lang.management.MemoryType; static NON_HEAP: java.lang.management.MemoryType
+class java.lang.management.MemoryUsage
+  getInit() long; getUsed() long; getCommitted() long; getMax() long
+interface java.lang.management.MemoryPoolMXBean : java.lang.management.PlatformManagedObject
+  getName() String; getType() java.lang.management.MemoryType; getUsage() java.lang.management.MemoryUsage
+  getPeakUsage() java.lang.management.MemoryUsage; getCollectionUsage() java.lang.management.MemoryUsage
+  isValid() boolean; getMemoryManagerNames() String[]; resetPeakUsage() void
+interface java.lang.management.MemoryMXBean : java.lang.management.PlatformManagedObject
+  getHeapMemoryUsage() java.lang.management.MemoryUsage; getNonHeapMemoryUsage() java.lang.management.MemoryUsage; gc() void
+interface java.lang.management.RuntimeMXBean : java.lang.management.PlatformManagedObject
+  getName() String; getVmName() String; getVmVendor() String; getVmVersion() String; getUptime() long
+  getStartTime() long; getInputArguments() List<String>; getPid() long
+interface java.lang.management.MemoryManagerMXBean : java.lang.management.PlatformManagedObject
+  getName() String; isValid() boolean; getMemoryPoolNames() String[]
+interface java.lang.management.GarbageCollectorMXBean : java.lang.management.MemoryManagerMXBean
+  getCollectionCount() long; getCollectionTime() long
+final class java.lang.management.ManagementFactory
+  static getMemoryMXBean() java.lang.management.MemoryMXBean; static getRuntimeMXBean() java.lang.management.RuntimeMXBean
+  static getMemoryPoolMXBeans() List<java.lang.management.MemoryPoolMXBean>
+  static getGarbageCollectorMXBeans() List<java.lang.management.GarbageCollectorMXBean>

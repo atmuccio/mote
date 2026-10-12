@@ -1,0 +1,88 @@
+package com.example.shapes;
+
+import java.util.List;
+
+abstract class Shape {
+    abstract double area();
+    void describe(StringBuilder out) { out.append("shape"); }
+    static Shape unit() { return null; }
+    private void secret() { }
+    protected void resize(double factor, boolean keepRatio) { }
+}
+
+class Circle extends Shape {
+    double r;
+
+    double area() { return Math.PI * r * r; }                    // expect: missing-override
+    void describe(StringBuilder out) { out.append("circle"); }   // expect: missing-override
+    static Shape unit() { return new Circle(); }                  // static: hides, does not override
+    private void secret() { }                                     // the parent's is private
+    protected void resize(double factor, boolean keepRatio) { }   // expect: missing-override
+    protected void resize(double factor) { }                      // overload: different arity
+    void describe(String out) { }                                 // overload: different type
+    @Override
+    public String toString() { return "circle"; }
+}
+
+class Ring extends Circle {
+    double area() { return 0; }                                   // expect: missing-override
+}
+
+interface Visitor<R> {
+    R visitCircle(Circle c);
+    R visitAll(List<Shape> shapes);
+    default R fallback() { return null; }
+}
+
+class AreaVisitor implements Visitor<Double> {
+    public Double visitCircle(Circle c) { return c.area(); }      // expect: missing-override
+    public Double visitAll(List<Shape> shapes) { return 0.0; }    // expect: missing-override
+    public Double fallback() { return 0.0; }                      // expect: missing-override
+    public Double visitCircle(Ring r) { return 0.0; }             // overload: different type
+}
+
+abstract class Repository<T, ID> {
+    abstract T find(ID id);
+    abstract void save(T item);
+}
+
+class ShapeRepository extends Repository<Shape, Long> {
+    Shape find(Long id) { return null; }                          // expect: missing-override
+    void save(Shape item) { }                                     // expect: missing-override
+    void save(Circle item) { }                                    // overload: not the bound type
+}
+
+enum Op {
+    PLUS {
+        int apply(int a, int b) { return a + b; }                 // expect: missing-override
+        int apply(long a, long b) { return 0; }                   // overload
+    },
+    TIMES {
+        @Override
+        int apply(int a, int b) { return a * b; }
+    };
+
+    abstract int apply(int a, int b);
+
+    public String toString() { return name().toLowerCase(); }    // expect: missing-override
+}
+
+class Outer {
+    void ping() { }
+
+    class Inner {
+        void ping() { }                                           // not a subclass of Outer
+    }
+}
+
+interface Named {
+    String name();
+}
+
+record Person(String name) implements Named {
+    public String name() { return name; }                         // expect: missing-override
+}
+
+record Point(int x, int y) {
+    public int x() { return x; }                                  // accessor, overrides nothing
+}

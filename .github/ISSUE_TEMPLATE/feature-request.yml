@@ -1,0 +1,55 @@
+name: Feature request
+description: A new rule, a change to a rule, an option, an output format or an integration.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the idea! For a rule, please describe the problem pattern **in your own words**
+        and don't paste rule descriptions or examples from other tools' documentation: Mote's rules
+        are written from scratch. Naming a permissively licensed tool with a similar rule is fine.
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What kind of feature?
+      options:
+        - New rule
+        - Change to an existing rule
+        - Command line or configuration
+        - Output format or CI integration
+        - MCP server
+        - Language support
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What are you trying to do, or what goes wrong in your code that Mote could catch?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: The proposal
+      description: What should Mote do? For a rule, what should it report and how severe is it?
+    validations:
+      required: true
+  - type: textarea
+    id: examples
+    attributes:
+      label: Examples (optional)
+      description: For a rule, code that should be reported and similar code that should not.
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives and other tools (optional)
+      description: Workarounds you use today, or tools with a similar feature.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I searched the existing issues and this is not a duplicate.
+          required: true

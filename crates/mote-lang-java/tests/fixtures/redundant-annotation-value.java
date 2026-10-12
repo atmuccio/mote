@@ -1,0 +1,22 @@
+class Controller {
+    @SuppressWarnings(value = "unchecked")                         // expect: redundant-annotation-value
+    void a() { }
+
+    @RequestMapping(value = {"/a", "/b"})                          // expect: redundant-annotation-value
+    void b() { }
+
+    @RequestMapping(value = "/c", method = GET)
+    void c() { }
+
+    @SuppressWarnings("unchecked")
+    void d() { }
+
+    @Timeout(seconds = 5)
+    void e() { }
+
+    @Deprecated
+    void f() { }
+
+    @Anno()
+    void g() { }
+}

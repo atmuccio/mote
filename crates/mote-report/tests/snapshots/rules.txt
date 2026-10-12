@@ -1,0 +1,8 @@
+RULE                       SEVERITY  QUALITY          DEFAULT  NAME
+java/cognitive-complexity  MEDIUM    maintainability  on       Cognitive complexity
+java/duplicated-block      MEDIUM    maintainability  on       Duplicated block
+java/empty-catch-block     MEDIUM    maintainability  on       Empty catch block
+java/self-assignment       HIGH      reliability      on       Self-assignment
+java/todo-comment          LOW       maintainability  on       TODO comment
+
+5 rules

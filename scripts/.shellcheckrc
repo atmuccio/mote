@@ -1,0 +1,7 @@
+# ShellCheck settings for the GitHub Action scripts (CI runs `shellcheck -x` on them).
+# Markdown backticks inside single-quoted printf formats are intentional.
+disable=SC2016
+# is_permission_status takes an optional status argument and defaults to $API_STATUS.
+disable=SC2119
+# Resolve `. "$SCRIPT_DIR/lib.sh"` relative to each script.
+source-path=SCRIPTDIR

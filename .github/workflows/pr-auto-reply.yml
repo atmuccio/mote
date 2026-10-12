@@ -1,0 +1,54 @@
+# Mote does not accept pull requests: the code is developed elsewhere and published here once per
+# release. This workflow thanks the author, points to issues, and closes the pull request.
+#
+# Why `pull_request_target` is safe here. That event runs with a token that can write to this
+# repository, even for pull requests from forks; it is dangerous only when a workflow checks out,
+# builds or runs the pull request's code, or pastes its text into a script. This workflow does none
+# of that:
+#   * there is no checkout step: nothing from the pull request's branch is fetched or executed;
+#   * the workflow file itself always comes from the default branch, so a pull request cannot
+#     change what runs here;
+#   * the script reads only the pull request number and the repository from the event, and passes
+#     them to the API as values; no title, body or branch name is ever interpolated into code;
+#   * the token can only comment and close (pull-requests and issues: write), nothing else.
+name: pr-auto-reply
+
+on:
+  pull_request_target:
+    types: [opened]
+
+permissions: {}
+
+jobs:
+  reply-and-close:
+    # The repository's own people are not turned away (e.g. the owner testing something).
+    if: >-
+      github.event.pull_request.author_association != 'OWNER'
+      && github.event.pull_request.author_association != 'MEMBER'
+      && github.event.pull_request.author_association != 'COLLABORATOR'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: write # close the pull request
+      issues: write # comment on it (pull request comments are issue comments)
+    steps:
+      - uses: actions/github-script@v8
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const number = context.payload.pull_request.number;
+            const base = `${context.serverUrl}/${owner}/${repo}`;
+            const branch = context.payload.repository.default_branch;
+            const body = [
+              'Thank you for taking the time to open this pull request!',
+              '',
+              'Mote does not accept pull requests: the code is developed in a separate repository and ' +
+                'published here once per release, so a pull request cannot be merged. This one is ' +
+                'closed automatically.',
+              '',
+              `Bug reports, false positives and ideas are very welcome as [issues](${base}/issues/new/choose): ` +
+                'please describe the problem or the change you have in mind, ideally with a small code ' +
+                `sample. [CONTRIBUTING.md](${base}/blob/${branch}/CONTRIBUTING.md) has the details.`,
+            ].join('\n');
+            await github.rest.issues.createComment({ owner, repo, issue_number: number, body });
+            await github.rest.pulls.update({ owner, repo, pull_number: number, state: 'closed' });

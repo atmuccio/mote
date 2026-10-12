@@ -1,0 +1,334 @@
+# Release: push a tag vX.Y.Z (or vX.Y.Z-pre) equal to `version` in [workspace.package] of
+# Cargo.toml. The tag's section of CHANGELOG.md becomes the release notes.
+#
+# Dry run: start this workflow by hand (Actions → release → Run workflow). It checks the version and
+# the changelog section, builds and packages every target, and uploads the archives as workflow
+# artifacts, but publishes nothing. Do that before pushing the first tag of a release.
+#
+# Asset contract (scripts/install.sh, used by the GitHub Action, downloads exactly these names;
+# <version> has no leading v, e.g. mote-0.1.0-x86_64-unknown-linux-gnu.tar.gz):
+#   mote-<version>-<target>.tar.gz   Linux, macOS: mote + LICENSE-MIT, LICENSE-APACHE, NOTICE,
+#                                    THIRD_PARTY_LICENSES.md, README.md (flat, no directory)
+#   mote-<version>-<target>.zip      Windows: the same with mote.exe
+#   <archive>.sha256                 "<sha256 hex>  <archive>"
+#   SHA256SUMS                       the lines of every .sha256 file
+#
+# Targets: the required ones must all build, or nothing is published. Best effort (attached when
+# they build): the two musl targets, static Linux binaries for Alpine and for distributions older
+# than glibc 2.35, and Windows on ARM64. scripts/licenses/generate.mjs reads this matrix: rerun it
+# when a target changes.
+name: release
+
+on:
+  push:
+    # vX.Y.Z and vX.Y.Z-pre only; the moving major tag (v0, v1, …) must not match.
+    tags: ["v[0-9]+.[0-9]+.[0-9]+*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+  RUST_TOOLCHAIN: 1.99.0 # keep in sync with rust-toolchain.toml
+
+jobs:
+  prepare:
+    name: version and release notes
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Tag matches Cargo.toml
+        id: version
+        shell: bash
+        env:
+          EVENT: ${{ github.event_name }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          # [workspace.package] version, read as text.
+          version=$(awk '
+            /^\[/ { in_ws = ($0 ~ /^\[workspace\.package\]/) }
+            in_ws && /^[[:space:]]*version[[:space:]]*=/ { gsub(/.*=[[:space:]]*"/, ""); gsub(/".*/, ""); print; exit }
+          ' Cargo.toml)
+          if [ -z "$version" ]; then
+            echo "::error::No version in [workspace.package] of Cargo.toml."
+            exit 1
+          fi
+          if [ "$EVENT" = push ] && [ "v$version" != "$TAG" ]; then
+            echo "::error::Tag $TAG does not match the Cargo.toml version $version (expected v$version)."
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Releasing mote $version"
+      - name: Release notes from CHANGELOG.md
+        shell: bash
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          # The section is the one whose "## " heading names the version, up to the next "## "
+          # heading. Accepted headings: "## [0.1.0] - 2026-10-12", "## 0.1.0", "## v0.1.0 (…)".
+          # Link reference definitions ("[0.1.0]: https://…") are dropped.
+          if [ ! -f CHANGELOG.md ]; then
+            echo "::error::CHANGELOG.md is missing."
+            exit 1
+          fi
+          awk -v v="$VERSION" '
+            { sub(/\r$/, "") }
+            /^## / {
+              if (found) exit
+              h = $0
+              sub(/^##[[:space:]]+/, "", h)
+              gsub(/\[/, "", h); gsub(/\]/, "", h)
+              sub(/^v/, "", h)
+              split(h, w, " ")
+              if (w[1] == v) found = 1
+              next
+            }
+            found && /^\[[^]]+\]:[[:space:]]/ { next }
+            found { line[++n] = $0 }
+            END {
+              first = 1; while (first <= n && line[first] ~ /^[[:space:]]*$/) first++
+              last = n; while (last >= first && line[last] ~ /^[[:space:]]*$/) last--
+              for (i = first; i <= last; i++) print line[i]
+            }
+          ' CHANGELOG.md | tr -d '\r' > changelog-section.md
+          if [ ! -s changelog-section.md ]; then
+            echo "::error::CHANGELOG.md has no section (or an empty one) for $VERSION, e.g. \"## [$VERSION] - YYYY-MM-DD\"."
+            exit 1
+          fi
+          cat changelog-section.md
+      # Every archive carries THIRD_PARTY_LICENSES.md: it must match Cargo.lock and this matrix.
+      - name: Install Rust ${{ env.RUST_TOOLCHAIN }}
+        run: rustup toolchain install "$RUST_TOOLCHAIN" --profile minimal
+      - name: THIRD_PARTY_LICENSES.md is up to date
+        run: node scripts/licenses/generate.mjs --check
+      - uses: actions/upload-artifact@v7
+        with:
+          name: changelog-section
+          path: changelog-section.md
+          if-no-files-found: error
+
+  build:
+    name: build ${{ matrix.target }}
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Linux is built on the oldest supported image so the binary runs on its glibc (2.35) and newer.
+          - { target: x86_64-unknown-linux-gnu, os: ubuntu-22.04 }
+          - { target: aarch64-unknown-linux-gnu, os: ubuntu-22.04-arm }
+          # Static binaries: musl-gcc (musl-tools) compiles the C parts (mimalloc, tree-sitter).
+          - { target: x86_64-unknown-linux-musl, os: ubuntu-22.04, optional: true }
+          - { target: aarch64-unknown-linux-musl, os: ubuntu-22.04-arm, optional: true }
+          # Both macOS targets on the arm64 image; Intel is a cross-compile with Apple's toolchain.
+          - { target: aarch64-apple-darwin, os: macos-latest }
+          - { target: x86_64-apple-darwin, os: macos-latest }
+          - { target: x86_64-pc-windows-msvc, os: windows-latest }
+          # Cross-compiled with the image's ARM64 MSVC tools; it cannot run on the x64 runner.
+          - { target: aarch64-pc-windows-msvc, os: windows-latest, optional: true }
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.optional == true }}
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    env:
+      TARGET: ${{ matrix.target }}
+      VERSION: ${{ needs.prepare.outputs.version }}
+    steps:
+      - run: git config --global core.autocrlf false
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      # rustup is preinstalled on GitHub-hosted runners; no third-party toolchain action.
+      - name: Install Rust ${{ env.RUST_TOOLCHAIN }}
+        run: |
+          rustup toolchain install "$RUST_TOOLCHAIN" --profile minimal --target "$TARGET"
+          rustup show active-toolchain
+      - name: musl C toolchain
+        if: endsWith(matrix.target, '-musl')
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q --no-install-recommends musl-tools
+          echo "CC_${TARGET//-/_}=musl-gcc" >> "$GITHUB_ENV"
+      - name: Build
+        run: cargo build --release --locked -p mote-cli --bin mote --target "$TARGET"
+      - name: Smoke-test the binary
+        run: |
+          set -euo pipefail
+          exe=""
+          if [[ "$TARGET" == *windows* ]]; then exe=.exe; fi
+          bin="$PWD/target/$TARGET/release/mote$exe"
+          if [[ "$TARGET" == x86_64-apple-darwin ]] && ! arch -x86_64 /usr/bin/true 2>/dev/null; then
+            echo "::notice::Rosetta 2 is not available on this runner; the x86_64 macOS binary was built but not run."
+            exit 0
+          fi
+          if [[ "$TARGET" == aarch64-pc-windows-msvc ]]; then
+            echo "::notice::An ARM64 Windows binary cannot run on this x64 runner; built but not run."
+            exit 0
+          fi
+          if [[ "$TARGET" == *-musl ]]; then file "$bin"; fi
+          # Captured first: grep -q stops reading early, which must not break mote's pipe.
+          out=$("$bin" version)
+          printf '%s\n' "$out"
+          printf '%s\n' "$out" | grep -qx "mote $VERSION"
+          # A real scan of two tiny files, one per language, outside any git repository.
+          smoke="$RUNNER_TEMP/smoke"
+          mkdir -p "$smoke"
+          printf 'class A {\n  boolean same(String a, String b) {\n    return a == b;\n  }\n}\n' > "$smoke/A.java"
+          printf 'export function isNan(x: number): boolean {\n  return x === NaN;\n}\n' > "$smoke/a.ts"
+          "$bin" scan "$smoke" --no-cache --no-gate --color never
+      - name: Package
+        id: package
+        run: |
+          set -euo pipefail
+          exe=""; ext=tar.gz
+          if [[ "$TARGET" == *windows* ]]; then exe=.exe; ext=zip; fi
+          archive="mote-$VERSION-$TARGET.$ext"
+          stage="$RUNNER_TEMP/stage"
+          dist="$RUNNER_TEMP/dist"
+          mkdir -p "$stage" "$dist"
+          files=("mote$exe" LICENSE-MIT LICENSE-APACHE NOTICE THIRD_PARTY_LICENSES.md README.md)
+          cp "target/$TARGET/release/mote$exe" "$stage/"
+          for f in "${files[@]:1}"; do
+            if [ ! -f "$f" ]; then
+              echo "::error::$f is missing from the repository; every archive must carry it."
+              exit 1
+            fi
+            cp "$f" "$stage/"
+          done
+          if [[ "$ext" == zip ]]; then
+            (cd "$stage" && 7z a -tzip -bd "$dist/$archive" "${files[@]}" >/dev/null)
+          else
+            # COPYFILE_DISABLE: no AppleDouble (._*) entries from macOS tar.
+            COPYFILE_DISABLE=1 tar -C "$stage" -czf "$dist/$archive" "${files[@]}"
+          fi
+          cd "$dist"
+          if command -v sha256sum >/dev/null; then sum=$(sha256sum "$archive" | cut -d' ' -f1); else sum=$(shasum -a 256 "$archive" | cut -d' ' -f1); fi
+          printf '%s  %s\n' "$sum" "$archive" > "$archive.sha256"
+          cat "$archive.sha256"
+          echo "dist=$dist" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist-${{ matrix.target }}
+          path: ${{ steps.package.outputs.dist }}/*
+          if-no-files-found: error
+
+  release:
+    name: publish GitHub release
+    needs: [prepare, build]
+    # Runs when an optional target failed too; the required assets are checked below.
+    if: ${{ !cancelled() && github.event_name == 'push' && needs.prepare.result == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # create the release, upload assets, move the major tag
+    env:
+      VERSION: ${{ needs.prepare.outputs.version }}
+      TAG: ${{ github.ref_name }}
+      REPO: ${{ github.repository }}
+      SERVER: ${{ github.server_url }}
+    steps:
+      - uses: actions/checkout@v7 # with credentials: the major-tag step pushes a tag
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: dist-*
+          path: dist
+          merge-multiple: true
+      - uses: actions/download-artifact@v8
+        with:
+          name: changelog-section
+          path: notes
+      - name: Verify the assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          for t in x86_64-unknown-linux-gnu.tar.gz aarch64-unknown-linux-gnu.tar.gz \
+                   x86_64-apple-darwin.tar.gz aarch64-apple-darwin.tar.gz x86_64-pc-windows-msvc.zip; do
+            a="mote-$VERSION-$t"
+            if [ ! -f "dist/$a" ] || [ ! -f "dist/$a.sha256" ]; then
+              echo "::error::missing $a or its .sha256: a required target failed to build"
+              exit 1
+            fi
+          done
+          cd dist
+          sha256sum -c ./*.sha256
+          cat ./*.sha256 > SHA256SUMS
+          cat SHA256SUMS
+      - name: Write release notes
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="$SERVER/$REPO/releases/download/$TAG"
+          linux="mote-$VERSION-x86_64-unknown-linux-gnu.tar.gz"
+          describe() {
+            case "$1" in
+              x86_64-unknown-linux-gnu) echo "Linux x86-64 (glibc 2.35 or newer)" ;;
+              aarch64-unknown-linux-gnu) echo "Linux ARM64 (glibc 2.35 or newer)" ;;
+              x86_64-unknown-linux-musl) echo "Linux x86-64, static (any distribution, Alpine included)" ;;
+              aarch64-unknown-linux-musl) echo "Linux ARM64, static (any distribution, Alpine included)" ;;
+              aarch64-apple-darwin) echo "macOS, Apple silicon" ;;
+              x86_64-apple-darwin) echo "macOS, Intel" ;;
+              x86_64-pc-windows-msvc) echo "Windows x86-64" ;;
+              aarch64-pc-windows-msvc) echo "Windows ARM64" ;;
+              *) echo "$1" ;;
+            esac
+          }
+          {
+            cat notes/changelog-section.md
+            echo
+            echo "## Downloads"
+            echo
+            echo "| Platform | Archive |"
+            echo "|---|---|"
+            for f in dist/mote-*.tar.gz dist/mote-*.zip; do
+              [ -f "$f" ] || continue
+              a=${f#dist/}
+              t=${a#"mote-$VERSION-"}; t=${t%.tar.gz}; t=${t%.zip}
+              echo "| $(describe "$t") | [\`$a\`]($base/$a) |"
+            done
+            echo
+            echo "Each archive holds the \`mote\` binary, the licenses, NOTICE, THIRD_PARTY_LICENSES.md and the README. Verify it before use:"
+            echo
+            echo '```sh'
+            echo "curl -fsSLO $base/$linux -O $base/$linux.sha256"
+            echo "sha256sum -c $linux.sha256      # macOS: shasum -a 256 -c …"
+            echo "tar xzf $linux && ./mote version"
+            echo '```'
+            echo
+            echo "\`SHA256SUMS\` lists every archive's checksum."
+            echo
+            echo "GitHub Action (installs this version):"
+            echo
+            echo '```yaml'
+            echo "- uses: $REPO@$TAG"
+            echo '```'
+          } > release-notes.md
+          cat release-notes.md
+      - name: Create the release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          prerelease=()
+          if [[ "$TAG" == *-* ]]; then prerelease=(--prerelease); fi
+          gh release create "$TAG" dist/* --repo "$REPO" --verify-tag --title "Mote $VERSION" \
+            --notes-file release-notes.md ${prerelease[@]+"${prerelease[@]}"}
+      - name: Move the major tag (e.g. v0) to this release
+        if: ${{ !contains(github.ref_name, '-') }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          major="${TAG%%.*}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -f "$major" "$GITHUB_SHA"
+          git push -f origin "refs/tags/$major"

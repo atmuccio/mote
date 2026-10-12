@@ -1,0 +1,73 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/mote-core",
+    "crates/mote-engine",
+    "crates/mote-report",
+    "crates/mote-lang-java",
+    "crates/mote-lang-js",
+    "crates/mote-cli",
+]
+exclude = ["spikes/parse-bench"]
+
+[workspace.package]
+version = "0.1.0"
+authors = ["The Mote Authors"]
+edition = "2021"
+license = "MIT OR Apache-2.0"
+rust-version = "1.85"
+publish = false
+repository = "https://github.com/atmuccio/mote"
+homepage = "https://github.com/atmuccio/mote"
+readme = "README.md"
+keywords = ["static-analysis", "code-quality", "linter", "java", "typescript"]
+categories = ["development-tools", "command-line-utilities"]
+
+[workspace.dependencies]
+mote-core = { path = "crates/mote-core" }
+mote-engine = { path = "crates/mote-engine" }
+mote-report = { path = "crates/mote-report" }
+mote-lang-java = { path = "crates/mote-lang-java" }
+mote-lang-js = { path = "crates/mote-lang-js" }
+
+anyhow = "1"
+thiserror = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_yaml_ng = "0.10"
+schemars = "1"
+globset = "0.4"
+ignore = "0.4"
+rayon = "1.10"
+rustc-hash = "2"
+xxhash-rust = { version = "0.8", features = ["xxh3"] }
+sha1_smol = "1"
+redb = "4"
+postcard = { version = "1", default-features = false, features = ["use-std"] }
+semver = "1"
+clap = { version = "4", features = ["derive", "env"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "json"] }
+mimalloc = { version = "0.1", default-features = false }
+anstyle-query = "1"
+tree-sitter = "=0.27.0"
+tree-sitter-java = "=0.23.5"
+oxc_allocator = "=0.133.0"
+oxc_ast = "=0.133.0"
+oxc_ast_visit = "=0.133.0"
+oxc_parser = "=0.133.0"
+oxc_regular_expression = "=0.133.0"
+oxc_semantic = "=0.133.0"
+oxc_span = "=0.133.0"
+oxc_syntax = "=0.133.0"
+tempfile = "3"
+quick-xml = "0.42"
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+panic = "unwind"
+debug = "line-tables-only"
+
+[profile.dev.package."*"]
+opt-level = 2

@@ -1,0 +1,300 @@
+# Mote — GitHub Action (composite).
+#
+# The quality gate is mote's own exit code, surfaced as this job's status (make the job a
+# required check). Checks API annotations, the job summary and a sticky PR comment work without
+# GitHub Code Security; uploading SARIF to Code Scanning is optional.
+#
+# The binary is a release asset of atmuccio/mote (`repository` input), mote-<version>-<target>,
+# checked against its SHA-256 file before use (scripts/install.sh); the version defaults to the
+# action's own tag. All logic lives in scripts/*.sh (bash; ubuntu, macOS and Windows/Git Bash
+# runners). Every input reaches the scripts through `env:`, never by `${{ }}` interpolation into a
+# script. See docs/github-action.md for setup, permissions and troubleshooting.
+name: Mote
+description: Fast, serverless code-quality scan for Java and JS/TS that gates pull requests on new code.
+author: atmuccio
+branding:
+  icon: eye
+  color: gray-dark
+
+inputs:
+  mode:
+    description: "`scan` (default): install, scan, publish and gate. `gate`: re-evaluate the gate from a saved results file with `mote gate` (e.g. the coverage condition, after the tests), honoring the override label. `install`: only put `mote` on PATH."
+    required: false
+    default: scan
+  version:
+    description: "mote version to install (`1.4.2`, `v1.4.2`, `latest`). Default: the version of this action's ref (a `vX.Y.Z` tag, else the workspace version in the action's Cargo.toml), else `latest`."
+    required: false
+    default: ""
+  repository:
+    description: Repository that publishes the mote release binaries (owner/repo).
+    required: false
+    default: atmuccio/mote
+  build-from-source:
+    description: "Build mote with `cargo install --locked` instead of downloading a release (also the automatic fallback when no release asset exists for this runner)."
+    required: false
+    default: "false"
+  path:
+    description: Directory to scan (inside the git checkout). Also keys the analysis cache and the sticky PR comment, so jobs scanning different directories don't overwrite each other.
+    required: false
+    default: .
+  config:
+    description: "Config file (default: `<path>/.mote.yaml` when present)."
+    required: false
+    default: ""
+  base:
+    description: "New-code base: a branch, tag or SHA; the merge-base with HEAD is used. Default: the PR base branch on pull_request events, none on other events (the severity gate then applies to all findings)."
+    required: false
+    default: ""
+  results:
+    description: "`mode: gate`: the results JSON of the scan job (downloaded from its `mote-results` artifact)."
+    required: false
+    default: mote-results/results.json
+  coverage:
+    description: "`mode: gate`: coverage report globs (LCOV, JaCoCo XML, Cobertura XML), one per line."
+    required: false
+    default: ""
+  gate-only:
+    description: "`mode: gate`: evaluate only these gate conditions (`mote gate --only`, comma-separated: `severity`, `duplication`, `coverage`, `worsened`). Empty re-evaluates the whole gate."
+    required: false
+    default: coverage
+  code-scanning:
+    description: "Upload SARIF to GitHub Code Scanning (category `mote`). Needs `security-events: write` and, on private repositories, GitHub Code Security."
+    required: false
+    default: "false"
+  sarif-min-severity:
+    description: Lowest severity written to SARIF (LOW, MEDIUM, HIGH). Keep it identical on the default branch and PRs.
+    required: false
+    default: MEDIUM
+  annotations:
+    description: "Publish a Checks API check run with inline annotations for new findings (needs `checks: write`)."
+    required: false
+    default: "true"
+  comment:
+    description: "Create/update one sticky summary comment on the PR (needs `pull-requests: write`)."
+    required: false
+    default: "true"
+  job-summary:
+    description: Write the Markdown report to the job summary.
+    required: false
+    default: "true"
+  fail-on-gate:
+    description: Fail the step when the quality gate fails (otherwise the check run is `neutral`, marked advisory). Errors (exit 2/3) always fail.
+    required: false
+    default: "true"
+  override-label:
+    description: PR label that waives a failed gate when applied by someone with one of `override-roles`. Empty disables overrides.
+    required: false
+    default: mote-override
+  override-roles:
+    description: Comma-separated repository roles (`role_name`) allowed to override the gate with the label.
+    required: false
+    default: maintain,admin
+  cache:
+    description: Restore the analysis cache, and save it on default-branch runs.
+    required: false
+    default: "true"
+  artifact-name:
+    description: Name of the uploaded results artifact (must be unique per workflow run; change it in matrix jobs). Empty skips the upload.
+    required: false
+    default: mote-results
+  extra-args:
+    description: "Extra arguments for `mote scan` (shell-style quoting is honored; nothing is evaluated), e.g. `--include 'src/**' --strict`."
+    required: false
+    default: ""
+  github-token:
+    description: Token for the GitHub API (check run, PR comment, merge-base, permission lookup, SARIF upload).
+    required: false
+    default: ${{ github.token }}
+
+outputs:
+  exit-code:
+    description: "mote exit code: 0 gate passed, 1 gate failed, 2 usage/config error, 3 internal error."
+    value: ${{ format('{0}{1}', steps.scan.outputs.exit-code, steps.gate.outputs.exit-code) }}
+  gate:
+    description: "`passed`, `failed`, or `error` (mote's verdict, before any override)."
+    value: ${{ format('{0}{1}', steps.scan.outputs.gate, steps.gate.outputs.gate) }}
+  new-findings:
+    description: Number of new, unsuppressed findings (all unsuppressed findings when there is no base).
+    value: ${{ steps.scan.outputs.new-findings }}
+  results-json:
+    description: Path to the full results JSON (input for `mote gate --results`).
+    value: ${{ steps.scan.outputs.results-json }}
+  sarif:
+    description: Path to the SARIF file.
+    value: ${{ steps.scan.outputs.sarif }}
+  override:
+    description: "`none`, `honored` or `ignored` — status of the override label. Empty when not evaluated (gate passed, or not a pull request)."
+    value: ${{ steps.override.outputs.override }}
+  version:
+    description: The mote version that was installed.
+    value: ${{ steps.install.outputs.version }}
+
+runs:
+  using: composite
+  steps:
+    - name: Install mote
+      id: install
+      shell: bash
+      env:
+        INPUT_MODE: ${{ inputs.mode }}
+        INPUT_VERSION: ${{ inputs.version }}
+        INPUT_REPOSITORY: ${{ inputs.repository }}
+        INPUT_BUILD_FROM_SOURCE: ${{ inputs.build-from-source }}
+        MOTE_ACTION_REF: ${{ github.action_ref }}
+        MOTE_ACTION_PATH: ${{ github.action_path }}
+        GH_TOKEN: ${{ inputs.github-token }}
+      run: bash "$GITHUB_ACTION_PATH/scripts/install.sh"
+
+    - name: Resolve new-code base
+      id: prepare
+      if: inputs.mode == 'scan'
+      shell: bash
+      env:
+        INPUT_PATH: ${{ inputs.path }}
+        INPUT_BASE: ${{ inputs.base }}
+        INPUT_CONFIG: ${{ inputs.config }}
+        GH_TOKEN: ${{ inputs.github-token }}
+      run: bash "$GITHUB_ACTION_PATH/scripts/prepare.sh"
+
+    # The key is scoped by path + config (cache-scope), so monorepo jobs scanning different
+    # directories keep separate caches.
+    - name: Restore analysis cache
+      id: cache-restore
+      if: inputs.mode == 'scan' && inputs.cache == 'true'
+      uses: actions/cache/restore@v6
+      with:
+        path: ${{ runner.temp }}/mote-cache-${{ steps.prepare.outputs.cache-scope }}
+        key: mote-${{ runner.os }}-${{ steps.install.outputs.version }}-${{ steps.prepare.outputs.cache-scope }}-${{ github.sha }}
+        restore-keys: |
+          mote-${{ runner.os }}-${{ steps.install.outputs.version }}-${{ steps.prepare.outputs.cache-scope }}-
+
+    - name: Scan
+      id: scan
+      if: inputs.mode == 'scan'
+      shell: bash
+      env:
+        MOTE_BIN: ${{ steps.install.outputs.bin }}
+        INPUT_PATH: ${{ inputs.path }}
+        INPUT_CONFIG: ${{ inputs.config }}
+        INPUT_SARIF_MIN_SEVERITY: ${{ inputs.sarif-min-severity }}
+        INPUT_EXTRA_ARGS: ${{ inputs.extra-args }}
+        BASE_SHA: ${{ steps.prepare.outputs.base-sha }}
+        MOTE_OUT_DIR: ${{ runner.temp }}/mote-results
+        MOTE_CACHE_DIR: ${{ runner.temp }}/mote-cache-${{ steps.prepare.outputs.cache-scope }}
+      run: bash "$GITHUB_ACTION_PATH/scripts/scan.sh"
+
+    - name: Evaluate gate from saved results
+      id: gate
+      if: inputs.mode == 'gate'
+      shell: bash
+      env:
+        MOTE_BIN: ${{ steps.install.outputs.bin }}
+        INPUT_RESULTS: ${{ inputs.results }}
+        INPUT_COVERAGE: ${{ inputs.coverage }}
+        INPUT_GATE_ONLY: ${{ inputs.gate-only }}
+        INPUT_CONFIG: ${{ inputs.config }}
+        INPUT_PATH: ${{ inputs.path }}
+        MOTE_OUT_DIR: ${{ runner.temp }}/mote-results
+      run: bash "$GITHUB_ACTION_PATH/scripts/gate.sh"
+
+    - name: Check override label
+      id: override
+      if: >-
+        (inputs.mode == 'scan' && steps.prepare.outputs.is-pr == 'true' && steps.scan.outputs.exit-code == '1')
+        || (inputs.mode == 'gate' && steps.gate.outputs.is-pr == 'true' && steps.gate.outputs.exit-code == '1')
+      shell: bash
+      env:
+        INPUT_OVERRIDE_LABEL: ${{ inputs.override-label }}
+        INPUT_OVERRIDE_ROLES: ${{ inputs.override-roles }}
+        HEAD_SHA: ${{ steps.prepare.outputs.head-sha || steps.gate.outputs.head-sha }}
+        PR_NUMBER: ${{ steps.prepare.outputs.pr-number || steps.gate.outputs.pr-number }}
+        MOTE_OUT_DIR: ${{ runner.temp }}/mote-results
+        GH_TOKEN: ${{ inputs.github-token }}
+      run: bash "$GITHUB_ACTION_PATH/scripts/override.sh"
+
+    - name: Publish check run
+      id: check
+      if: inputs.mode == 'scan' && inputs.annotations == 'true' && steps.scan.outputs.checks != ''
+      shell: bash
+      env:
+        CHECKS_FILE: ${{ steps.scan.outputs.checks }}
+        HEAD_SHA: ${{ steps.prepare.outputs.head-sha }}
+        OVERRIDE: ${{ steps.override.outputs.override }}
+        OVERRIDE_ACTOR: ${{ steps.override.outputs.override-actor }}
+        INPUT_FAIL_ON_GATE: ${{ inputs.fail-on-gate }}
+        GH_TOKEN: ${{ inputs.github-token }}
+      run: bash "$GITHUB_ACTION_PATH/scripts/post-check.sh"
+
+    - name: Upload SARIF to Code Scanning
+      if: >-
+        inputs.mode == 'scan' && inputs.code-scanning == 'true' && steps.scan.outputs.sarif != ''
+        && steps.prepare.outputs.is-fork != 'true'
+      continue-on-error: true
+      uses: github/codeql-action/upload-sarif@v4
+      with:
+        sarif_file: ${{ steps.scan.outputs.sarif }}
+        category: mote
+        ref: ${{ steps.prepare.outputs.sarif-ref }}
+        sha: ${{ steps.prepare.outputs.sarif-sha }}
+        wait-for-processing: false
+        token: ${{ inputs.github-token }}
+
+    - name: Write job summary
+      if: inputs.mode != 'install' && inputs.job-summary == 'true'
+      shell: bash
+      env:
+        MOTE_MODE: ${{ inputs.mode }}
+        MOTE_MARKDOWN_FILE: ${{ steps.scan.outputs.markdown || steps.gate.outputs.markdown }}
+        MOTE_OVERRIDE_MD: ${{ steps.override.outputs.override-md }}
+        MOTE_EXIT_CODE: ${{ format('{0}{1}', steps.scan.outputs.exit-code, steps.gate.outputs.exit-code) }}
+        MOTE_VERSION: ${{ steps.install.outputs.version }}
+        MOTE_ARTIFACT_NAME: ${{ inputs.mode == 'scan' && inputs.artifact-name || '' }}
+      run: bash "$GITHUB_ACTION_PATH/scripts/summary.sh"
+
+    # Scan mode only: a gate-mode job would overwrite the scan job's report.
+    - name: Update PR comment
+      if: inputs.mode == 'scan' && inputs.comment == 'true' && steps.prepare.outputs.is-pr == 'true'
+      shell: bash
+      env:
+        PR_NUMBER: ${{ steps.prepare.outputs.pr-number }}
+        IS_FORK: ${{ steps.prepare.outputs.is-fork }}
+        INPUT_PATH: ${{ inputs.path }}
+        MOTE_MARKDOWN_FILE: ${{ steps.scan.outputs.markdown }}
+        MOTE_OVERRIDE_MD: ${{ steps.override.outputs.override-md }}
+        MOTE_EXIT_CODE: ${{ steps.scan.outputs.exit-code }}
+        MOTE_VERSION: ${{ steps.install.outputs.version }}
+        MOTE_ARTIFACT_NAME: ${{ inputs.artifact-name }}
+        GH_TOKEN: ${{ inputs.github-token }}
+      run: bash "$GITHUB_ACTION_PATH/scripts/comment.sh"
+
+    - name: Upload results artifact
+      if: inputs.mode == 'scan' && inputs.artifact-name != '' && steps.scan.outputs.exit-code != ''
+      uses: actions/upload-artifact@v7
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: ${{ runner.temp }}/mote-results
+        if-no-files-found: ignore
+
+    - name: Save analysis cache
+      # Default branch only: PR-written caches are scoped to the PR's merge ref and useless to others,
+      # while PR runs can restore caches saved from the base/default branch.
+      if: >-
+        inputs.mode == 'scan' && inputs.cache == 'true'
+        && steps.prepare.outputs.is-default-branch == 'true'
+        && steps.cache-restore.outputs.cache-hit != 'true'
+        && (steps.scan.outputs.exit-code == '0' || steps.scan.outputs.exit-code == '1')
+      uses: actions/cache/save@v6
+      with:
+        path: ${{ runner.temp }}/mote-cache-${{ steps.prepare.outputs.cache-scope }}
+        key: mote-${{ runner.os }}-${{ steps.install.outputs.version }}-${{ steps.prepare.outputs.cache-scope }}-${{ github.sha }}
+
+    - name: Enforce quality gate
+      if: inputs.mode != 'install'
+      shell: bash
+      env:
+        MOTE_EXIT_CODE: ${{ format('{0}{1}', steps.scan.outputs.exit-code, steps.gate.outputs.exit-code) }}
+        INPUT_FAIL_ON_GATE: ${{ inputs.fail-on-gate }}
+        INPUT_OVERRIDE_LABEL: ${{ inputs.override-label }}
+        OVERRIDE: ${{ steps.override.outputs.override }}
+        OVERRIDE_ACTOR: ${{ steps.override.outputs.override-actor }}
+      run: bash "$GITHUB_ACTION_PATH/scripts/finalize.sh"

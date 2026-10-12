@@ -1,0 +1,15 @@
+# Mote as a hook of the pre-commit framework (https://pre-commit.com): merge into
+# .pre-commit-config.yaml. `mote` must be on PATH (a release binary; see examples/ci/install-mote.sh).
+#
+# The hook scans what is staged, compares it with HEAD, and fails only when the staged changes add
+# findings that fail the quality gate. It needs a first commit (HEAD); for a repository without one,
+# use the plain git hook in examples/hooks/pre-commit, which handles that case.
+repos:
+  - repo: local
+    hooks:
+      - id: mote
+        name: mote (new findings in the staged changes)
+        entry: mote scan --staged --base HEAD --new-only
+        language: system
+        pass_filenames: false
+        files: '\.(java|[cm]?[jt]sx?)$'

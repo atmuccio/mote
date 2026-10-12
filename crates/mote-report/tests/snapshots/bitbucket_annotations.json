@@ -1,0 +1,38 @@
+[
+  {
+    "external_id": "new000000001",
+    "annotation_type": "BUG",
+    "severity": "HIGH",
+    "path": "backend/src/a/Order Service.java",
+    "line": 3,
+    "summary": "Remove this self-assignment of `total` | it has no effect",
+    "details": "java/self-assignment (HIGH, reliability, new): Self-assignment"
+  },
+  {
+    "external_id": "wrs000000001",
+    "annotation_type": "CODE_SMELL",
+    "severity": "MEDIUM",
+    "path": "backend/src/a/Order Service.java",
+    "line": 20,
+    "summary": "Reduce the cognitive complexity of `total` from 22 to 15",
+    "details": "java/cognitive-complexity (MEDIUM, maintainability, worsened): Cognitive complexity"
+  },
+  {
+    "external_id": "dup000000001",
+    "annotation_type": "CODE_SMELL",
+    "severity": "MEDIUM",
+    "path": "backend/src/a/Order Service.java",
+    "line": 40,
+    "summary": "This block of 21 lines is duplicated in 1 other place",
+    "details": "java/duplicated-block (MEDIUM, maintainability, new): Duplicated block"
+  },
+  {
+    "external_id": "new000000002",
+    "annotation_type": "CODE_SMELL",
+    "severity": "LOW",
+    "path": "backend/src/c/Util.java",
+    "line": 1,
+    "summary": "Complete the task in this TODO comment",
+    "details": "java/todo-comment (LOW, maintainability, new): TODO comment"
+  }
+]

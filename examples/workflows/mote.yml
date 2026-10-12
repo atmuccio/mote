@@ -1,0 +1,52 @@
+# Pull-request gate with Mote: copy to .github/workflows/mote.yml in the repository to check.
+#
+# On a pull request the action downloads the Mote release binary (checksum-verified), scans the
+# head commit against the base branch, and reports:
+#   * a check run with inline annotations on the new findings (Checks API),
+#   * a sticky summary comment on the pull request and the job summary,
+#   * SARIF uploaded to GitHub code scanning (alerts in the Security tab, annotations in the diff),
+#   * the quality gate as this job's status: make the `mote` job a required status check.
+# Pushes to main scan without a base: they refresh the analysis cache and the code-scanning
+# baseline that pull requests are compared with, and never fail on existing debt.
+#
+# Code scanning is free on public repositories; private ones need GitHub Code Security. Without it,
+# set `code-scanning: false` and drop `security-events: write` (everything else still works).
+name: mote
+
+on:
+  pull_request:
+    # labeled/unlabeled re-run the gate when the override label changes.
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+  push:
+    branches: [main]
+
+concurrency:
+  group: mote-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  checks: write          # check run with inline annotations
+  pull-requests: write   # sticky summary comment
+  security-events: write # SARIF upload to code scanning
+
+jobs:
+  mote:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # Analyze the PR head commit, not the merge ref, so line numbers match "Files changed".
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          # Keep the default persisted credentials: the action fetches the merge base with git.
+
+      # Pin an exact release: 0.x releases may change rules and defaults. The action installs the
+      # engine version of its own tag.
+      - uses: atmuccio/mote@v0.1.0
+        with:
+          code-scanning: true
+          # Keep the same SARIF threshold on main and on pull requests (MEDIUM is the default).
+          # sarif-min-severity: MEDIUM
+          # Gate pull requests only; main runs report and refresh the baselines.
+          fail-on-gate: ${{ github.event_name == 'pull_request' }}

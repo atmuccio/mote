@@ -1,0 +1,41 @@
+# Speed regression thresholds for `scripts/bench.sh --thresholds` / `scripts/bench.ps1 -Thresholds`.
+#
+# Wall times depend on the machine, so baselines are grouped per machine: choose a table with
+# `--machine NAME` (or MOTE_BENCH_MACHINE). A median slower than baseline × (1 + pct/100)
+# is a regression and makes the script exit 1. Keys with no baseline aren't checked, and neither
+# is a machine without a table.
+#
+# Keys are "<corpus>.<source>.<mode>" = median seconds, where source is rev | worktree and mode
+# is cold | warm (the same keys the scripts print). Refresh a table by running the benchmark on
+# that machine and copying the medians; keep the old values in the diff for review.
+#
+# Format: top-level `max_regression_pct`, then [machine.<name>] tables of quoted keys and plain
+# numbers. The scripts parse this without a TOML library, so keep it that simple.
+
+max_regression_pct = 25
+
+# Intel Core i7-8700K (6 cores / 12 threads), 32 GB RAM, Windows 10 22H2, release build; corpora
+# on a SATA HDD (served from the OS file cache after the priming run), cache dirs on an NVMe SSD.
+# Re-measured on 2026-10-01 (517 rules, up from 184) with scripts/bench.sh under Git Bash, 5 runs
+# (see docs/benchmark.md).
+[machine.i7-8700k-windows]
+max_regression_pct = 30   # Windows timings are noisier (Defender, background indexing)
+"spring-petclinic.rev.cold" = 0.18
+"spring-petclinic.rev.warm" = 0.16
+"spring-petclinic.worktree.cold" = 0.07
+"spring-petclinic.worktree.warm" = 0.04
+"symmetric-ds.rev.cold" = 0.89
+"symmetric-ds.rev.warm" = 0.20
+"symmetric-ds.worktree.cold" = 0.65
+"symmetric-ds.worktree.warm" = 0.08
+"excalidraw.rev.cold" = 0.29
+"excalidraw.rev.warm" = 0.17
+"excalidraw.worktree.cold" = 0.13
+"excalidraw.worktree.warm" = 0.06
+"vscode.rev.cold" = 2.70
+"vscode.rev.warm" = 0.45
+"vscode.worktree.cold" = 1.62
+"vscode.worktree.warm" = 0.32
+
+# Another machine (a GitHub-hosted runner image, for example): add a [machine.<name>] table from
+# the medians of a few benchmark runs on it, then pass --machine <name> (or MOTE_BENCH_MACHINE).

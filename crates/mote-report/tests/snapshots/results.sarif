@@ -1,0 +1,393 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "Mote",
+          "version": "0.1.0",
+          "semanticVersion": "0.1.0",
+          "informationUri": "https://github.com/atmuccio/mote",
+          "rules": [
+            {
+              "id": "java/cognitive-complexity",
+              "name": "CognitiveComplexity",
+              "shortDescription": {
+                "text": "Cognitive complexity"
+              },
+              "fullDescription": {
+                "text": "Flags Cognitive complexity."
+              },
+              "help": {
+                "text": "Flags Cognitive complexity.\n\nWhy: it hurts.\n\n```java\nbad();\n```\n\nFix: `good()`.",
+                "markdown": "Flags Cognitive complexity.\n\nWhy: it hurts.\n\n```java\nbad();\n```\n\nFix: `good()`."
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "properties": {
+                "tags": [
+                  "demo",
+                  "maintainability"
+                ],
+                "quality": "maintainability",
+                "severity": "MEDIUM"
+              }
+            },
+            {
+              "id": "java/duplicated-block",
+              "name": "DuplicatedBlock",
+              "shortDescription": {
+                "text": "Duplicated block"
+              },
+              "fullDescription": {
+                "text": "Flags Duplicated block."
+              },
+              "help": {
+                "text": "Flags Duplicated block.\n\nWhy: it hurts.\n\n```java\nbad();\n```\n\nFix: `good()`.",
+                "markdown": "Flags Duplicated block.\n\nWhy: it hurts.\n\n```java\nbad();\n```\n\nFix: `good()`."
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "properties": {
+                "tags": [
+                  "demo",
+                  "maintainability"
+                ],
+                "quality": "maintainability",
+                "severity": "MEDIUM"
+              }
+            },
+            {
+              "id": "java/empty-catch-block",
+              "name": "EmptyCatchBlock",
+              "shortDescription": {
+                "text": "Empty catch block"
+              },
+              "fullDescription": {
+                "text": "Flags Empty catch block."
+              },
+              "help": {
+                "text": "Flags Empty catch block.\n\nWhy: it hurts.\n\n```java\nbad();\n```\n\nFix: `good()`.",
+                "markdown": "Flags Empty catch block.\n\nWhy: it hurts.\n\n```java\nbad();\n```\n\nFix: `good()`."
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "properties": {
+                "tags": [
+                  "demo",
+                  "maintainability"
+                ],
+                "quality": "maintainability",
+                "severity": "MEDIUM"
+              }
+            },
+            {
+              "id": "java/self-assignment",
+              "name": "SelfAssignment",
+              "shortDescription": {
+                "text": "Self-assignment"
+              },
+              "fullDescription": {
+                "text": "Flags Self-assignment."
+              },
+              "help": {
+                "text": "Flags Self-assignment.\n\nWhy: it hurts.\n\n```java\nbad();\n```\n\nFix: `good()`.\n\n**Parameters**\n\n- `threshold` (default `15`): Maximum allowed.",
+                "markdown": "Flags Self-assignment.\n\nWhy: it hurts.\n\n```java\nbad();\n```\n\nFix: `good()`.\n\n**Parameters**\n\n- `threshold` (default `15`): Maximum allowed."
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "properties": {
+                "tags": [
+                  "demo",
+                  "reliability"
+                ],
+                "quality": "reliability",
+                "severity": "HIGH"
+              }
+            },
+            {
+              "id": "java/todo-comment",
+              "name": "TodoComment",
+              "shortDescription": {
+                "text": "TODO comment"
+              },
+              "fullDescription": {
+                "text": "Flags TODO comment."
+              },
+              "help": {
+                "text": "Flags TODO comment.\n\nWhy: it hurts.\n\n```java\nbad();\n```\n\nFix: `good()`.",
+                "markdown": "Flags TODO comment.\n\nWhy: it hurts.\n\n```java\nbad();\n```\n\nFix: `good()`."
+              },
+              "defaultConfiguration": {
+                "level": "note"
+              },
+              "properties": {
+                "tags": [
+                  "demo",
+                  "maintainability"
+                ],
+                "quality": "maintainability",
+                "severity": "LOW"
+              }
+            }
+          ]
+        }
+      },
+      "automationDetails": {
+        "id": "mote/"
+      },
+      "columnKind": "unicodeCodePoints",
+      "results": [
+        {
+          "ruleId": "java/self-assignment",
+          "ruleIndex": 3,
+          "level": "error",
+          "message": {
+            "text": "Remove this self-assignment of `total` | it has no effect"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/a/Order%20Service.java",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 3,
+                  "startColumn": 5,
+                  "endLine": 3,
+                  "endColumn": 12
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "fp-new000000001"
+          },
+          "baselineState": "new",
+          "properties": {
+            "id": "new000000001",
+            "quality": "reliability",
+            "symbol": "Demo#run"
+          }
+        },
+        {
+          "ruleId": "java/cognitive-complexity",
+          "ruleIndex": 0,
+          "level": "warning",
+          "message": {
+            "text": "Reduce the cognitive complexity of `total` from 22 to 15"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/a/Order%20Service.java",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 20,
+                  "startColumn": 10,
+                  "endLine": 20,
+                  "endColumn": 15
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "fp-wrs000000001"
+          },
+          "baselineState": "updated",
+          "properties": {
+            "id": "wrs000000001",
+            "quality": "maintainability",
+            "symbol": "Demo#run"
+          }
+        },
+        {
+          "ruleId": "java/duplicated-block",
+          "ruleIndex": 1,
+          "level": "warning",
+          "message": {
+            "text": "This block of 21 lines is duplicated in 1 other place"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/a/Order%20Service.java",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 40,
+                  "startColumn": 1,
+                  "endLine": 60,
+                  "endColumn": 2
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "fp-dup000000001"
+          },
+          "baselineState": "new",
+          "relatedLocations": [
+            {
+              "id": 1,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/b/Legacy.java",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 10,
+                  "startColumn": 1,
+                  "endLine": 30,
+                  "endColumn": 2
+                }
+              },
+              "message": {
+                "text": "Duplicate"
+              }
+            }
+          ],
+          "properties": {
+            "id": "dup000000001",
+            "quality": "maintainability"
+          }
+        },
+        {
+          "ruleId": "java/empty-catch-block",
+          "ruleIndex": 2,
+          "level": "warning",
+          "message": {
+            "text": "Remove this empty catch block or explain why the exception is ignored"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/b/Legacy.java",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 2,
+                  "startColumn": 9,
+                  "endLine": 2,
+                  "endColumn": 14
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "fp-unc000000001"
+          },
+          "baselineState": "unchanged",
+          "properties": {
+            "id": "unc000000001",
+            "quality": "maintainability",
+            "symbol": "Demo#run"
+          }
+        },
+        {
+          "ruleId": "java/todo-comment",
+          "ruleIndex": 4,
+          "level": "note",
+          "message": {
+            "text": "Complete the task in this TODO comment"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/b/Legacy.java",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 4,
+                  "startColumn": 1,
+                  "endLine": 4,
+                  "endColumn": 20
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "fp-sup000000001"
+          },
+          "baselineState": "new",
+          "suppressions": [
+            {
+              "kind": "inSource",
+              "justification": "tracked in JIRA-1"
+            }
+          ],
+          "properties": {
+            "id": "sup000000001",
+            "quality": "maintainability",
+            "symbol": "Demo#run"
+          }
+        },
+        {
+          "ruleId": "java/todo-comment",
+          "ruleIndex": 4,
+          "level": "note",
+          "message": {
+            "text": "Complete the task in this TODO comment"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/c/Util.java",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "fp-new000000002"
+          },
+          "baselineState": "new",
+          "properties": {
+            "id": "new000000002",
+            "quality": "maintainability",
+            "symbol": "Demo#run"
+          }
+        }
+      ],
+      "invocations": [
+        {
+          "executionSuccessful": true,
+          "toolExecutionNotifications": [
+            {
+              "level": "warning",
+              "message": {
+                "text": "cannot parse coverage report"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "coverage/lcov.info",
+                      "uriBaseId": "%SRCROOT%"
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

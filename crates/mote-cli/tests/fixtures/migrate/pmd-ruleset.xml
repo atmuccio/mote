@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ruleset name="Team rules"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+  <description>The rules our team runs in CI.</description>
+
+  <exclude-pattern>.*/generated/.*</exclude-pattern>
+  <exclude-pattern>.*/src/main/java/legacy/(a|b)/.*</exclude-pattern>
+
+  <!-- Single rules, one with a priority and a property. -->
+  <rule ref="category/java/errorprone.xml/EmptyCatchBlock"/>
+  <rule ref="category/java/bestpractices.xml/UnusedPrivateField">
+    <priority>1</priority>
+  </rule>
+  <rule ref="category/java/codestyle.xml/UnnecessaryImport">
+    <priority>5</priority>
+  </rule>
+  <rule ref="category/java/errorprone.xml/AvoidDuplicateLiterals">
+    <properties>
+      <property name="maxDuplicateLiterals" value="5"/>
+    </properties>
+  </rule>
+  <!-- An older PMD name. -->
+  <rule ref="rulesets/java/basic.xml/EmptyIfStmt"/>
+
+  <!-- Rules outside PMD's quickstart ruleset; thresholds become parameters. -->
+  <rule ref="category/java/bestpractices.xml/SystemPrintln"/>
+  <rule ref="category/java/design.xml/CyclomaticComplexity">
+    <properties>
+      <property name="methodReportLevel" value="12"/>
+      <property name="classReportLevel" value="90"/>
+    </properties>
+  </rule>
+  <rule ref="category/java/design.xml/ExcessiveParameterList">
+    <properties>
+      <property name="minimum"><value>6</value></property>
+    </properties>
+  </rule>
+  <!-- Thresholds left at PMD's defaults keep them (converted), not Mote's own. -->
+  <rule ref="category/java/design.xml/TooManyMethods"/>
+  <rule ref="category/java/design.xml/CognitiveComplexity"/>
+  <rule ref="rulesets/java/junit.xml/JUnitTestContainsTooManyAsserts">
+    <properties>
+      <property name="maximumAsserts" value="3"/>
+    </properties>
+  </rule>
+
+  <!-- A whole category, minus two rules. -->
+  <rule ref="category/java/design.xml">
+    <exclude name="SingularField"/>
+    <exclude name="LawOfDemeter"/>
+  </rule>
+
+  <!-- Another language, and a custom rule. -->
+  <rule ref="category/apex/errorprone.xml/EmptyCatchBlock"/>
+  <rule name="NoSystemExit" language="java" message="Do not call System.exit"
+        class="net.sourceforge.pmd.lang.rule.xpath.XPathRule">
+    <priority>2</priority>
+  </rule>
+</ruleset>

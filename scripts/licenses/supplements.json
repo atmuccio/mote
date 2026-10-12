@@ -1,0 +1,46 @@
+{
+  "_comment": [
+    "License texts for crates whose published package ships none (generate.mjs reads this file).",
+    "Each entry applies to the listed crates at exactly `version`: after an upgrade the script fails",
+    "until someone has checked the upstream text again and updated `version`. `file` is relative to",
+    "scripts/licenses/ and must be a verbatim copy of `source` at the matching release."
+  ],
+  "entries": [
+    {
+      "crates": [
+        "oxc_allocator",
+        "oxc_ast",
+        "oxc_ast_macros",
+        "oxc_ast_visit",
+        "oxc_data_structures",
+        "oxc_diagnostics",
+        "oxc_ecmascript",
+        "oxc_estree",
+        "oxc_parser",
+        "oxc_regular_expression",
+        "oxc_semantic",
+        "oxc_span",
+        "oxc_str",
+        "oxc_syntax"
+      ],
+      "version": "0.133.0",
+      "license": "MIT",
+      "file": "texts/oxc-LICENSE",
+      "source": "https://github.com/oxc-project/oxc/blob/crates_v0.133.0/LICENSE"
+    },
+    {
+      "crates": ["oxc_index"],
+      "version": "4.1.0",
+      "license": "MIT",
+      "file": "texts/oxc-index-vec-LICENSE",
+      "source": "https://github.com/oxc-project/oxc-index-vec/blob/v4.1.0/LICENSE"
+    },
+    {
+      "crates": ["tree-sitter-java"],
+      "version": "0.23.5",
+      "license": "MIT",
+      "file": "texts/tree-sitter-java-LICENSE",
+      "source": "https://github.com/tree-sitter/tree-sitter-java/blob/v0.23.5/LICENSE"
+    }
+  ]
+}

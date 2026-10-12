@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="Mote" tests="9" failures="8" errors="0" skipped="0" time="0">
+  <testsuite name="Mote quality gate" tests="4" failures="3" errors="0" skipped="0" time="0">
+    <testcase classname="mote.gate" name="New findings" time="0">
+      <failure message="New findings: 1 (&lt;= 0)" type="gate">Quality gate condition failed: New findings: 1 (&lt;= 0)</failure>
+    </testcase>
+    <testcase classname="mote.gate" name="Duplication on new code" time="0">
+      <failure message="Duplication on new code: 55.3% (&lt;= 3.0%)" type="gate">Quality gate condition failed: Duplication on new code: 55.3% (&lt;= 3.0%)</failure>
+    </testcase>
+    <testcase classname="mote.gate" name="Coverage on new code" time="0"/>
+    <testcase classname="mote.gate" name="Maintainability grade on new code" time="0">
+      <failure message="Maintainability grade on new code: E (B or better)" type="gate">Quality gate condition failed: Maintainability grade on new code: E (B or better)</failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="java/cognitive-complexity" tests="1" failures="1" errors="0" skipped="0" time="0">
+    <testcase classname="java/cognitive-complexity" name="src/a/Order Service.java:20:10" file="src/a/Order Service.java" line="20" time="0">
+      <failure message="Reduce the cognitive complexity of `total` from 22 to 15" type="MEDIUM">Rule: java/cognitive-complexity (Cognitive complexity)
+Severity: MEDIUM, quality: maintainability, status: worsened
+Location: src/a/Order Service.java:20:10
+Reduce the cognitive complexity of `total` from 22 to 15</failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="java/duplicated-block" tests="1" failures="1" errors="0" skipped="0" time="0">
+    <testcase classname="java/duplicated-block" name="src/a/Order Service.java:40:1" file="src/a/Order Service.java" line="40" time="0">
+      <failure message="This block of 21 lines is duplicated in 1 other place" type="MEDIUM">Rule: java/duplicated-block (Duplicated block)
+Severity: MEDIUM, quality: maintainability, status: new
+Location: src/a/Order Service.java:40:1
+This block of 21 lines is duplicated in 1 other place</failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="java/empty-catch-block" tests="1" failures="1" errors="0" skipped="0" time="0">
+    <testcase classname="java/empty-catch-block" name="src/b/Legacy.java:2:9" file="src/b/Legacy.java" line="2" time="0">
+      <failure message="Remove this empty catch block or explain why the exception is ignored" type="MEDIUM">Rule: java/empty-catch-block (Empty catch block)
+Severity: MEDIUM, quality: maintainability, status: unchanged
+Location: src/b/Legacy.java:2:9
+Remove this empty catch block or explain why the exception is ignored</failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="java/self-assignment" tests="1" failures="1" errors="0" skipped="0" time="0">
+    <testcase classname="java/self-assignment" name="src/a/Order Service.java:3:5" file="src/a/Order Service.java" line="3" time="0">
+      <failure message="Remove this self-assignment of `total` | it has no effect" type="HIGH">Rule: java/self-assignment (Self-assignment)
+Severity: HIGH, quality: reliability, status: new
+Location: src/a/Order Service.java:3:5
+Remove this self-assignment of `total` | it has no effect</failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="java/todo-comment" tests="1" failures="1" errors="0" skipped="0" time="0">
+    <testcase classname="java/todo-comment" name="src/c/Util.java:1:1" file="src/c/Util.java" line="1" time="0">
+      <failure message="Complete the task in this TODO comment" type="LOW">Rule: java/todo-comment (TODO comment)
+Severity: LOW, quality: maintainability, status: new
+Location: src/c/Util.java:1:1
+Complete the task in this TODO comment</failure>
+    </testcase>
+  </testsuite>
+</testsuites>

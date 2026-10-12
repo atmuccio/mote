@@ -1,0 +1,37 @@
+[package]
+name = "mote-engine"
+description = "Mote scan engine: config, registry, generic rules, lexer/CPD, suppressions, sources, cache, new-code, coverage, gate"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+repository.workspace = true
+homepage.workspace = true
+readme = "README.md"
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+mote-core.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+serde_yaml_ng.workspace = true
+schemars.workspace = true
+globset.workspace = true
+ignore.workspace = true
+rayon.workspace = true
+rustc-hash.workspace = true
+xxhash-rust.workspace = true
+sha1_smol.workspace = true
+redb.workspace = true
+postcard.workspace = true
+semver.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+quick-xml.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+regex = "1"

@@ -1,0 +1,10 @@
+/target
+/spikes/*/target
+*.mote-cache
+.mote/cache/
+
+# Local cargo settings (corpus paths for ignored tests)
+/.cargo/config.toml
+
+# Local working notes
+/scratch/

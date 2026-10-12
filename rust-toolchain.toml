@@ -1,0 +1,8 @@
+# The Rust toolchain for development and CI, pinned so a new stable release can't change lints
+# or behaviour underneath us. Bump it deliberately: change this file and the `toolchain:` inputs
+# in .github/workflows/*.yml together, then fix any new clippy lints. The minimum supported Rust
+# version (MSRV) is separate and stays in Cargo.toml (`rust-version`).
+[toolchain]
+channel = "1.99.0"
+components = ["rustfmt", "clippy"]
+profile = "minimal"

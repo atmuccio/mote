@@ -1,0 +1,146 @@
+name: ci
+
+# Pull requests are not accepted here (pr-auto-reply.yml closes them), so CI checks what lands on
+# main, on Linux, Windows and macOS, and can be started by hand (Actions → ci → Run workflow).
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+  RUST_BACKTRACE: 1
+  RUST_TOOLCHAIN: 1.99.0 # keep in sync with rust-toolchain.toml
+
+jobs:
+  fmt:
+    name: rustfmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      # rustup is preinstalled on GitHub-hosted runners; no third-party toolchain action.
+      - name: Install Rust ${{ env.RUST_TOOLCHAIN }}
+        run: rustup toolchain install "$RUST_TOOLCHAIN" --profile minimal --component rustfmt,clippy
+      - run: cargo fmt --all --check
+
+  test:
+    name: clippy + test (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      # Fixtures and golden outputs are byte-exact: never let Windows rewrite line endings.
+      - run: git config --global core.autocrlf false && git config --global core.eol lf
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Install Rust ${{ env.RUST_TOOLCHAIN }}
+        run: rustup toolchain install "$RUST_TOOLCHAIN" --profile minimal --component rustfmt,clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      - run: cargo test --workspace --locked
+
+  deny:
+    name: cargo-deny (licenses, advisories, bans, sources)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check
+          arguments: --all-features
+
+  licenses:
+    name: THIRD_PARTY_LICENSES.md up to date
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      # The generator resolves the release targets' dependencies with `cargo metadata --locked`.
+      - name: Install Rust ${{ env.RUST_TOOLCHAIN }}
+        run: rustup toolchain install "$RUST_TOOLCHAIN" --profile minimal
+      - run: node scripts/licenses/generate.mjs --check
+
+  action-scripts:
+    name: action scripts (${{ matrix.os }})
+    # macOS runs the scripts under its /bin/bash 3.2 and Windows under Git Bash, like the action.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - run: git config --global core.autocrlf false
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: shellcheck
+        if: runner.os == 'Linux'
+        run: |
+          shellcheck -x scripts/*.sh scripts/tests/run.sh scripts/tests/fake-mote \
+            examples/hooks/pre-commit examples/ci/*.sh
+      - name: Dry-run tests (fake mote, stubbed GitHub API)
+        run: bash scripts/tests/run.sh
+
+  actionlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: actionlint
+        run: |
+          bash <(curl -fsSL https://raw.githubusercontent.com/rhysd/actionlint/v1.7.12/scripts/download-actionlint.bash) 1.7.12
+          ./actionlint -color .github/workflows/*.yml examples/workflows/*.yml
+
+  smoke:
+    # Dogfood: build mote from this checkout and run the local action on the repository itself.
+    name: smoke (local action on this repo)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    permissions:
+      contents: read
+      checks: write # the action's check run with annotations
+    steps:
+      # Credentials stay persisted: the action fetches history with git when it needs a merge base.
+      - uses: actions/checkout@v7
+      - name: Install Rust ${{ env.RUST_TOOLCHAIN }}
+        run: rustup toolchain install "$RUST_TOOLCHAIN" --profile minimal
+      - uses: Swatinem/rust-cache@v2
+      - name: Mote (local action)
+        id: mote
+        uses: ./
+        with:
+          build-from-source: true
+          fail-on-gate: false
+          artifact-name: mote-results-smoke
+      - name: Show action outputs
+        if: always()
+        shell: bash
+        env:
+          EXIT_CODE: ${{ steps.mote.outputs.exit-code }}
+          GATE: ${{ steps.mote.outputs.gate }}
+          NEW_FINDINGS: ${{ steps.mote.outputs.new-findings }}
+          VERSION: ${{ steps.mote.outputs.version }}
+        run: echo "version=$VERSION exit-code=$EXIT_CODE gate=$GATE new-findings=$NEW_FINDINGS"

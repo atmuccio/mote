@@ -1,0 +1,12 @@
+* text=auto
+*.sh text eol=lf
+scripts/tests/fake-mote text eol=lf
+examples/hooks/pre-commit text eol=lf
+action.yml text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# Fixtures that contain raw control bytes or a byte-order mark on purpose: never normalise them.
+crates/mote-lang-java/tests/fixtures/invisible-character*.java -text
+crates/mote-lang-js/tests/fixtures/invisible-character*.js -text
+crates/mote-lang-js/tests/fixtures/regex-control-character.js -text
