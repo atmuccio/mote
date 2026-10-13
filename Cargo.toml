@@ -34,7 +34,7 @@ anyhow = "1"
 thiserror = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-serde_yaml_ng = "0.10"
+granit-parser = { version = "2", default-features = false, features = ["std", "error_messages"] }
 schemars = "1"
 globset = "0.4"
 ignore = "0.4"

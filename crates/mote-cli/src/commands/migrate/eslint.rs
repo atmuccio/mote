@@ -315,7 +315,7 @@ fn parse_json(text: &str) -> Result<Value, String> {
 }
 
 fn parse_yaml(text: &str) -> Result<Value, String> {
-    serde_yaml_ng::from_str::<Value>(text).map_err(|e| e.to_string())
+    mote_engine::yaml::from_str::<Value>(text).map_err(|e| e.to_string())
 }
 
 /// A configuration read as data.

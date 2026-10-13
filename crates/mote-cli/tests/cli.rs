@@ -85,6 +85,40 @@ fn config_errors_exit_2() {
     assert!(r.stdout.contains("valid"));
 }
 
+/// A configuration from an untrusted pull request cannot make a scan hang: a "billion laughs"
+/// document is refused at once, with a configuration error.
+#[test]
+fn hostile_yaml_is_refused_quickly() {
+    let d = tmp();
+    let root = d.path();
+    write(root, "a.tl", "HIGHBUG\n");
+    let mut laughs = String::from("a0: &a0 [lol, lol, lol, lol, lol, lol, lol, lol, lol]\n");
+    for i in 1..10 {
+        let p = i - 1;
+        laughs.push_str(&format!(
+            "a{i}: &a{i} [*a{p}, *a{p}, *a{p}, *a{p}, *a{p}, *a{p}, *a{p}, *a{p}, *a{p}]\n"
+        ));
+    }
+    let start = std::time::Instant::now();
+    write(root, ".mote.yaml", &laughs);
+    let want = "error: invalid configuration in .mote.yaml:6:10: not valid YAML: repetition limit exceeded (aliases expand to more than 100000 values)\n";
+    for args in [&["config", "validate"][..], &["scan"]] {
+        let r = mote(root, args);
+        assert_eq!(r.code, 2, "{args:?}: {r:?}");
+        assert_eq!(r.stderr, want, "{args:?}");
+    }
+    // Any YAML read: an ESLint configuration too.
+    write(root, ".eslintrc.yaml", &laughs);
+    let r = mote(root, &["migrate", "--from", "eslint", ".eslintrc.yaml"]);
+    assert_eq!(r.code, 2, "{r:?}");
+    assert!(
+        r.stderr
+            .contains(".eslintrc.yaml: repetition limit exceeded"),
+        "{r:?}"
+    );
+    assert!(start.elapsed() < std::time::Duration::from_secs(60));
+}
+
 #[test]
 fn every_config_problem_at_its_position_the_same_for_every_command() {
     let d = tmp();
@@ -417,8 +451,8 @@ fn migrate_fixture(name: &str) -> String {
     .unwrap()
 }
 
-fn yaml(text: &str) -> serde_yaml_ng::Value {
-    serde_yaml_ng::from_str(text).unwrap_or_else(|e| panic!("invalid YAML ({e}): {text}"))
+fn yaml(text: &str) -> serde_json::Value {
+    mote_engine::yaml::from_str(text).unwrap_or_else(|e| panic!("invalid YAML ({e}): {text}"))
 }
 
 /// `init --from` writes one starter holding init's proposals and the migration, with the same
@@ -478,8 +512,8 @@ fn init_from_merges_the_migration_into_the_starter() {
     assert_eq!(r.code, 0, "{r:?}");
     let (init, migrated) = (yaml(&text), yaml(&r.stdout));
     assert_eq!(init["rules"], migrated["rules"]);
-    let excludes = init["exclude"].as_sequence().unwrap();
-    for g in migrated["exclude"].as_sequence().unwrap() {
+    let excludes = init["exclude"].as_array().unwrap();
+    for g in migrated["exclude"].as_array().unwrap() {
         assert!(excludes.contains(g), "{g:?}");
     }
 

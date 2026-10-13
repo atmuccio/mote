@@ -22,8 +22,10 @@
 // (`MIT OR Apache-2.0`), the first alternative, in the preference order below, whose licenses are
 // all allowed by deny.toml and all have a text in the package is used, and only its texts are
 // reproduced. A crate whose package ships no usable text needs an entry in supplements.json that
-// points at a verbatim copy of the upstream text under scripts/licenses/texts/; without one the
-// script fails. A crate whose license is not allowed by deny.toml always fails.
+// points at a verbatim copy of the upstream text under scripts/licenses/texts/ (`file`, or `files`
+// when the crate's code is under several copyright holders' texts of that license, all reproduced;
+// `notice` adds a notice the license asks to pass on); without one the script fails. A crate
+// whose license is not allowed by deny.toml always fails.
 
 import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
@@ -116,9 +118,11 @@ function loadSupplements() {
   if (!existsSync(file)) return [];
   const data = JSON.parse(readFileSync(file, 'utf8'));
   for (const e of data.entries ?? []) {
-    if (!Array.isArray(e.crates) || !e.version || !e.license || !e.file || !e.source) {
-      fail(`supplements.json: every entry needs crates, version, license, file and source: ${JSON.stringify(e)}`);
+    const files = e.files ?? (e.file ? [e.file] : []);
+    if (!Array.isArray(e.crates) || !e.version || !e.license || files.length === 0 || !e.source) {
+      fail(`supplements.json: every entry needs crates, version, license, file (or files) and source: ${JSON.stringify(e)}`);
     }
+    e.files = files;
   }
   return data.entries ?? [];
 }
@@ -305,17 +309,26 @@ function analyzePackage(pkg, allowed, supplements) {
       texts.get(id).push({ file, text });
     }
   }
+  // A supplement's texts are all reproduced (and its notice, if any), not only the first.
+  const supplied = new Map(); // id -> [{ file, text, supplement, notice }]
   for (const s of supplements) {
     if (!s.crates.includes(pkg.name) || s.version !== pkg.version) continue;
-    const file = join(HERE, s.file);
-    if (!existsSync(file)) {
-      problems.push(`${pkg.name} ${pkg.version}: its package ships no ${s.license} text; save the upstream text (${s.source}) verbatim as scripts/licenses/${s.file}`);
-      continue;
+    const entries = [];
+    for (const [name, notice] of [...s.files.map((f) => [f, false]), ...(s.notice ? [[s.notice, true]] : [])]) {
+      const file = join(HERE, name);
+      if (!existsSync(file)) {
+        problems.push(`${pkg.name} ${pkg.version}: its package ships no usable ${s.license} ${notice ? 'notice' : 'text'}; save the upstream text (${s.source}) verbatim as scripts/licenses/${name}`);
+        continue;
+      }
+      const text = normalizeText(readFileSync(file, 'utf8'));
+      if (!notice && !classify(text).includes(s.license)) problems.push(`scripts/licenses/${name} does not look like a ${s.license} text`);
+      entries.push({ file: `scripts/licenses/${name}`, text, supplement: s.source, notice });
     }
-    const text = normalizeText(readFileSync(file, 'utf8'));
-    if (!classify(text).includes(s.license)) problems.push(`scripts/licenses/${s.file} does not look like a ${s.license} text`);
-    if (!texts.has(s.license)) texts.set(s.license, []);
-    texts.get(s.license).push({ file: `scripts/licenses/${s.file}`, text, supplement: s.source });
+    if (entries.length === s.files.length + (s.notice ? 1 : 0)) {
+      if (!texts.has(s.license)) texts.set(s.license, []);
+      texts.get(s.license).push(entries[0]);
+      supplied.set(s.license, [...(supplied.get(s.license) ?? []), ...entries]);
+    }
   }
 
   const chosen = permitted.find((ids) => ids.every((id) => texts.has(id)));
@@ -326,7 +339,7 @@ function analyzePackage(pkg, allowed, supplements) {
     }
     return { expression, problems, chosen: permitted[0], used: [], nested: [] };
   }
-  const used = chosen.map((id) => ({ id, ...texts.get(id)[0] }));
+  const used = chosen.flatMap((id) => (supplied.get(id) ?? [texts.get(id)[0]]).map((t) => ({ id, ...t })));
 
   // License files of code vendored deeper inside the package (C sources, data tables).
   const nested = findLicenseFiles(dir, NESTED_DEPTH)
@@ -400,7 +413,7 @@ function render(packages, results, targets) {
   for (const p of packages) {
     const r = results.get(p.id);
     for (const u of r.used) {
-      const where = u.supplement ? `upstream text, ${u.supplement}` : u.file;
+      const where = u.supplement ? `upstream ${u.notice ? 'notice' : 'text'}, ${u.supplement}` : u.file;
       add(u.id, u.text, `${p.name} ${p.version} (${where})`);
     }
     for (const n of r.nested) add(n.id, n.text, `${p.name} ${p.version} (${n.file}, code vendored in the crate)`);

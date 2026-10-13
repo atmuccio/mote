@@ -189,6 +189,14 @@ names are not counted as fixed.
 
 ## Internals worth knowing
 
+* **YAML** (`yaml.rs`): `.mote.yaml`, triage files and ESLint YAML configurations are parsed
+  with granit-parser (a YAML 1.2 event parser in safe Rust) into a tree whose nodes keep the
+  line and column libyaml gave them, and read by the module's own serde deserializer with the
+  reading Mote has always had (YAML 1.2 core schema; a plain scalar read as written where a
+  string is expected; `on`/`yes` are strings; aliases expanded, `<<` an ordinary key; one
+  document). Configuration problems are located by walking that tree. Reading is bounded for
+  untrusted files: 16 MiB of text (1 MiB for a configuration), 1,000,000 values, 100,000 values
+  added by aliases, nesting 256 deep; a configuration error lists at most 1,000 problems.
 * **Cache key** = xxh3-128(cache format version, engine version, plugin id + version, effective
   rule-set hash, git blob id, test flag, analysis-settings hash, **path**). The path is included
   because plugins receive it and may use it. The analysis-settings hash is the file's: computed

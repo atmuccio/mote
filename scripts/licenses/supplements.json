@@ -2,8 +2,9 @@
   "_comment": [
     "License texts for crates whose published package ships none (generate.mjs reads this file).",
     "Each entry applies to the listed crates at exactly `version`: after an upgrade the script fails",
-    "until someone has checked the upstream text again and updated `version`. `file` is relative to",
-    "scripts/licenses/ and must be a verbatim copy of `source` at the matching release."
+    "until someone has checked the upstream text again and updated `version`. `file` (or `files`, all",
+    "reproduced) and `notice` (a notice the license asks to pass on) are relative to scripts/licenses/",
+    "and must be verbatim copies of `source` at the matching release."
   ],
   "entries": [
     {
@@ -34,6 +35,14 @@
       "license": "MIT",
       "file": "texts/oxc-index-vec-LICENSE",
       "source": "https://github.com/oxc-project/oxc-index-vec/blob/v4.1.0/LICENSE"
+    },
+    {
+      "crates": ["granit-parser"],
+      "version": "2.0.0",
+      "license": "MIT",
+      "files": ["texts/granit-parser-ChenYuheng-MIT", "texts/granit-parser-Ethiraric-MIT"],
+      "notice": "texts/granit-parser-LICENSE",
+      "source": "https://github.com/bourumir-wyngs/granit-parser/tree/d2bde4f175c206405d5a33a048c5041eccb59bf8 (v2.0.0: .licenses/ChenYuheng-MIT, .licenses/Ethiraric-MIT, LICENSE)"
     }
   ]
 }

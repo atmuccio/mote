@@ -46,6 +46,7 @@ pub mod suppress;
 pub mod triage;
 pub mod vendored;
 pub mod worktree;
+pub mod yaml;
 
 pub use config::{
     CompiledConfig, Config, ConfigError, ConfigProblem, ForeignRule, ForeignRuleNames, JavaConfig,

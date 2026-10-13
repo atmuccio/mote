@@ -25,6 +25,7 @@ reproduced below.
 | anstyle-parse | 1.0.0 | MIT OR Apache-2.0 | [MIT](#mit) | https://github.com/rust-cli/anstyle.git |
 | anstyle-query | 1.1.5 | MIT OR Apache-2.0 | [MIT](#mit) | https://github.com/rust-cli/anstyle.git |
 | anstyle-wincon | 3.0.11 | MIT OR Apache-2.0 | [MIT](#mit) | https://github.com/rust-cli/anstyle.git |
+| arraydeque | 0.5.1 | MIT/Apache-2.0 | [MIT](#mit) | https://github.com/andylokandy/arraydeque |
 | autocfg | 1.5.1 | Apache-2.0 OR MIT | [MIT](#mit) | https://github.com/cuviper/autocfg |
 | bitflags | 2.13.2 | MIT OR Apache-2.0 | [MIT](#mit) | https://github.com/bitflags/bitflags |
 | bstr | 1.13.1 | MIT OR Apache-2.0 | [MIT](#mit) | https://github.com/BurntSushi/bstr |
@@ -52,6 +53,7 @@ reproduced below.
 | fastrand | 2.5.0 | Apache-2.0 OR MIT | [MIT](#mit) | https://github.com/smol-rs/fastrand |
 | find-msvc-tools | 0.1.14 | MIT OR Apache-2.0 | [MIT](#mit) | https://github.com/rust-lang/cc-rs |
 | globset | 0.4.20 | Unlicense OR MIT | [MIT](#mit) | https://github.com/BurntSushi/ripgrep/tree/master/crates/globset |
+| granit-parser | 2.0.0 | MIT OR Apache-2.0 | [MIT](#mit) | https://github.com/bourumir-wyngs/granit-parser |
 | hashbrown | 0.17.1 | MIT OR Apache-2.0 | [MIT](#mit) | https://github.com/rust-lang/hashbrown |
 | heck | 0.5.0 | MIT OR Apache-2.0 | [MIT](#mit) | https://github.com/withoutboats/heck |
 | icu_collections | 2.3.0 | Unicode-3.0 | [Unicode-3.0](#unicode-30) | https://github.com/unicode-org/icu4x |
@@ -132,7 +134,6 @@ reproduced below.
 | serde_derive | 1.0.229 | MIT OR Apache-2.0 | [MIT](#mit) | https://github.com/serde-rs/serde |
 | serde_derive_internals | 0.30.0 | MIT OR Apache-2.0 | [MIT](#mit) | https://github.com/serde-rs/serde |
 | serde_json | 1.0.151 | MIT OR Apache-2.0 | [MIT](#mit) | https://github.com/serde-rs/json |
-| serde_yaml_ng | 0.10.0 | MIT | [MIT](#mit) | https://github.com/acatton/serde-yaml-ng |
 | sha1_smol | 1.0.1 | BSD-3-Clause | [BSD-3-Clause](#bsd-3-clause) | https://github.com/mitsuhiko/sha1-smol |
 | sharded-slab | 0.1.7 | MIT | [MIT](#mit) | https://github.com/hawkw/sharded-slab |
 | shlex | 2.0.1 | MIT OR Apache-2.0 | [MIT](#mit) | https://github.com/comex/rust-shlex |
@@ -164,7 +165,6 @@ reproduced below.
 | unicode-ident | 1.0.26 | (MIT OR Apache-2.0) AND Unicode-3.0 | [MIT](#mit) AND [Unicode-3.0](#unicode-30) | https://github.com/dtolnay/unicode-ident |
 | unicode-segmentation | 1.13.3 | MIT OR Apache-2.0 | [MIT](#mit) | https://github.com/unicode-rs/unicode-segmentation |
 | unicode-width | 0.2.2 | MIT OR Apache-2.0 | [MIT](#mit) | https://github.com/unicode-rs/unicode-width |
-| unsafe-libyaml | 0.2.11 | MIT | [MIT](#mit) | https://github.com/dtolnay/unsafe-libyaml |
 | utf8_iter | 1.0.4 | Apache-2.0 OR MIT | [MIT](#mit) | https://github.com/hsivonen/utf8_iter |
 | utf8parse | 0.2.2 | Apache-2.0 OR MIT | [MIT](#mit) | https://github.com/alacritty/vte |
 | walkdir | 2.5.0 | Unlicense/MIT | [MIT](#mit) | https://github.com/BurntSushi/walkdir |
@@ -174,7 +174,7 @@ reproduced below.
 | writeable | 0.6.4 | Unicode-3.0 | [Unicode-3.0](#unicode-30) | https://github.com/unicode-org/icu4x |
 | xxhash-rust | 0.8.18 | BSL-1.0 | [BSL-1.0](#bsl-10) | https://github.com/DoumanAsh/xxhash-rust |
 | yoke | 0.8.3 | Unicode-3.0 | [Unicode-3.0](#unicode-30) | https://github.com/unicode-org/icu4x |
-| yoke-derive | 0.8.3 | Unicode-3.0 | [Unicode-3.0](#unicode-30) | https://github.com/unicode-org/icu4x |
+| yoke-derive | 0.8.4 | Unicode-3.0 | [Unicode-3.0](#unicode-30) | https://github.com/unicode-org/icu4x |
 | zerofrom | 0.1.8 | Unicode-3.0 | [Unicode-3.0](#unicode-30) | https://github.com/unicode-org/icu4x |
 | zerofrom-derive | 0.1.8 | Unicode-3.0 | [Unicode-3.0](#unicode-30) | https://github.com/unicode-org/icu4x |
 | zerotrie | 0.2.5 | Unicode-3.0 | [Unicode-3.0](#unicode-30) | https://github.com/unicode-org/icu4x |
@@ -186,7 +186,7 @@ reproduced below.
 
 ### MIT
 
-#### MIT, text 1 of 54
+#### MIT, text 1 of 57
 
 Used by: aho-corasick 1.1.5 (LICENSE-MIT); globset 0.4.20 (LICENSE-MIT); ignore 0.4.33 (LICENSE-MIT); memchr 2.8.3 (LICENSE-MIT); walkdir 2.5.0 (LICENSE-MIT).
 
@@ -214,9 +214,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-#### MIT, text 2 of 54
+#### MIT, text 2 of 57
 
-Used by: allocator-api2 0.2.21 (LICENSE-MIT); displaydoc 0.2.7 (LICENSE-MIT); dyn-clone 1.0.20 (LICENSE-MIT); fastrand 2.5.0 (LICENSE-MIT); itoa 1.0.18 (LICENSE-MIT); once_cell 1.21.4 (LICENSE-MIT); pin-project-lite 0.2.17 (LICENSE-MIT); proc-macro2 1.0.107 (LICENSE-MIT); quote 1.0.47 (LICENSE-MIT); ref-cast 1.0.27 (LICENSE-MIT); ref-cast-impl 1.0.27 (LICENSE-MIT); rustc-hash 2.1.3 (LICENSE-MIT); rustversion 1.0.23 (LICENSE-MIT); semver 1.0.28 (LICENSE-MIT); seq-macro 0.3.6 (LICENSE-MIT); serde 1.0.229 (LICENSE-MIT); serde_core 1.0.229 (LICENSE-MIT); serde_derive 1.0.229 (LICENSE-MIT); serde_derive_internals 0.30.0 (LICENSE-MIT); serde_json 1.0.151 (LICENSE-MIT); siphasher 1.0.4 (LICENSE-MIT); syn 2.0.119 (LICENSE-MIT); syn 3.0.6 (LICENSE-MIT); thiserror 2.0.21 (LICENSE-MIT); thiserror-impl 2.0.21 (LICENSE-MIT); unicode-id-start 1.5.0 (LICENSE-MIT); unicode-ident 1.0.26 (LICENSE-MIT); unsafe-libyaml 0.2.11 (LICENSE-MIT); zmij 1.0.23 (LICENSE-MIT).
+Used by: allocator-api2 0.2.21 (LICENSE-MIT); displaydoc 0.2.7 (LICENSE-MIT); dyn-clone 1.0.20 (LICENSE-MIT); fastrand 2.5.0 (LICENSE-MIT); itoa 1.0.18 (LICENSE-MIT); once_cell 1.21.4 (LICENSE-MIT); pin-project-lite 0.2.17 (LICENSE-MIT); proc-macro2 1.0.107 (LICENSE-MIT); quote 1.0.47 (LICENSE-MIT); ref-cast 1.0.27 (LICENSE-MIT); ref-cast-impl 1.0.27 (LICENSE-MIT); rustc-hash 2.1.3 (LICENSE-MIT); rustversion 1.0.23 (LICENSE-MIT); semver 1.0.28 (LICENSE-MIT); seq-macro 0.3.6 (LICENSE-MIT); serde 1.0.229 (LICENSE-MIT); serde_core 1.0.229 (LICENSE-MIT); serde_derive 1.0.229 (LICENSE-MIT); serde_derive_internals 0.30.0 (LICENSE-MIT); serde_json 1.0.151 (LICENSE-MIT); siphasher 1.0.4 (LICENSE-MIT); syn 2.0.119 (LICENSE-MIT); syn 3.0.6 (LICENSE-MIT); thiserror 2.0.21 (LICENSE-MIT); thiserror-impl 2.0.21 (LICENSE-MIT); unicode-id-start 1.5.0 (LICENSE-MIT); unicode-ident 1.0.26 (LICENSE-MIT); zmij 1.0.23 (LICENSE-MIT).
 
 ```text
 Permission is hereby granted, free of charge, to any
@@ -244,7 +244,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-#### MIT, text 3 of 54
+#### MIT, text 3 of 57
 
 Used by: anstream 1.0.0 (LICENSE-MIT); anstyle 1.0.14 (LICENSE-MIT); anstyle-parse 1.0.0 (LICENSE-MIT); anstyle-query 1.1.5 (LICENSE-MIT); anstyle-wincon 3.0.11 (LICENSE-MIT); clap 4.6.7 (LICENSE-MIT); clap_builder 4.6.7 (LICENSE-MIT); clap_derive 4.6.7 (LICENSE-MIT); clap_lex 1.1.1 (LICENSE-MIT); colorchoice 1.0.5 (LICENSE-MIT); is_terminal_polyfill 1.70.2 (LICENSE-MIT); once_cell_polyfill 1.70.2 (LICENSE-MIT).
 
@@ -270,7 +270,35 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### MIT, text 4 of 54
+#### MIT, text 4 of 57
+
+Used by: arraydeque 0.5.1 (LICENSE).
+
+```text
+The MIT License (MIT)
+
+Copyright (c) 2018 Andy Lok <andylokandy@hotmail.com>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+#### MIT, text 5 of 57
 
 Used by: autocfg 1.5.1 (LICENSE-MIT).
 
@@ -302,7 +330,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-#### MIT, text 5 of 54
+#### MIT, text 6 of 57
 
 Used by: bitflags 2.13.2 (LICENSE-MIT); log 0.4.34 (LICENSE-MIT); num-bigint 0.4.8 (LICENSE-MIT); num-integer 0.1.47 (LICENSE-MIT); num-traits 0.2.19 (LICENSE-MIT); regex 1.13.1 (LICENSE-MIT); regex-automata 0.4.18 (LICENSE-MIT); regex-syntax 0.8.11 (LICENSE-MIT).
 
@@ -334,7 +362,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-#### MIT, text 6 of 54
+#### MIT, text 7 of 57
 
 Used by: bstr 1.13.1 (LICENSE-MIT).
 
@@ -362,7 +390,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-#### MIT, text 7 of 54
+#### MIT, text 8 of 57
 
 Used by: castaway 0.2.4 (LICENSE).
 
@@ -390,7 +418,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### MIT, text 8 of 54
+#### MIT, text 9 of 57
 
 Used by: cc 1.5.1 (LICENSE-MIT); cfg-if 1.0.5 (LICENSE-MIT); find-msvc-tools 0.1.14 (LICENSE-MIT).
 
@@ -422,7 +450,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-#### MIT, text 9 of 54
+#### MIT, text 10 of 57
 
 Used by: cobs 0.3.0 (LICENSE-MIT).
 
@@ -448,7 +476,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### MIT, text 10 of 54
+#### MIT, text 11 of 57
 
 Used by: compact_str 0.9.1 (LICENSE).
 
@@ -476,7 +504,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### MIT, text 11 of 54
+#### MIT, text 12 of 57
 
 Used by: cow-utils 0.1.3 (LICENSE).
 
@@ -504,7 +532,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### MIT, text 12 of 54
+#### MIT, text 13 of 57
 
 Used by: crossbeam-deque 0.8.8 (LICENSE-MIT); crossbeam-epoch 0.9.21 (LICENSE-MIT); crossbeam-utils 0.8.23 (LICENSE-MIT).
 
@@ -538,7 +566,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-#### MIT, text 13 of 54
+#### MIT, text 14 of 57
 
 Used by: either 1.18.0 (LICENSE-MIT); itertools 0.14.0 (LICENSE-MIT).
 
@@ -570,7 +598,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-#### MIT, text 14 of 54
+#### MIT, text 15 of 57
 
 Used by: embedded-io 0.4.0 (LICENSE-MIT).
 
@@ -602,7 +630,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-#### MIT, text 15 of 54
+#### MIT, text 16 of 57
 
 Used by: embedded-io 0.6.1 (LICENSE-MIT).
 
@@ -634,7 +662,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-#### MIT, text 16 of 54
+#### MIT, text 17 of 57
 
 Used by: equivalent 1.0.2 (LICENSE-MIT).
 
@@ -666,7 +694,85 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-#### MIT, text 17 of 54
+#### MIT, text 18 of 57
+
+Used by: granit-parser 2.0.0 (upstream text, https://github.com/bourumir-wyngs/granit-parser/tree/d2bde4f175c206405d5a33a048c5041eccb59bf8 (v2.0.0: .licenses/ChenYuheng-MIT, .licenses/Ethiraric-MIT, LICENSE)).
+
+```text
+The MIT License (MIT)
+
+Copyright (c) 2015 Chen Yuheng
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+#### MIT, text 19 of 57
+
+Used by: granit-parser 2.0.0 (upstream text, https://github.com/bourumir-wyngs/granit-parser/tree/d2bde4f175c206405d5a33a048c5041eccb59bf8 (v2.0.0: .licenses/ChenYuheng-MIT, .licenses/Ethiraric-MIT, LICENSE)).
+
+```text
+The MIT License (MIT)
+
+Copyright (c) 2023 Ethiraric
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+#### MIT, text 20 of 57
+
+Used by: granit-parser 2.0.0 (upstream notice, https://github.com/bourumir-wyngs/granit-parser/tree/d2bde4f175c206405d5a33a048c5041eccb59bf8 (v2.0.0: .licenses/ChenYuheng-MIT, .licenses/Ethiraric-MIT, LICENSE)).
+
+```text
+Inherited license notices:
+
+Code up to and including commit `da52a68615f2ecdd6b7e4567019f280c433c1521` is licensed by Chen Yuheng under either of:
+  - [Apache License, Version 2.0](.licenses/ChenYuheng-Apache) (http://www.apache.org/licenses/LICENSE-2.0)
+  - [MIT License](.licenses/ChenYuheng-MIT) (http://opensource.org/licenses/MIT)
+
+Code modifications starting with commit `1d71a23b151dcc12b289d0f06d8207dd9c764216` (included) are licensed by Ethiraric under either of:
+  - [Apache License, Version 2.0](.licenses/Ethiraric-Apache) (http://www.apache.org/licenses/LICENSE-2.0)
+  - [MIT License](.licenses/Ethiraric-MIT) (http://opensource.org/licenses/MIT)
+
+granit-parser modification notice:
+
+Modifications after commit `825edf857426d034954523fed19599635cbb5043` are Copyright (c) 2026 Bourumir Wyngs and licensed under MIT OR Apache-2.0.
+
+Redistributions of this Work must include all inherited and new license notices, including the notices for Chen Yuheng, Ethiraric, and Bourumir Wyngs.
+```
+
+#### MIT, text 21 of 57
 
 Used by: hashbrown 0.17.1 (LICENSE-MIT).
 
@@ -698,7 +804,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-#### MIT, text 18 of 54
+#### MIT, text 22 of 57
 
 Used by: heck 0.5.0 (LICENSE-MIT); unicode-segmentation 1.13.3 (LICENSE-MIT); unicode-width 0.2.2 (LICENSE-MIT).
 
@@ -730,7 +836,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-#### MIT, text 19 of 54
+#### MIT, text 23 of 57
 
 Used by: indexmap 2.14.2 (LICENSE-MIT).
 
@@ -762,7 +868,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-#### MIT, text 20 of 54
+#### MIT, text 24 of 57
 
 Used by: lazy_static 1.5.0 (LICENSE-MIT); rayon 1.12.0 (LICENSE-MIT); rayon-core 1.13.0 (LICENSE-MIT).
 
@@ -794,7 +900,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-#### MIT, text 21 of 54
+#### MIT, text 25 of 57
 
 Used by: libc 0.2.189 (LICENSE-MIT).
 
@@ -826,7 +932,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-#### MIT, text 22 of 54
+#### MIT, text 26 of 57
 
 Used by: libmimalloc-sys 0.1.49 (LICENSE.txt); mimalloc 0.1.52 (LICENSE.txt).
 
@@ -858,7 +964,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-#### MIT, text 23 of 54
+#### MIT, text 27 of 57
 
 Used by: libmimalloc-sys 0.1.49 (c_src/mimalloc/v2/LICENSE, code vendored in the crate); libmimalloc-sys 0.1.49 (c_src/mimalloc/v3/LICENSE, code vendored in the crate).
 
@@ -886,7 +992,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### MIT, text 24 of 54
+#### MIT, text 28 of 57
 
 Used by: matchers 0.2.0 (LICENSE); sharded-slab 0.1.7 (LICENSE).
 
@@ -912,7 +1018,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### MIT, text 25 of 54
+#### MIT, text 29 of 57
 
 Used by: nonmax 0.5.5 (LICENSE-MIT).
 
@@ -938,7 +1044,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### MIT, text 26 of 54
+#### MIT, text 30 of 57
 
 Used by: nu-ansi-term 0.50.3 (LICENSE).
 
@@ -967,7 +1073,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### MIT, text 27 of 54
+#### MIT, text 31 of 57
 
 Used by: owo-colors 4.4.0 (LICENSE).
 
@@ -995,7 +1101,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### MIT, text 28 of 54
+#### MIT, text 32 of 57
 
 Used by: oxc_allocator 0.133.0 (upstream text, https://github.com/oxc-project/oxc/blob/crates_v0.133.0/LICENSE); oxc_ast 0.133.0 (upstream text, https://github.com/oxc-project/oxc/blob/crates_v0.133.0/LICENSE); oxc_ast_macros 0.133.0 (upstream text, https://github.com/oxc-project/oxc/blob/crates_v0.133.0/LICENSE); oxc_ast_visit 0.133.0 (upstream text, https://github.com/oxc-project/oxc/blob/crates_v0.133.0/LICENSE); oxc_data_structures 0.133.0 (upstream text, https://github.com/oxc-project/oxc/blob/crates_v0.133.0/LICENSE); oxc_diagnostics 0.133.0 (upstream text, https://github.com/oxc-project/oxc/blob/crates_v0.133.0/LICENSE); oxc_ecmascript 0.133.0 (upstream text, https://github.com/oxc-project/oxc/blob/crates_v0.133.0/LICENSE); oxc_estree 0.133.0 (upstream text, https://github.com/oxc-project/oxc/blob/crates_v0.133.0/LICENSE); oxc_index 4.1.0 (upstream text, https://github.com/oxc-project/oxc-index-vec/blob/v4.1.0/LICENSE); oxc_parser 0.133.0 (upstream text, https://github.com/oxc-project/oxc/blob/crates_v0.133.0/LICENSE); oxc_regular_expression 0.133.0 (upstream text, https://github.com/oxc-project/oxc/blob/crates_v0.133.0/LICENSE); oxc_semantic 0.133.0 (upstream text, https://github.com/oxc-project/oxc/blob/crates_v0.133.0/LICENSE); oxc_span 0.133.0 (upstream text, https://github.com/oxc-project/oxc/blob/crates_v0.133.0/LICENSE); oxc_str 0.133.0 (upstream text, https://github.com/oxc-project/oxc/blob/crates_v0.133.0/LICENSE); oxc_syntax 0.133.0 (upstream text, https://github.com/oxc-project/oxc/blob/crates_v0.133.0/LICENSE).
 
@@ -1024,7 +1130,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### MIT, text 29 of 54
+#### MIT, text 33 of 57
 
 Used by: percent-encoding 2.3.2 (LICENSE-MIT).
 
@@ -1056,7 +1162,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-#### MIT, text 30 of 54
+#### MIT, text 34 of 57
 
 Used by: phf 0.13.1 (LICENSE); phf_generator 0.13.1 (LICENSE); phf_macros 0.13.1 (LICENSE); phf_shared 0.13.1 (LICENSE).
 
@@ -1083,7 +1189,7 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ```
 
-#### MIT, text 31 of 54
+#### MIT, text 35 of 57
 
 Used by: postcard 1.1.3 (LICENSE-MIT).
 
@@ -1115,7 +1221,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-#### MIT, text 32 of 54
+#### MIT, text 36 of 57
 
 Used by: quick-xml 0.42.0 (LICENSE-MIT.md).
 
@@ -1145,7 +1251,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-#### MIT, text 33 of 54
+#### MIT, text 37 of 57
 
 Used by: redb 4.3.0 (LICENSE-MIT).
 
@@ -1171,7 +1277,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### MIT, text 34 of 54
+#### MIT, text 38 of 57
 
 Used by: same-file 1.0.6 (LICENSE-MIT); winapi-util 0.1.11 (LICENSE-MIT).
 
@@ -1199,7 +1305,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-#### MIT, text 35 of 54
+#### MIT, text 39 of 57
 
 Used by: schemars 1.2.2 (LICENSE); schemars_derive 1.2.2 (LICENSE).
 
@@ -1227,36 +1333,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### MIT, text 36 of 54
-
-Used by: serde_yaml_ng 0.10.0 (LICENSE).
-
-```text
-                                  MIT License
-
-Copyright 2024 Antoine Catton
-Copyright 2016-2024 David Tolnay
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of
-this software and associated documentation files (the “Software”), to deal in
-the Software without restriction, including without limitation the rights to
-use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
-of the Software, and to permit persons to whom the Software is furnished to do
-so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
-
-#### MIT, text 37 of 54
+#### MIT, text 40 of 57
 
 Used by: shlex 2.0.1 (LICENSE-MIT).
 
@@ -1284,7 +1361,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-#### MIT, text 38 of 54
+#### MIT, text 41 of 57
 
 Used by: smallvec 1.16.2 (LICENSE-MIT).
 
@@ -1316,7 +1393,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-#### MIT, text 39 of 54
+#### MIT, text 42 of 57
 
 Used by: smawk 0.3.3 (LICENSE).
 
@@ -1344,7 +1421,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### MIT, text 40 of 54
+#### MIT, text 43 of 57
 
 Used by: stable_deref_trait 1.2.1 (LICENSE-MIT).
 
@@ -1376,7 +1453,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-#### MIT, text 41 of 54
+#### MIT, text 44 of 57
 
 Used by: static_assertions 1.1.0 (LICENSE-MIT).
 
@@ -1404,7 +1481,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### MIT, text 42 of 54
+#### MIT, text 45 of 57
 
 Used by: streaming-iterator 0.1.9 (LICENSE-MIT).
 
@@ -1430,7 +1507,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### MIT, text 43 of 54
+#### MIT, text 46 of 57
 
 Used by: strsim 0.11.1 (LICENSE).
 
@@ -1460,7 +1537,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### MIT, text 44 of 54
+#### MIT, text 47 of 57
 
 Used by: synstructure 0.14.0 (LICENSE).
 
@@ -1474,7 +1551,7 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ```
 
-#### MIT, text 45 of 54
+#### MIT, text 48 of 57
 
 Used by: textwrap 0.16.4 (LICENSE).
 
@@ -1502,7 +1579,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### MIT, text 46 of 54
+#### MIT, text 49 of 57
 
 Used by: thread_local 1.1.10 (LICENSE-MIT).
 
@@ -1534,7 +1611,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-#### MIT, text 47 of 54
+#### MIT, text 50 of 57
 
 Used by: tracing 0.1.44 (LICENSE); tracing-attributes 0.1.31 (LICENSE); tracing-core 0.1.36 (LICENSE); tracing-log 0.2.0 (LICENSE); tracing-serde 0.2.0 (LICENSE); tracing-subscriber 0.3.23 (LICENSE).
 
@@ -1566,7 +1643,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-#### MIT, text 48 of 54
+#### MIT, text 51 of 57
 
 Used by: tracing-core 0.1.36 (src/spin/LICENSE, code vendored in the crate).
 
@@ -1594,7 +1671,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### MIT, text 49 of 54
+#### MIT, text 52 of 57
 
 Used by: tree-sitter 0.27.0 (LICENSE); tree-sitter-language 0.1.8 (LICENSE).
 
@@ -1622,7 +1699,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### MIT, text 50 of 54
+#### MIT, text 53 of 57
 
 Used by: tree-sitter 0.27.0 (src/wasm-stdlib/libc/LICENSE, code vendored in the crate).
 
@@ -1822,7 +1899,7 @@ permissive licensing, and of not having licensing issues being an
 obstacle to adoption, that text has been removed.
 ```
 
-#### MIT, text 51 of 54
+#### MIT, text 54 of 57
 
 Used by: tree-sitter-java-orchard 0.5.22 (LICENSE).
 
@@ -1850,7 +1927,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### MIT, text 52 of 54
+#### MIT, text 55 of 57
 
 Used by: utf8_iter 1.0.4 (LICENSE-MIT).
 
@@ -1882,7 +1959,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-#### MIT, text 53 of 54
+#### MIT, text 56 of 57
 
 Used by: utf8parse 0.2.2 (LICENSE-MIT).
 
@@ -1914,7 +1991,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-#### MIT, text 54 of 54
+#### MIT, text 57 of 57
 
 Used by: windows-link 0.2.1 (license-mit); windows-sys 0.61.2 (license-mit).
 
@@ -2043,7 +2120,7 @@ DEALINGS IN THE SOFTWARE.
 
 #### Unicode-3.0, text 1 of 2
 
-Used by: icu_collections 2.3.0 (LICENSE); icu_locale_core 2.3.0 (LICENSE); icu_locale_fallback 2.3.0 (LICENSE); icu_locale_fallback_data 2.3.0 (LICENSE); icu_provider 2.3.1 (LICENSE); icu_segmenter 2.3.0 (LICENSE); icu_segmenter_data 2.3.0 (LICENSE); litemap 0.8.3 (LICENSE); potential_utf 0.1.6 (LICENSE); tinystr 0.8.4 (LICENSE); writeable 0.6.4 (LICENSE); yoke 0.8.3 (LICENSE); yoke-derive 0.8.3 (LICENSE); zerofrom 0.1.8 (LICENSE); zerofrom-derive 0.1.8 (LICENSE); zerotrie 0.2.5 (LICENSE); zerovec 0.11.8 (LICENSE); zerovec-derive 0.11.6 (LICENSE).
+Used by: icu_collections 2.3.0 (LICENSE); icu_locale_core 2.3.0 (LICENSE); icu_locale_fallback 2.3.0 (LICENSE); icu_locale_fallback_data 2.3.0 (LICENSE); icu_provider 2.3.1 (LICENSE); icu_segmenter 2.3.0 (LICENSE); icu_segmenter_data 2.3.0 (LICENSE); litemap 0.8.3 (LICENSE); potential_utf 0.1.6 (LICENSE); tinystr 0.8.4 (LICENSE); writeable 0.6.4 (LICENSE); yoke 0.8.3 (LICENSE); yoke-derive 0.8.4 (LICENSE); zerofrom 0.1.8 (LICENSE); zerofrom-derive 0.1.8 (LICENSE); zerotrie 0.2.5 (LICENSE); zerovec 0.11.8 (LICENSE); zerovec-derive 0.11.6 (LICENSE).
 
 ```text
 UNICODE LICENSE V3

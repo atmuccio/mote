@@ -57,6 +57,20 @@ to the results JSON bumps its `format_version`); such changes are listed under *
   failed to parse before and a few old misparses (for example `case X -> a = b` read as a
   lambda). Java analysis caches are invalidated once (plugin version 5).
 
+- **YAML reader:** `.mote.yaml`, triage files and ESLint YAML configurations are now parsed with
+  granit-parser, a YAML 1.2 parser in safe Rust, and read by Mote's own layer on top of it. It
+  replaces `serde_yaml_ng`, whose libyaml port `unsafe-libyaml` is no longer maintained
+  (RUSTSEC-2024-0449). No configuration change is needed: values, defaults, error messages and
+  their `FILE:LINE:COLUMN` positions read as before (`on`, `off`, `yes`, `no` are still strings;
+  a plain `0.1` is still read as written where a string is expected; a quoted number is still not
+  a number). What differs, only in rare or invalid files: in text that is not valid YAML, the
+  first syntax error is sometimes worded or placed differently; a file that starts with a byte
+  order mark is read (with several lines it used to fail with "more than one document"), and its
+  first-line columns no longer count the mark; NEL, line separator and paragraph separator
+  characters are no longer line breaks (as in YAML 1.2); a flow-mapping key broken over two lines,
+  which libyaml refused, is read as one key; a key that is a sequence or mapping is shown in flow
+  style in "unknown key" messages (`[a, b]`).
+
 ### Fixed
 
 - **Java 23 Markdown documentation comments:** a run of `///` lines before a declaration
@@ -71,6 +85,18 @@ to the results JSON bumps its `format_version`); such changes are listed under *
   notes. `////` lines, `///` after code, and jbang's `///usr/bin/env` shebang and directives
   (`///DEPS …`) are never documentation. Findings on code without `///` comments are
   unchanged; Java analysis caches are invalidated once (plugin version 6).
+
+### Security
+
+- **Untrusted YAML:** reading YAML is bounded, so a configuration or triage file from a pull
+  request cannot make a scan slow or use much memory: aliases that expand to more than 100,000
+  values ("billion laughs"), more than 1,000,000 values, nesting deeper than 256 levels, a text over
+  16 MiB and a configuration over 1 MiB are refused with an error naming the file. A
+  configuration with more than 1,000 problems lists the first 1,000 (`(more than 1000 problems;
+  the first 1000 are listed)`), and problems are located without reading the file again for each
+  one: a configuration with 20,000 unknown keys took nearly three minutes to check and now takes a
+  tenth of a second; 100,000 nested brackets took nearly a minute to refuse and now take a fifth
+  of a second. See [docs/cli.md](docs/cli.md#configuration-errors).
 
 ## [0.1.0] - 2026-10-11
 

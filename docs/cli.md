@@ -1055,6 +1055,12 @@ error: invalid configuration in .mote.yaml (6 problems):
   (`error`, `warn`, `0`–`2`, `[level, options]`) get the Mote setting to write instead.
 * Positions are those of the key in error (an unknown key or rule id) or of the value. A
   configuration read from a revision (`scan --rev`) is named `REV:.mote.yaml`.
+* A configuration can come from an untrusted pull request, so reading it is bounded: a file over
+  1 MiB, aliases (`*name`) that expand to more than 100,000 values, more than 1,000,000 values
+  or nesting deeper than 256 levels are refused with a configuration error, and a file with more
+  than 1,000 problems lists the first 1,000 (`(more than 1000 problems; the first 1000 are
+  listed)`). Triage files and ESLint YAML configurations are read with the same bounds (up to
+  16 MiB).
 
 For a Java file, `config explain` also prints the Java release rules see and where it came
 from: `java release: 17 (backend/pom.xml: maven.compiler.release)`, `java release: 21

@@ -224,7 +224,7 @@ impl TriageFile {
         if text.trim().is_empty() {
             return Ok(TriageFile::default());
         }
-        let raw: RawFile = serde_yaml_ng::from_str(text).map_err(|e| e.to_string())?;
+        let raw: RawFile = crate::yaml::from_str(text).map_err(|e| e.to_string())?;
         if let Some(v) = raw.version {
             if v != TRIAGE_FILE_VERSION {
                 return Err(format!(

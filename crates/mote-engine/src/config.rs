@@ -21,6 +21,7 @@ mod problems;
 use crate::grades::Grade;
 use crate::registry::{CatalogEntry, Registry};
 use crate::suppress::{CompatSet, COMPAT_SOURCES};
+use crate::yaml;
 use globset::{GlobBuilder, GlobMatcher, GlobSet, GlobSetBuilder};
 use mote_core::{ActiveRule, ParamValue, RuleSet, RuleStatus, Severity};
 use problems::{key_path, path_text, suggest, Pending, Seg};
@@ -37,6 +38,13 @@ use xxhash_rust::xxh3::Xxh3;
 
 /// Engine version (the crate version), checked against the config's `mote` requirement.
 pub const ENGINE_VERSION: &str = env!("CARGO_PKG_VERSION");
+
+/// The most problems a configuration error lists. A file with more (a hostile one, say) is still
+/// checked in bounded time, and the listing says that it stops there.
+pub const MAX_LISTED_PROBLEMS: usize = 1000;
+
+/// The largest configuration text read, in bytes (1 MiB; configurations are a few kilobytes).
+pub const MAX_CONFIG_BYTES: usize = 1 << 20;
 
 /// Config file names looked up at the repository root, in order.
 pub const CONFIG_FILE_NAMES: [&str; 2] = [".mote.yaml", ".mote.yml"];
@@ -714,14 +722,27 @@ pub struct ConfigError {
     /// A parse failure keeps the configuration without the entries in error, so that
     /// [`complete`](Self::complete) can validate the rest too.
     partial: Option<Box<Config>>,
+    /// More problems than [`MAX_LISTED_PROBLEMS`] were found; `problems` has the first ones.
+    more: bool,
 }
 
 impl ConfigError {
     fn new(path: Option<&Path>, problems: Vec<ConfigProblem>) -> Self {
-        ConfigError {
+        let mut e = ConfigError {
             path: path.map(Path::to_path_buf),
             problems,
             partial: None,
+            more: false,
+        };
+        e.cap();
+        e
+    }
+
+    /// Keep the first [`MAX_LISTED_PROBLEMS`] problems in file order.
+    fn cap(&mut self) {
+        if self.problems.len() > MAX_LISTED_PROBLEMS {
+            self.problems.truncate(MAX_LISTED_PROBLEMS);
+            self.more = true;
         }
     }
 
@@ -731,8 +752,10 @@ impl ConfigError {
     pub fn complete(mut self, registry: &Registry) -> ConfigError {
         if let Some(partial) = self.partial.take() {
             if let Err(more) = partial.validate(registry) {
+                self.more |= more.more;
                 self.problems.extend(more.problems);
                 problems::sort_problems(&mut self.problems);
+                self.cap();
             }
         }
         self
@@ -766,7 +789,15 @@ impl fmt::Display for ConfigError {
                 if let Some(file) = &file {
                     write!(f, " in {file}")?;
                 }
-                write!(f, " ({} problems):", problems.len())?;
+                if self.more {
+                    write!(
+                        f,
+                        " (more than {MAX_LISTED_PROBLEMS} problems; the first {} are listed):",
+                        problems.len()
+                    )?;
+                } else {
+                    write!(f, " ({} problems):", problems.len())?;
+                }
                 for p in problems {
                     match at(p) {
                         at if at.is_empty() => write!(f, "\n  {}", p.message)?,
@@ -807,6 +838,15 @@ impl Config {
     }
 
     fn parse(text: &str, path: Option<&Path>) -> Result<Config, ConfigError> {
+        if text.len() > MAX_CONFIG_BYTES {
+            return Err(ConfigError::new(
+                path,
+                vec![ConfigProblem::new(format!(
+                    "the file is too large for a configuration ({} bytes; the limit is {MAX_CONFIG_BYTES})",
+                    text.len()
+                ))],
+            ));
+        }
         let source = ConfigSource::new(path, text);
         if text.trim().is_empty() {
             return Ok(Config {
@@ -814,11 +854,19 @@ impl Config {
                 ..Config::default()
             });
         }
-        match serde_yaml_ng::from_str::<Config>(text) {
+        let (document, error) = yaml::load_partial(text);
+        if let Some(e) = error {
+            // The first problem in reading order, as a streaming parser finds it: a key twice or
+            // an integer beyond 64 bits before the place where the text stops being YAML.
+            let first = yaml::check_generic(&document).err().unwrap_or(e);
+            let problems = problems::resolve(Some(text), vec![problems::not_yaml(&first)]);
+            return Err(ConfigError::new(path, problems));
+        }
+        match yaml::from_node::<Config>(&document) {
             Ok(config) => Ok(Config { source, ..config }),
             Err(e) => {
                 // Find every problem, not only the first one the parser stops at.
-                let (pending, partial) = problems::check_document(text, &e);
+                let (pending, partial) = problems::check_document(&document, &e);
                 Err(ConfigError {
                     partial: partial.map(|c| Box::new(Config { source, ..c })),
                     ..ConfigError::new(path, problems::resolve(Some(text), pending))
@@ -1257,6 +1305,10 @@ impl<'a> RuleCheck<'a> {
     ) {
         let section_text = path_text(section);
         for (key, cfg) in rules {
+            if problems.len() > MAX_LISTED_PROBLEMS {
+                // The listing stops there; the closest rule ids are not worth looking for.
+                return;
+            }
             let at = child(section, key);
             let ctx = format!("{section_text}.{key}");
             let entries: Vec<&CatalogEntry> = if is_glob(key) {
@@ -1342,6 +1394,9 @@ impl<'a> RuleCheck<'a> {
 fn check_path_globs(at: &[Seg], globs: &[String], problems: &mut Vec<Pending>) {
     let ctx = path_text(at);
     for (i, g) in globs.iter().enumerate() {
+        if problems.len() > MAX_LISTED_PROBLEMS {
+            return;
+        }
         for pat in expand_path_glob(g) {
             if let Err(e) = GlobBuilder::new(&pat).literal_separator(true).build() {
                 let mut path = at.to_vec();
@@ -1825,7 +1880,7 @@ mod tests {
 
     #[test]
     fn yaml_off_is_a_string() {
-        let v: serde_yaml_ng::Value = serde_yaml_ng::from_str("x: off").unwrap();
+        let v: serde_json::Value = yaml::from_str("x: off").unwrap();
         assert!(v["x"].is_string());
     }
 
@@ -2172,7 +2227,8 @@ metrics: { depth: deep }
         assert!(!legacy.contains("spotbugs") && !legacy.contains("intellij"));
         // Serialized as written.
         let c = Config::from_yaml_str("suppressions: { compat: [pmd] }").unwrap();
-        let back = Config::from_yaml_str(&serde_yaml_ng::to_string(&c).unwrap()).unwrap();
+        // (JSON is YAML.)
+        let back = Config::from_yaml_str(&serde_json::to_string(&c).unwrap()).unwrap();
         assert_eq!(back, c);
         // The cache key depends on the selected sources, not on how they are written.
         let hash = |yaml: &str| {
@@ -2568,7 +2624,7 @@ overrides:
     fn json_schema_accepts_what_the_parser_accepts() {
         let schema = Config::json_schema();
         let check = |yaml: &str| {
-            let v: serde_json::Value = serde_yaml_ng::from_str(yaml).unwrap();
+            let v: serde_json::Value = yaml::from_str(yaml).unwrap();
             (
                 Config::from_yaml_str(yaml).is_ok(),
                 valid(&schema, &schema, &v),
@@ -2612,6 +2668,83 @@ overrides:
         ] {
             assert_eq!(check(yaml), (false, false), "{yaml}");
         }
+    }
+
+    /// A configuration can come from an untrusted pull request: whatever it holds, reading and
+    /// checking it ends quickly with a configuration error.
+    #[test]
+    fn hostile_configurations_fail_fast() {
+        let start = std::time::Instant::now();
+        let reg = registry(vec![FakePlugin::boxed("fk")]);
+        let problems = |text: &str| match Config::from_yaml_named(text, ".mote.yaml") {
+            Ok(c) => c.validate(&reg).unwrap_err().to_string(),
+            Err(e) => e.complete(&reg).to_string(),
+        };
+        // Aliases that expand a billion times.
+        let mut laughs = String::from("a0: &a0 [lol, lol, lol, lol, lol, lol, lol, lol, lol]\n");
+        for i in 1..10 {
+            let p = i - 1;
+            laughs.push_str(&format!(
+                "a{i}: &a{i} [*a{p}, *a{p}, *a{p}, *a{p}, *a{p}, *a{p}, *a{p}, *a{p}, *a{p}]\n"
+            ));
+        }
+        assert_eq!(
+            problems(&laughs),
+            "invalid configuration in .mote.yaml:6:10: not valid YAML: repetition limit exceeded (aliases expand to more than 100000 values)"
+        );
+        // Deep nesting.
+        let deep = format!("rules: {}{}", "[".repeat(5000), "]".repeat(5000));
+        assert!(problems(&deep).contains("not valid YAML: recursion limit exceeded"));
+        let deep = format!("rules:\n{}x\n", "- ".repeat(5000));
+        assert!(problems(&deep).contains("not valid YAML"));
+        // A huge scalar: refused for its size.
+        let huge = format!("mote: \"{}\"\n", "x".repeat(MAX_CONFIG_BYTES));
+        assert_eq!(
+            problems(&huge),
+            format!(
+                "invalid configuration in .mote.yaml: the file is too large for a configuration ({} bytes; the limit is 1048576)",
+                huge.len()
+            )
+        );
+        // Many unknown keys, rules and values: the first ones are listed.
+        let mut many = String::new();
+        for i in 0..10_000 {
+            many.push_str(&format!("unknown_{i}: 1\n"));
+        }
+        many.push_str("rules:\n");
+        for i in 0..6_000 {
+            many.push_str(&format!(
+                "  fk/no-such-rule-{i}: off\n  fk/bad-level-{i}: loud\n"
+            ));
+        }
+        let e = problems(&many);
+        assert!(
+            e.starts_with(
+                "invalid configuration in .mote.yaml (more than 1000 problems; the first 1000 are listed):\n  .mote.yaml:1:1: unknown key `unknown_0`"
+            ),
+            "{}",
+            &e[..e.len().min(300)]
+        );
+        assert_eq!(e.lines().count(), 1001);
+        // Validation of a configuration that parses stops there too.
+        let valid_yaml = many
+            .replace("unknown_", "# unknown_")
+            .replace(": loud", ": off");
+        let e = Config::from_yaml_str(&valid_yaml)
+            .unwrap()
+            .validate(&reg)
+            .unwrap_err()
+            .to_string();
+        assert!(
+            e.contains("(more than 1000 problems; the first 1000 are listed)"),
+            "{}",
+            &e[..e.len().min(200)]
+        );
+        assert!(
+            start.elapsed() < std::time::Duration::from_secs(60),
+            "{:?}",
+            start.elapsed()
+        );
     }
 
     #[test]
