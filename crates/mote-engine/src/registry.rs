@@ -285,6 +285,10 @@ pub struct RuleInfo {
     pub description: String,
     pub remediation_minutes: u32,
     pub origin: RuleOrigin,
+    /// The rule offers fixes (`mote fix`) for its findings. An addition: false when read from
+    /// results written before it existed.
+    #[serde(default)]
+    pub fixable: bool,
 }
 
 /// A rule parameter with its default.
@@ -321,6 +325,7 @@ impl RuleInfo {
             description: m.description.to_string(),
             remediation_minutes: m.remediation_minutes,
             origin: e.origin,
+            fixable: m.fixable,
         }
     }
 }

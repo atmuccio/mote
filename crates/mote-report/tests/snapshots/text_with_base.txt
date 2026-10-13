@@ -1,4 +1,4 @@
-src/a/Order Service.java:3:5    HIGH    java/self-assignment       Remove this self-assignment of `total` | it has no effect [new]
+src/a/Order Service.java:3:5    HIGH    java/self-assignment       Remove this self-assignment of `total` | it has no effect [new] [fixable]
 src/a/Order Service.java:20:10  MEDIUM  java/cognitive-complexity  Reduce the cognitive complexity of `total` from 22 to 15 [worsened]
 src/a/Order Service.java:40:1   MEDIUM  java/duplicated-block      This block of 21 lines is duplicated in 1 other place [new]
 
@@ -21,3 +21,4 @@ Quality gate  FAILED
   FAIL  Duplication on new code            55.3% (<= 3.0%)
   pass  Coverage on new code               80.0% (>= 80.0%)
   FAIL  Maintainability grade on new code  E (B or better)
+1 finding can be fixed automatically: `mote fix` shows the changes, `mote fix --write` applies them

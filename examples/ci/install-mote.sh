@@ -1,7 +1,7 @@
 #!/bin/sh
 # Install a Mote release binary: download the archive for this machine, verify its SHA-256, extract.
 #
-#   MOTE_VERSION=0.1.0 sh install-mote.sh [DEST_DIR]      # DEST_DIR defaults to ./.mote-bin
+#   MOTE_VERSION=0.2.0 sh install-mote.sh [DEST_DIR]      # DEST_DIR defaults to ./.mote-bin
 #   export PATH="$PWD/.mote-bin:$PATH"
 #
 # Copy this file into your repository rather than piping it from the network. It prints the path of
@@ -14,7 +14,7 @@ set -eu
 
 version=${MOTE_VERSION:-}
 if [ -z "$version" ]; then
-  echo "install-mote: set MOTE_VERSION, e.g. MOTE_VERSION=0.1.0" >&2
+  echo "install-mote: set MOTE_VERSION, e.g. MOTE_VERSION=0.2.0" >&2
   exit 2
 fi
 version=${version#v}

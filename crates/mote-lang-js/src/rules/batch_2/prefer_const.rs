@@ -48,7 +48,14 @@ With the `destructuring` parameter set to `any`, a declaration whose variables a
 reassigned (`let { a, b } = obj; b = 1;`) is reported too, naming the variables that could be
 `const` (the declaration has to be split). Top-level `let` in non-module scripts is not reported:
 another script can assign it.
+
+**Fix available.** `mote fix` replaces `let` with `const` in a declaration none of whose
+variables is ever assigned again and each of which has a value (or which heads a `for…of` /
+`for…in` loop): the bindings behave the same, `const` only forbids an assignment that never
+happens. Declarations that need moving (`let x; x = …;`) or splitting are reported but not
+fixed.
 "#,
+    fixable: true,
     ..RuleMeta::new(
         "js/prefer-const",
         "js",
@@ -137,7 +144,17 @@ impl JsRule for PreferConst {
                 listed()
             ),
         };
-        ctx.emit(keyword, message);
+        let emitted = ctx.emit(keyword, message);
+        if !reassigned {
+            emitted.fix(
+                "Declare with `const`",
+                vec![Edit::replace(
+                    keyword.start as usize,
+                    keyword.end as usize,
+                    "const",
+                )],
+            );
+        }
     }
 }
 

@@ -513,6 +513,7 @@ impl<'a> Ctx<'a> {
             symbol: self.facts.symbol_at(span.start).map(str::to_string),
             value: None,
             secondary: Vec::new(),
+            fix: None,
         };
         self.findings.push(finding);
         Emitted {
@@ -588,6 +589,16 @@ impl Emitted<'_> {
     pub fn symbol(mut self, symbol: impl Into<String>) -> Self {
         if let Some(f) = self.finding.as_deref_mut() {
             f.symbol = Some(symbol.into());
+        }
+        self
+    }
+
+    /// Attach a fix: byte-range edits of the source that remove the finding and cannot change
+    /// what the program does (see `RULE_AUTHORING.md`, "Fixes"). Only for rules whose
+    /// `RuleMeta` says `fixable: true`.
+    pub fn fix(mut self, description: impl Into<String>, edits: Vec<mote_core::Edit>) -> Self {
+        if let Some(f) = self.finding.as_deref_mut() {
+            f.fix = Some(mote_core::Fix::new(description, edits));
         }
         self
     }

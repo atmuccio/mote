@@ -62,7 +62,7 @@ impl<'t> JavaRule<'t> for UntypedToArrayCast {
         let Some(recv) = call.field(Field::Object) else {
             return;
         };
-        let Some(elem) = ty.field(Field::Element) else {
+        let Some(elem) = syntax::array_element(ty) else {
             return;
         };
         match kind(elem) {

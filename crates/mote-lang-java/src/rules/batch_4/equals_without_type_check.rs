@@ -68,7 +68,9 @@ impl<'t> JavaRule<'t> for EqualsWithoutTypeCheck {
         let (Some(param), None) = (params.next(), params.next()) else {
             return;
         };
-        let Some(ptype) = util::fld(param, F::Type) else {
+        // `equals(Object... o)` does not override `Object.equals`.
+        let Some(ptype) = util::fld(param, F::Type).filter(|_| kind(param) == "formal_parameter")
+        else {
             return;
         };
         if !matches!(ctx.text(ptype), "Object" | "java.lang.Object") {

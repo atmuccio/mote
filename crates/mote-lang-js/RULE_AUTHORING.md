@@ -438,6 +438,41 @@ needs at least one `expect:` line; most need a `.ts` variant too.
 no extension, so the most permissive grammar, TSX, is used): your rule must not panic on other
 rules' fixtures.
 
+### Fixes
+
+A rule may attach a **fix** to a finding: byte-range edits of the source that remove the finding
+*without changing what the program does*. `mote fix` applies them; the results JSON, SARIF and
+the MCP server carry them.
+
+```rust
+let keyword = Span::new(decl.span.start, decl.span.start + 3);
+ctx.emit(keyword, "Use 'const' instead of 'let'")
+    .fix(
+        "Declare with `const`",
+        vec![Edit::replace(keyword.start as usize, keyword.end as usize, "const")],
+    );
+```
+
+* Only for rewrites that are behaviour-preserving by construction: deleting something that has
+  no effect, reordering what the language does not order, spelling the same thing another way.
+  Where a case is not provably safe, emit the finding without a fix (a TypeScript import whose names are all unused, a backslash in a string that may have been meant for a regular expression). Set
+  `fixable: true` in the `RuleMeta` and say in the description what the fix does and why it
+  is safe (a "**Fix available.**" paragraph).
+* Edits are `Edit::replace(start, end, text)`, `Edit::delete(start, end)` and
+  `Edit::insert(at, text)` on byte offsets of `ctx.source()`; the edits of one fix must not
+  overlap. `fix::delete_span` deletes a statement or declaration together with its line when
+  nothing else is on it; `fix::line_break_at` gives the line break to use in inserted text
+  (CRLF files stay CRLF). The engine drops a fix whose edits fall outside the text or inside a
+  character, and never offers one on a suppressed finding.
+* `mote fix` applies every fix that does not conflict with another, analyzes the file again and
+  repeats (at most 10 passes), so a fix need not care about its neighbours. It discards all of a
+  file's changes when they would add a syntax error: a fix that breaks code is a bug.
+* Fixtures: `<fixture file name>.fixed` next to a fixture (`prefer-const.ts.fixed`) holds the
+  text after every fix of the rule is applied; each fixable rule needs at least one. Write them
+  with `MOTE_BLESS_FIXED=1 MOTE_FIXTURE=<rule-name> cargo test -p mote-lang-js --test
+  fixtures`, then read every changed line. For a case that must get no fix, a `.fixed` file
+  identical to the fixture checks that none is offered.
+
 ---
 
 ## 8. Severity and quality

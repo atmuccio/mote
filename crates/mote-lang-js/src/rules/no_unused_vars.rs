@@ -60,7 +60,17 @@ that are not exported, overloaded, merged, or ambient, and `private` / `#` metho
 that are not overloaded or decorated. Public methods (a subclass or an interface may share the
 signature) and type parameters of classes, interfaces, and type aliases (an unused one can
 deliberately tag a type) are left alone.
+
+**Fix available** for unused imports: `mote fix` deletes the unused name from its import
+(`import { a, b } from 'x'` → `import { a } from 'x'`); the module is imported as before. When
+no name of a JavaScript import is used, the import is kept for the module's side effects
+(`import 'x';`), as it ran the module before. A TypeScript import whose names are all unused is
+deleted only when it is `import type` (always erased); otherwise it is reported but not fixed,
+since whether TypeScript keeps it for its side effects depends on the compiler settings
+(`verbatimModuleSyntax`). Imports with comments, `import x = require(…)` and other
+declarations are not rewritten.
 "#,
+    fixable: true,
     ..RuleMeta::new(
         "js/no-unused-vars",
         "js",
@@ -99,7 +109,7 @@ impl JsRule for NoUnusedVars {
             ctx.is_module() || ctx.source_type().is_commonjs() || is_commonjs(ctx);
         let jsx_names = jsx_pragma_names(ctx);
         let caught_errors = ctx.param_bool("caught_errors");
-        let mut reports: Vec<(Span, String, &str, What)> = Vec::new();
+        let mut reports: Vec<(Span, String, &str, What, SymbolId)> = Vec::new();
 
         for symbol in scoping.symbol_ids() {
             let name = scoping.symbol_name(symbol);
@@ -117,6 +127,7 @@ impl JsRule for NoUnusedVars {
                         format!("Remove the unused type parameter '{name}'"),
                         name,
                         What::TypeParameter,
+                        symbol,
                     ));
                 }
                 continue;
@@ -190,7 +201,7 @@ impl JsRule for NoUnusedVars {
                 };
                 format!("Remove the unused {noun} '{name}'")
             };
-            reports.push((scoping.symbol_span(symbol), message, name, what));
+            reports.push((scoping.symbol_span(symbol), message, name, what, symbol));
         }
         if reports.is_empty() {
             return;
@@ -202,9 +213,22 @@ impl JsRule for NoUnusedVars {
         } else {
             FxHashSet::default()
         };
-        for (span, message, name, what) in reports {
-            if matches!(what, What::Parameter | What::CaughtError) || !documented.contains(name) {
-                ctx.emit(span, message);
+        reports.retain(|(_, _, name, what, _)| {
+            matches!(what, What::Parameter | What::CaughtError) || !documented.contains(name)
+        });
+        // The unused imports: a fix may remove a whole declaration when all its names are here.
+        let unused_imports: FxHashSet<SymbolId> = reports
+            .iter()
+            .filter(|r| r.3 == What::Import)
+            .map(|r| r.4)
+            .collect();
+        for (span, message, _, what, symbol) in reports {
+            let fix = (what == What::Import)
+                .then(|| import_fix(ctx, symbol, &unused_imports))
+                .flatten();
+            let emitted = ctx.emit(span, message);
+            if let Some((description, edits)) = fix {
+                emitted.fix(description, edits);
             }
         }
     }
@@ -250,6 +274,97 @@ fn jsdoc_names<'a>(ctx: &Ctx<'a>) -> FxHashSet<&'a str> {
         }
     }
     names
+}
+
+/// The fix of the unused import `symbol` (`unused`: every unused import of the file): delete
+/// its specifier (with the comma or braces that go with it), or, when no name of the declaration
+/// is used, turn a JavaScript import into a side-effect import and delete an `import type`.
+fn import_fix(
+    ctx: &Ctx<'_>,
+    symbol: SymbolId,
+    unused: &FxHashSet<SymbolId>,
+) -> Option<(&'static str, Vec<Edit>)> {
+    let spec_node = ctx.symbol_declaration(symbol);
+    let decl = ctx
+        .ancestors(spec_node)
+        .take(2)
+        .find_map(|n| match n.kind() {
+            AstKind::ImportDeclaration(d) => Some(d),
+            _ => None,
+        })?;
+    if decl.phase.is_some() || ctx.has_comments_in(decl.span) {
+        return None;
+    }
+    let specs = decl.specifiers.as_ref()?;
+    let id_of = |s: &ImportDeclarationSpecifier<'_>| s.local().symbol_id.get();
+    let this = specs.iter().position(|s| id_of(s) == Some(symbol))?;
+    let src = ctx.source();
+    let all_unused = specs
+        .iter()
+        .all(|s| id_of(s).is_some_and(|id| unused.contains(&id)));
+    if all_unused {
+        if decl.import_kind.is_type() {
+            let edit = fix::delete_span(src, decl.span.start as usize, decl.span.end as usize);
+            return Some(("Delete the unused import", vec![edit]));
+        }
+        if ctx.is_typescript() {
+            return None;
+        }
+        // `import a, { b } from 'x'` → `import 'x'`: from the first name (or its brace) to the
+        // module specifier.
+        let first = specs.first()?.span().start as usize;
+        let first = match specs.first()? {
+            ImportDeclarationSpecifier::ImportSpecifier(_) => src[..first].rfind('{')?,
+            _ => first,
+        };
+        let edit = Edit::delete(first, decl.source.span.start as usize);
+        return Some(("Keep only the module's side effects", vec![edit]));
+    }
+    let named: Vec<&ImportSpecifier<'_>> = specs
+        .iter()
+        .filter_map(|s| match s {
+            ImportDeclarationSpecifier::ImportSpecifier(n) => Some(&**n),
+            _ => None,
+        })
+        .collect();
+    let default = specs.iter().find_map(|s| match s {
+        ImportDeclarationSpecifier::ImportDefaultSpecifier(d) => Some(d.span),
+        _ => None,
+    });
+    let namespace = specs.iter().find_map(|s| match s {
+        ImportDeclarationSpecifier::ImportNamespaceSpecifier(n) => Some(n.span),
+        _ => None,
+    });
+    let span = specs[this].span();
+    let (start, end) = match &specs[this] {
+        ImportDeclarationSpecifier::ImportDefaultSpecifier(_) => {
+            // `import a, { b }` / `import a, * as ns`: up to what follows.
+            let next = match (namespace, named.first()) {
+                (Some(ns), _) => ns.start as usize,
+                (None, Some(first)) => src[..first.span.start as usize].rfind('{')?,
+                (None, None) => return None,
+            };
+            (span.start as usize, next)
+        }
+        ImportDeclarationSpecifier::ImportNamespaceSpecifier(_) => {
+            // `import a, * as ns`: from the end of the default import.
+            (default?.end as usize, span.end as usize)
+        }
+        ImportDeclarationSpecifier::ImportSpecifier(_) => {
+            let i = named.iter().position(|n| n.span == span)?;
+            if named.len() > 1 {
+                match named.get(i + 1) {
+                    Some(next) => (span.start as usize, next.span.start as usize),
+                    None => (named[i - 1].span.end as usize, span.end as usize),
+                }
+            } else {
+                // `import a, { b }` → `import a`: the braces go too.
+                let close = span.end as usize + src[span.end as usize..].find('}')? + 1;
+                (default?.end as usize, close)
+            }
+        }
+    };
+    Some(("Delete the unused import", vec![Edit::delete(start, end)]))
 }
 
 /// Is `name` referenced as a global anywhere in the file?

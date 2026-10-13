@@ -1,0 +1,23 @@
+interface User { name: string; friend?: User; greet?: () => string; tags?: string[] }
+declare const user: User | undefined;
+declare const cb: (() => void) | undefined;
+
+const a = user!.name; // expect: no-extra-non-null-assertion
+const b = user!.name; // expect: no-extra-non-null-assertion, no-extra-non-null-assertion
+const c = user?.name; // expect: no-extra-non-null-assertion
+cb?.(); // expect: no-extra-non-null-assertion
+const d = user?.tags?.[0]; // expect: no-extra-non-null-assertion
+const e = user?.friend?.name; // expect: no-extra-non-null-assertion
+
+// Single assertions and assertions not followed by `?.` are fine.
+const f = user!.name;
+const g = user?.friend!.name;
+const h = user!.friend?.name;
+const i = user?.greet!();
+const j = user!.tags![0];
+const k = !!user;
+const l = !user!;
+class Box {
+  #value?: User;
+  get name() { return this.#value!.name; }
+}

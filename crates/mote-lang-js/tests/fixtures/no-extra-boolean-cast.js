@@ -22,3 +22,10 @@ function shadow(Boolean) {
 }
 if (Boolean()) {}
 if (Boolean(...args)) {}
+const p1 = !!!(a || b); // expect: no-extra-boolean-cast
+const p2 = !Boolean(a || b); // expect: no-extra-boolean-cast
+const p3 = !Boolean((a) || b); // expect: no-extra-boolean-cast
+const p4 = !!(a = b) ? 1 : 2; // expect: no-extra-boolean-cast
+const p5 = Boolean(x => x) ? 1 : 2; // expect: no-extra-boolean-cast
+if (Boolean((a, b))) {} // expect: no-extra-boolean-cast
+const p6 = !Boolean((c)); // expect: no-extra-boolean-cast

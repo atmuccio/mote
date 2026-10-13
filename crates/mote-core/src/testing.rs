@@ -17,8 +17,18 @@
 //!   `mote-test: path src/main/Foo.java` sets the path the plugin sees.
 //!
 //! Only the rule under test is enabled, so fixtures are independent of each other.
+//!
+//! # Fixes
+//!
+//! For a rule that offers fixes ([`RuleMeta::fixable`]), the fixes of every fixture are applied
+//! the way `mote fix` applies them — all that do not conflict, then the file is analyzed again,
+//! until none is left — and the result must not have more syntax errors than the fixture. When
+//! a file `<fixture file name>.fixed` exists next to the fixture (`unused-import.java.fixed`),
+//! the result must equal its content. Every fixable rule needs at least one such file, and a
+//! rule whose findings carry fixes must be declared `fixable`.
 
-use crate::model::{ParamValue, RuleMeta};
+use crate::fix::{self, Fix};
+use crate::model::{ParamValue, RawFinding, RuleMeta};
 use crate::plugin::{ActiveRule, LanguagePlugin, RuleSet, SourceFile};
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
@@ -154,6 +164,79 @@ pub struct FixtureReport {
     pub expectations: usize,
     pub failures: Vec<String>,
     pub rules_without_fixtures: Vec<String>,
+    /// Fixable rules without a `.fixed` fixture (only when no filter is given).
+    pub rules_without_fix_fixtures: Vec<String>,
+}
+
+pub use crate::fix::MAX_PASSES as MAX_FIX_PASSES;
+
+/// What [`fix_to_fixpoint`] did.
+#[derive(Clone, Debug, Default)]
+pub struct FixRun {
+    /// The text after the last pass.
+    pub text: String,
+    /// Fixes applied, over all passes.
+    pub applied: usize,
+    /// Passes that applied at least one fix.
+    pub passes: usize,
+    /// Syntax errors of the original text and of the result.
+    pub syntax_errors: (u32, u32),
+    /// Fixes left after the last pass (more passes would have been needed).
+    pub remaining: usize,
+    /// Problems: invalid fixes offered, a pass that applied nothing although fixes were offered.
+    pub problems: Vec<String>,
+}
+
+/// Apply the fixes `rules` offer for `text` (as the file `path`) like `mote fix` does, until
+/// none is left or [`MAX_FIX_PASSES`] passes were made.
+pub fn fix_to_fixpoint(
+    plugin: &dyn LanguagePlugin,
+    path: &str,
+    is_test: bool,
+    text: &str,
+    rules: &RuleSet,
+) -> FixRun {
+    let analyze = |t: &str| {
+        let src = SourceFile {
+            path,
+            text: t,
+            is_test,
+        };
+        plugin.analyze(&src, rules)
+    };
+    let first = analyze(text);
+    let mut run = FixRun {
+        text: text.to_string(),
+        syntax_errors: (first.syntax_errors, first.syntax_errors),
+        ..FixRun::default()
+    };
+    let mut findings: Vec<RawFinding> = first.findings;
+    for _ in 0..MAX_FIX_PASSES {
+        let fixes: Vec<&Fix> = findings.iter().filter_map(|f| f.fix.as_ref()).collect();
+        if fixes.is_empty() {
+            break;
+        }
+        let applied = fix::apply(&run.text, &fixes);
+        for &i in &applied.invalid {
+            run.problems.push(format!(
+                "invalid fix `{}`: {:?}",
+                fixes[i].description, fixes[i].edits
+            ));
+        }
+        if applied.applied.is_empty() {
+            run.problems
+                .push("a pass applied no fix although fixes were offered".into());
+            break;
+        }
+        run.applied += applied.applied.len();
+        run.passes += 1;
+        run.text = applied.text;
+        let next = analyze(&run.text);
+        run.syntax_errors.1 = next.syntax_errors;
+        findings = next.findings;
+    }
+    run.remaining = findings.iter().filter(|f| f.fix.is_some()).count();
+    run
 }
 
 fn fixture_files(dir: &Path, exts: &[&str]) -> Vec<PathBuf> {
@@ -181,6 +264,7 @@ pub fn run_fixture_dir(
     let known: FxHashMap<&str, &RuleMeta> = metas.iter().map(|m| (m.id, *m)).collect();
     let mut report = FixtureReport::default();
     let mut covered: FxHashMap<String, usize> = FxHashMap::default();
+    let mut fixed_covered: FxHashMap<String, usize> = FxHashMap::default();
 
     for path in fixture_files(dir, plugin.extensions()) {
         let file_name = path.file_name().unwrap().to_string_lossy().to_string();
@@ -249,12 +333,80 @@ pub fn run_fixture_dir(
                 .failures
                 .push(format!("{file_name}:{line}: missing {id}"));
         }
+
+        let meta = known[fx.rule_id.as_str()];
+        let offers_fixes = analysis
+            .findings
+            .iter()
+            .any(|f| f.rule_id == fx.rule_id && f.fix.is_some());
+        if offers_fixes && !meta.fixable {
+            report.failures.push(format!(
+                "{file_name}: `{}` offers fixes but its RuleMeta does not say `fixable: true`",
+                fx.rule_id
+            ));
+        }
+        let fixed_path = path.with_file_name(format!("{file_name}.fixed"));
+        let expected_fix = std::fs::read_to_string(&fixed_path).ok();
+        if expected_fix.is_some() {
+            *fixed_covered.entry(fx.rule_id.clone()).or_default() += 1;
+        }
+        if meta.fixable && (offers_fixes || expected_fix.is_some()) {
+            let run = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                fix_to_fixpoint(plugin, src.path, fx.is_test, &text, &rules)
+            }));
+            let Ok(run) = run else {
+                report
+                    .failures
+                    .push(format!("{file_name}: plugin panicked on a fixed text"));
+                continue;
+            };
+            for p in &run.problems {
+                report.failures.push(format!("{file_name}: fix: {p}"));
+            }
+            if run.syntax_errors.1 > run.syntax_errors.0 {
+                report.failures.push(format!(
+                    "{file_name}: fixes raised the syntax errors from {} to {}:\n{}",
+                    run.syntax_errors.0, run.syntax_errors.1, run.text
+                ));
+            }
+            if run.remaining > 0 {
+                report.failures.push(format!(
+                    "{file_name}: {} fix(es) still offered after {MAX_FIX_PASSES} passes",
+                    run.remaining
+                ));
+            }
+            // `MOTE_BLESS_FIXED=1` writes the fixed text as the expected one (review the files!).
+            let bless = std::env::var_os("MOTE_BLESS_FIXED").is_some_and(|v| v == "1");
+            if bless && run.applied > 0 && expected_fix.as_deref() != Some(run.text.as_str()) {
+                std::fs::write(&fixed_path, &run.text).expect("write .fixed file");
+                *fixed_covered.entry(fx.rule_id.clone()).or_default() += 1;
+                continue;
+            }
+            match expected_fix {
+                Some(want) if want != run.text => {
+                    let line = want
+                        .lines()
+                        .zip(run.text.lines())
+                        .position(|(a, b)| a != b)
+                        .unwrap_or_else(|| want.lines().count().min(run.text.lines().count()));
+                    report.failures.push(format!(
+                        "{file_name}: fixed text differs from {file_name}.fixed (first at line {}):\n{}",
+                        line + 1,
+                        run.text
+                    ));
+                }
+                _ => {}
+            }
+        }
     }
 
     if filter.is_none() {
         for meta in &metas {
             if covered.get(meta.id).copied().unwrap_or(0) == 0 {
                 report.rules_without_fixtures.push(meta.id.to_string());
+            }
+            if meta.fixable && fixed_covered.get(meta.id).copied().unwrap_or(0) == 0 {
+                report.rules_without_fix_fixtures.push(meta.id.to_string());
             }
         }
     }
@@ -269,6 +421,11 @@ pub fn assert_fixtures(plugin: &dyn LanguagePlugin, dir: &Path) {
     let mut problems = report.failures.clone();
     for id in &report.rules_without_fixtures {
         problems.push(format!("rule `{id}` has no fixture with an `expect:` line"));
+    }
+    for id in &report.rules_without_fix_fixtures {
+        problems.push(format!(
+            "fixable rule `{id}` has no fixture with a `.fixed` file (the expected fixed text)"
+        ));
     }
     if !problems.is_empty() {
         panic!(
@@ -311,6 +468,12 @@ pub fn assert_all_rules_robust(plugin: &dyn LanguagePlugin, dir: &Path) {
                         problems.push(format!(
                             "{name}: {} reported at invalid line {}",
                             f.rule_id, f.range.start_line
+                        ));
+                    }
+                    if let Some(fix) = f.fix.as_ref().filter(|x| !x.is_valid_for(&text)) {
+                        problems.push(format!(
+                            "{name}: {} offers an invalid fix: {fix:?}",
+                            f.rule_id
                         ));
                     }
                 }

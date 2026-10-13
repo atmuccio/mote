@@ -115,7 +115,8 @@ impl LanguagePlugin for JsPlugin {
         //    test-suite callbacks (`describe(…, () => …)`) are containers, not functions, so
         //    function-level rules measure each test instead of the whole suite. (The engine cache
         //    version invalidates caches.)
-        4
+        // 5: findings of fixable rules carry a fix (`mote fix`).
+        5
     }
 
     fn rules(&self) -> Vec<&'static RuleMeta> {

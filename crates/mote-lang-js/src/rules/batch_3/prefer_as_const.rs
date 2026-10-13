@@ -27,7 +27,13 @@ let strict: true = true;            // flagged (string, number, and boolean lite
 let mode = 'dark' as const;         // compliant
 let mode: 'dark' | 'light' = 'dark'; // compliant: a wider type on purpose
 ```
+
+**Fix available.** `mote fix` writes `as const` in place of the repeated literal type (`'dark'
+as 'dark'` → `'dark' as const`), and for a variable moves it to the value (`let mode: 'dark' =
+'dark'` → `let mode = 'dark' as const`). The type is the same literal type, and types do not
+exist at run time. Class properties are reported but not rewritten.
 "#,
+    fixable: true,
     ..RuleMeta::new(
         "js/prefer-as-const",
         "js",
@@ -78,8 +84,47 @@ impl JsRule for PreferAsConst {
         } else {
             "Use 'as const' on the value instead of repeating it as the type"
         };
-        ctx.emit(lit.span, message);
+        let edits = if is_cast {
+            Some(vec![Edit::replace(
+                lit.span.start as usize,
+                lit.span.end as usize,
+                "const",
+            )])
+        } else if let AstKind::VariableDeclarator(decl) = node.kind() {
+            declarator_edits(ctx, decl, value)
+        } else {
+            None
+        };
+        let emitted = ctx.emit(lit.span, message);
+        if let Some(edits) = edits {
+            emitted.fix("Use `as const`", edits);
+        }
     }
+}
+
+/// `let x: 'a' = 'a'` → `let x = 'a' as const`: the annotation (from the end of the name) goes,
+/// ` as const` follows the value. Only for a plain name with nothing but the annotation between
+/// it and `=`.
+fn declarator_edits(
+    ctx: &Ctx<'_>,
+    decl: &VariableDeclarator<'_>,
+    value: &Expression<'_>,
+) -> Option<Vec<Edit>> {
+    let BindingPattern::BindingIdentifier(id) = &decl.id else {
+        return None;
+    };
+    let ann = decl.type_annotation.as_ref()?;
+    if decl.definite || ann.span.start < id.span.end || ctx.has_comments_in(decl.span) {
+        return None;
+    }
+    let between = ctx.text(Span::new(id.span.end, ann.span.end));
+    if !between.trim_start().starts_with(':') {
+        return None;
+    }
+    Some(vec![
+        Edit::delete(id.span.end as usize, ann.span.end as usize),
+        Edit::insert(value.span().end as usize, " as const"),
+    ])
 }
 
 fn same_literal(ty: &TSLiteral<'_>, value: &Expression<'_>) -> bool {

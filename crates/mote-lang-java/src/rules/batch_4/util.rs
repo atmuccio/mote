@@ -48,7 +48,7 @@ const FIELD_NAMES: [&str; 17] = [
 ];
 
 static FIELD_IDS: LazyLock<[u16; 17]> = LazyLock::new(|| {
-    let lang = tree_sitter::Language::new(tree_sitter_java::LANGUAGE);
+    let lang = tree_sitter::Language::new(tree_sitter_java_orchard::LANGUAGE);
     FIELD_NAMES.map(|n| lang.field_id_for_name(n).map(|f| f.get()).unwrap_or(0))
 });
 
@@ -370,12 +370,7 @@ pub(super) fn unescape(raw: &str) -> Option<String> {
 /// The simple name of a type node without type arguments or package: `Map` for
 /// `java.util.Map<K, V>`, `int` for `int`, `String` for `String[]`.
 pub(super) fn simple_type_name<'t>(ctx: &Ctx<'t>, ty: Node<'t>) -> &'t str {
-    let mut t = ty;
-    if kind(t) == "array_type" {
-        if let Some(e) = t.field(Field::Element) {
-            t = e;
-        }
-    }
+    let t = syntax::array_element(ty).unwrap_or(ty);
     let text = ctx.text(type_base(t));
     text.rsplit('.').next().unwrap_or(text).trim()
 }

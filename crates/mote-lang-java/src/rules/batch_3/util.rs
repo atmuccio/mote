@@ -3,7 +3,7 @@
 
 use crate::prelude::*;
 
-/// Field ids of tree-sitter-java, resolved once: `child_by_field_id` avoids the per-call
+/// Field ids of the Java grammar, resolved once: `child_by_field_id` avoids the per-call
 /// field-name lookup of `child_by_field_name` on hot paths (every method call, declaration…).
 pub(super) struct Fields {
     pub name: u16,
@@ -13,7 +13,7 @@ pub(super) struct Fields {
 }
 
 pub(super) static FIELDS: std::sync::LazyLock<Fields> = std::sync::LazyLock::new(|| {
-    let lang = tree_sitter::Language::new(tree_sitter_java::LANGUAGE);
+    let lang = tree_sitter::Language::new(tree_sitter_java_orchard::LANGUAGE);
     let id = |n: &str| lang.field_id_for_name(n).map_or(u16::MAX, |f| f.get());
     Fields {
         name: id("name"),

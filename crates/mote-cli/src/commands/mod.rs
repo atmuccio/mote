@@ -3,6 +3,7 @@
 pub mod compare;
 pub mod config;
 pub mod config_foreign;
+pub mod fix;
 pub mod gate;
 pub mod init;
 pub mod mcp;

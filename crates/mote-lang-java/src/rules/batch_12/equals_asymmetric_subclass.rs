@@ -131,8 +131,9 @@ impl<'t> JavaRule<'t> for EqualsAsymmetricSubclass<'t> {
                 return false;
             }
             let ty = n.field(Field::Right).or_else(|| {
-                n.field(Field::Pattern)
-                    .and_then(|p| named_children(p).find(|c| kind(*c) != "identifier"))
+                n.field(Field::Pattern).and_then(|p| {
+                    named_children(p).find(|c| !matches!(kind(*c), "identifier" | "modifiers"))
+                })
             });
             let Some(ty) = ty else { return false };
             let base = if kind(ty) == "generic_type" {

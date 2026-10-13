@@ -21,7 +21,10 @@ long timeout = 30000l;
 
 // Compliant
 long timeout = 30000L;
-```"#,
+```
+
+**Fix available.** `mote fix` writes the suffix as `L`: both spell the same `long` literal."#,
+    fixable: true,
     ..RuleMeta::new(
         "java/long-literal-lowercase",
         "java",
@@ -47,7 +50,12 @@ impl<'t> JavaRule<'t> for LongLiteralLowercase {
 
     fn check(&mut self, node: Node<'t>, ctx: &Ctx<'t>) {
         if let Some(digits) = ctx.text(node).strip_suffix('l') {
-            ctx.emit(node, format!("Use an uppercase `L` suffix: `{digits}L`"));
+            let end = node.end_byte();
+            ctx.emit(node, format!("Use an uppercase `L` suffix: `{digits}L`"))
+                .fix(
+                    "Write the suffix as `L`",
+                    vec![Edit::replace(end - 1, end, "L")],
+                );
         }
     }
 }

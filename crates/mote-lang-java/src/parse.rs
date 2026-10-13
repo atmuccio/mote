@@ -5,9 +5,6 @@
 //! them bounds the work on pathological inputs without making the result depend on machine load
 //! or thread count (a wall-clock deadline would, and the engine caches the result).
 
-#[path = "case_patterns.rs"]
-mod case_patterns;
-
 use crate::kinds::LANGUAGE;
 use std::cell::RefCell;
 use std::ops::ControlFlow;
@@ -66,9 +63,6 @@ pub(crate) fn parse(text: &str, budget: ParseBudget, timeout: Option<Duration>) 
             *slot = Some(p);
         }
         let parser = slot.as_mut()?;
-        // Same length and offsets as `text`; see `varargs` and `case_patterns`.
-        let text = crate::varargs::blank_varargs_annotations(text);
-        let text = case_patterns::blank_case_pattern_modifiers(text);
         let bytes = text.as_bytes();
         let len = bytes.len();
         let max_checks = budget.checks_for(len);
@@ -122,6 +116,31 @@ mod tests {
         // A zero timeout cancels too.
         assert!(parse(&big, ParseBudget::DEFAULT, Some(Duration::ZERO)).is_none());
         assert!(parse("class C {}", ParseBudget::DEFAULT, None).is_some());
+    }
+
+    /// Shapes tree-sitter-java 0.23 rejected, which Mote used to blank out before parsing: type
+    /// annotations on the ellipsis of a varargs parameter (Java 8) and annotations or `final` on
+    /// a `case` type pattern (Java 21). The grammar now reads them as written (their fixtures
+    /// `empty-catch-block.varargs-annotation.java` and `….case-pattern-modifiers.java` check
+    /// the positions of the findings around them).
+    #[test]
+    fn annotated_varargs_and_case_pattern_modifiers_parse() {
+        for src in [
+            "class A { void f(String @Nullable ... a) {} }",
+            "class A { void f(@Nullable Object @NonNull... xs) {} }",
+            "class A { void g(@Deprecated String @a.b.C(\"x\") @D(1)... v) {} }",
+            "class A { void h(String @A(x = {1}) ... v) {} }",
+            "class A { void k(String @A(1)\n  ... v) {} }",
+            "class A { int f(Object o) { return switch (o) {
+               case @SuppressWarnings(\"unused\") String s -> 1;
+               case final Integer i when i > 0 -> i;
+               case @SuppressWarnings({\"unused\", \"rawtypes\"})
+                   final java.util.List l -> 2;
+               default -> 0; }; } }",
+        ] {
+            let tree = parse(src, ParseBudget::DEFAULT, None).expect("tree");
+            assert!(!tree.root_node().has_error(), "{src}");
+        }
     }
 
     #[test]

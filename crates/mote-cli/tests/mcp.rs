@@ -94,6 +94,7 @@ fn protocol_basics() {
             "summary",
             "work_units",
             "findings",
+            "fixes",
             "rule",
             "verify",
             "explain_config"
@@ -139,6 +140,11 @@ fn protocol_basics() {
     let rule = ok(&call(&mut s, 15, "rule", json!({"id": "tl/high-bug"})));
     assert_eq!(rule["severity"], "HIGH");
     assert!(rule["description"].as_str().unwrap().contains("HIGHBUG"));
+    // The test plugin's rules are not in the embedded precision data.
+    assert_eq!(rule["precision"]["state"], "not-measured-yet", "{rule}");
+    assert!(rule["precision"]["repositories"]
+        .as_u64()
+        .is_some_and(|n| n > 0));
     // Responses from the client and unknown notifications get no reply.
     assert!(s
         .handle_line(r#"{"jsonrpc":"2.0","id":7,"result":{}}"#)
@@ -539,4 +545,66 @@ fn scan_with_a_baseline_and_a_triage_file() {
         .unwrap()
         .clone();
     assert!(scan["inputSchema"]["properties"]["baseline"].is_object());
+}
+
+#[test]
+fn fixes_tool_returns_edits_and_a_diff_without_writing() {
+    let d = tempfile::tempdir().unwrap();
+    let root = d.path();
+    let java = "package a;\n\nimport java.util.List;\n\nclass A {\n    long x = 10l;\n}\n";
+    write(root, "src/A.java", java);
+    let mut s = server(root);
+    let scan = ok(&call(&mut s, 1, "scan", json!({})));
+    let scan_id = scan["scan_id"].as_str().unwrap().to_string();
+
+    let found = ok(&call(
+        &mut s,
+        2,
+        "findings",
+        json!({"scan_id": scan_id, "rule": "java/long-literal-lowercase"}),
+    ));
+    let f = &found["files"][0]["findings"][0];
+    assert_eq!(
+        f["fix"],
+        json!({"description": "Write the suffix as `L`", "edits": [
+            {"line": 6, "col": 16, "end_line": 6, "end_col": 17, "text": "L"}
+        ]})
+    );
+    let long_id = f["id"].as_str().unwrap().to_string();
+
+    let all = ok(&call(&mut s, 3, "fixes", json!({"scan_id": scan_id})));
+    assert_eq!(all["total_files"], 1);
+    let file = &all["files"][0];
+    assert_eq!(file["path"], "src/A.java");
+    assert_eq!(file["fixes"].as_array().unwrap().len(), 2);
+    assert_eq!(
+        file["applied"],
+        json!({"java/long-literal-lowercase": 1, "java/unused-import": 1})
+    );
+    let diff = file["diff"].as_str().unwrap();
+    assert!(
+        diff.contains("-import java.util.List;\n") && diff.contains("+    long x = 10L;\n"),
+        "{diff}"
+    );
+    assert_eq!(read(root, "src/A.java"), java, "the server never writes");
+
+    let one_fix = ok(&call(
+        &mut s,
+        4,
+        "fixes",
+        json!({"scan_id": scan_id, "finding_id": long_id}),
+    ));
+    let diff = one_fix["files"][0]["diff"].as_str().unwrap();
+    assert!(
+        diff.contains("+    long x = 10L;\n") && !diff.contains("-import"),
+        "{diff}"
+    );
+
+    let none = call(
+        &mut s,
+        5,
+        "fixes",
+        json!({"scan_id": scan_id, "rule": "java/magic-*"}),
+    );
+    assert_eq!(none["result"]["isError"], true, "{none}");
 }

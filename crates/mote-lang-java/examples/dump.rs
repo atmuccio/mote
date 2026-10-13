@@ -16,7 +16,7 @@ use mote_lang_java::{timing, JavaPlugin};
 fn print_tree(src: &str) {
     let mut parser = tree_sitter::Parser::new();
     parser
-        .set_language(&tree_sitter_java::LANGUAGE.into())
+        .set_language(&tree_sitter_java_orchard::LANGUAGE.into())
         .expect("language");
     let Some(tree) = parser.parse(src, None) else {
         return;

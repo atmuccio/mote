@@ -54,7 +54,7 @@ name, check the ids already in `src/rules/` (`grep -r 'RuleMeta::new("java/' src
 
 The crate's own tests check every rule automatically: id prefix and kebab-case, unique ids,
 non-empty name/description, described parameters, and that every kind in `kinds()` is a real
-**named** node kind of tree-sitter-java (a typo would otherwise never fire).
+**named** node kind of the Java grammar (a typo would otherwise never fire).
 
 ## 3. Template
 
@@ -240,6 +240,20 @@ Do **not** call `node.parent()`, `node.next_named_sibling()`, `node.prev_named_s
 * `ctx.comments() -> &[Comment]` — complete in `finish`; during `check` only the comments that
   precede the current node. To react to comments during the walk, subscribe to
   `line_comment` / `block_comment` (Javadoc is a `block_comment` starting with `/**`).
+* **Documentation comments** (`doc`, in the prelude): a `/** … */` comment, or since Java 23
+  (JEP 467) a run of `///` lines on consecutive lines — each line is its own `line_comment`;
+  `////` lines, `///` after code on the same line, and jbang's `///usr/bin/env` shebang and
+  directives (`///DEPS …`) are plain comments.
+  `doc::doc_comment_before(ctx, decl, usage)` gives the comment directly before a declaration
+  (`DocComment::Javadoc(node)` / `DocComment::Markdown(lines)`, with `span()`, `lines(src)`
+  — content lines and their offsets — and `text(src)`, normalized for tag scanning);
+  `doc::is_markdown_line`, `doc::starts_run` and `doc::run_from` handle runs for rules
+  subscribed to `line_comment`. Whether `///` is documentation depends on the JDK whose
+  javadoc reads the code, not on the release it is compiled for, so the rule says how it uses
+  it: `ctx.markdown_docs(DocUse::Silences)` (documentation only removes findings: always
+  true) or `DocUse::Reports` (documentation produces findings: true only on a release known
+  to be 23 or later, as older code also writes `///` notes). An older or unknown release thus
+  never adds a finding.
 * `ctx.imports() -> &[Import]` — `path` (`java.util.List`, without `.*`), `is_static`,
   `is_wildcard`, `simple_name()`, `qualifier()`, `node`. Available from the first `check`.
 * `ctx.package_name()`, `ctx.header_end()` (byte offset where package/imports end).
@@ -310,20 +324,22 @@ conditions first (method name, operator, argument count) and call `type_of` last
   which skips comments. `syntax::children(node)` includes anonymous tokens and comments. Both
   read lists of up to 8 children by index (no allocation) and longer ones with a tree cursor;
   `first_named_child` never allocates.
-* `syntax::strip_parens`, `modifiers`, `has_modifier(decl, "static")`, `annotations(decl)`,
+* `syntax::strip_parens`, `modifiers`, `has_modifier(decl, "static")`, `modifier_keywords(mods)`,
+  `annotations(decl)`,
   `annotation_name(ann, src)`, `has_annotation(decl, src, "Override")`, `type_body(decl)`,
   `members(body)` (enum constants and `enum_body_declarations` flattened), `declarators`,
   `parameters(method)`, `arguments(call)`, `argument_count`, `operator(expr)`,
   `operator_str(expr)` (`"=="`, `"&&"`, `"+="`), `is_null_literal`, `is_string_literal`,
   `int_literal_value(node, src)`, `string_literal_content(node, src)`, `name_node`,
   `name_of(decl, src)`, `is_empty_block`, `block_has_comment`, `is_type_declaration`,
-  `is_method_like`, `is_function_like`, `first_named_child`, `child_of_kind`.
+  `is_method_like`, `is_function_like`, `first_named_child`, `child_of_kind`, `array_element(ty)`
+  (`int` for `int[][]`), `is_module_import(import)`.
 
 To see the tree for any snippet:
 `cargo run -p mote-lang-java --example dump -- Some.java --tree` prints every named node
 as `kind [field] line:col` (plus the findings, metrics and comments of the file).
 
-**Common kinds and fields** (tree-sitter-java 0.23.5; `?` optional, `*` repeated)
+**Common kinds and fields** (tree-sitter-java-orchard 0.5.22; `?` optional, `*` repeated)
 
 | Kind | Fields / children |
 |---|---|
@@ -333,11 +349,11 @@ as `kind [field] line:col` (plus the findings, metrics and comments of the file)
 | `record_declaration` | `name`, `parameters` (`formal_parameters`), `interfaces?`, `body` |
 | `annotation_type_declaration` | `name`, `body` |
 | `method_declaration` | `name`, `parameters`, `type`, `body?`, `type_parameters?`; children `modifiers`, `throws` |
-| `constructor_declaration` | `name`, `parameters`, `body` (`constructor_body`) |
+| `constructor_declaration` | `name`, `parameters`, `body` (`constructor_body`: statements and at most one `explicit_constructor_invocation`, which since Java 25 need not come first) |
 | `compact_constructor_declaration` | `name`, `body` |
 | `field_declaration` / `local_variable_declaration` / `constant_declaration` | `type`, `declarator`* (`variable_declarator`: `name`, `value?`, `dimensions?`) |
-| `formal_parameter` / `spread_parameter` | `type`, `name` / (type, `variable_declarator`) |
-| `modifiers` | anonymous keywords (`public`, `static`, `final`, …) and `annotation` / `marker_annotation` (`name`, `arguments?`) |
+| `formal_parameter` / `spread_parameter` | `type`, `name` / `modifiers?`, `type`, `annotations`* (on the ellipsis), child `variable_declarator` |
+| `modifiers` | `visibility` (`public`, `protected`, `private`) and `modifier` (`static`, `final`, `abstract`, …) nodes, each holding the anonymous keyword token, and `annotation` / `marker_annotation` (`name`, `arguments?`); read keywords with `syntax::modifier_keywords` / `has_modifier` |
 | `static_initializer`; instance initializer | `block`; a `block` directly in a `class_body` |
 | `enum_constant` | `name`, `arguments?`, `body?` |
 | `lambda_expression` | `parameters` (`identifier` / `inferred_parameters` / `formal_parameters`), `body` (block or expression) |
@@ -345,7 +361,7 @@ as `kind [field] line:col` (plus the findings, metrics and comments of the file)
 | `for_statement` | `init`*, `condition?`, `update`*, `body` |
 | `enhanced_for_statement` | `type`, `name`, `value`, `body` |
 | `while_statement` / `do_statement` | `condition`, `body` |
-| `switch_expression` (also switch *statements*) | `condition`, `body` (`switch_block`: `switch_block_statement_group`* or `switch_rule`*; `switch_label` = `case …` / `default`, may hold `pattern`, `guard`) |
+| `switch_expression` (also switch *statements*) | `condition`, `body` (`switch_block`: `switch_block_statement_group`* or `switch_rule`*; `switch_label` = `case …` / `default`, may hold one or more `pattern`s (`case A _, B _ ->`), `guard`) |
 | `try_statement` | `body`; children `catch_clause`*, `finally_clause?` |
 | `try_with_resources_statement` | `resources` (`resource_specification` → `resource`: `type`, `name`, `value`), `body`, catches, finally |
 | `catch_clause` | `body`; child `catch_formal_parameter` (`name`; child `catch_type` with one or more types) |
@@ -361,16 +377,20 @@ as `kind [field] line:col` (plus the findings, metrics and comments of the file)
 | `unary_expression` | `operator`, `operand`; `update_expression` (`x++`) has one child |
 | `assignment_expression` | `left`, `operator` (`=`, `+=`, …), `right` |
 | `ternary_expression` | `condition`, `consequence`, `alternative` |
-| `instanceof_expression` | `left`, `right?`, `name?` (pattern variable), `pattern?` |
+| `instanceof_expression` | `left`, `right?`, `name?` (pattern variable), `pattern?`; child `modifiers?` (`final`, annotations of the pattern) |
 | `cast_expression` | `type`, `value` |
 | `array_access` | `array`, `index`; `array_creation_expression`: `type`, `dimensions`, `value?` |
 | `method_reference`, `class_literal`, `this`, `super`, `parenthesized_expression` | |
 | literals | `string_literal` (text blocks too), `character_literal`, `decimal_integer_literal`, `hex_integer_literal`, `octal_integer_literal`, `binary_integer_literal`, `decimal_floating_point_literal`, `true`, `false`, `null_literal` |
-| names & types | `identifier`, `type_identifier`, `scoped_identifier`, `scoped_type_identifier`, `generic_type` (`type_arguments`), `array_type`, `integral_type`, `floating_point_type`, `boolean_type`, `void_type`, `wildcard` |
-| comments | `line_comment`, `block_comment` |
+| names & types | `identifier`, `type_identifier`, `scoped_identifier`, `scoped_type_identifier`, `generic_type` (`type_arguments`), `array_type` (`element`, `dimensions`; nested per dimension: the `element` of `int[][]` is `int[]`, see `syntax::array_element`), `integral_type`, `floating_point_type`, `boolean_type`, `void_type`, `wildcard` |
+| comments | `line_comment` (also Markdown doc comments `///`, Java 23), `block_comment` |
+| `import_declaration` | `static`? / `module` keyword, name (`identifier` / `scoped_identifier`), `asterisk`?; `import module java.base;` (Java 25) is not in `ctx.imports()` |
+| `type_pattern` / `record_pattern_component` | child `modifiers?`, type, name (`identifier`; `_` for an unnamed pattern variable) / `underscore_pattern` |
 
 Operators, keywords, and punctuation are anonymous nodes: they can't be subscribed to, but you
 can read them (`syntax::operator_str`, `syntax::has_modifier`, `kind(child) == "else"`).
+Modifier keywords are the exception that is wrapped: they sit inside `visibility` / `modifier`
+nodes (`syntax::modifier_keyword(child)` unwraps one).
 
 ## 8. Fixtures
 
@@ -399,6 +419,38 @@ skipped when the corpus is absent), then
 prints every finding of the rule over it with its symbol; read a sample of them. The
 harness runs the plugin without the engine, so no Java release is known; add
 `MOTE_JAVA_RELEASE=21` (SymmetricDS's release) for rules gated on one.
+
+### Fixes
+
+A rule may attach a **fix** to a finding: byte-range edits of the source that remove the finding
+*without changing what the program does*. `mote fix` applies them; the results JSON, SARIF and
+the MCP server carry them.
+
+```rust
+let end = node.end_byte();
+ctx.emit(node, format!("Use an uppercase `L` suffix: `{digits}L`"))
+    .fix("Write the suffix as `L`", vec![Edit::replace(end - 1, end, "L")]);
+```
+
+* Only for rewrites that are behaviour-preserving by construction: deleting something that has
+  no effect, reordering what the language does not order, spelling the same thing another way.
+  Where a case is not provably safe, emit the finding without a fix (a used `java.lang` import, a `;` that is the body of an `if`). Set
+  `fixable: true` in the `RuleMeta` and say in the description what the fix does and why it
+  is safe (a "**Fix available.**" paragraph).
+* Edits are `Edit::replace(start, end, text)`, `Edit::delete(start, end)` and
+  `Edit::insert(at, text)` on byte offsets of `ctx.source()`; the edits of one fix must not
+  overlap. `fix::delete_span` deletes a statement or declaration together with its line when
+  nothing else is on it; `fix::line_break_at` gives the line break to use in inserted text
+  (CRLF files stay CRLF). The engine drops a fix whose edits fall outside the text or inside a
+  character, and never offers one on a suppressed finding.
+* `mote fix` applies every fix that does not conflict with another, analyzes the file again and
+  repeats (at most 10 passes), so a fix need not care about its neighbours. It discards all of a
+  file's changes when they would add a syntax error: a fix that breaks code is a bug.
+* Fixtures: `<fixture file name>.fixed` next to a fixture (`unused-import.java.fixed`) holds the
+  text after every fix of the rule is applied; each fixable rule needs at least one. Write them
+  with `MOTE_BLESS_FIXED=1 MOTE_FIXTURE=<rule-name> cargo test -p mote-lang-java --test
+  fixtures`, then read every changed line. For a case that must get no fix, a `.fixed` file
+  identical to the fixture checks that none is offered.
 
 ## 9. Severity, quality, messages
 

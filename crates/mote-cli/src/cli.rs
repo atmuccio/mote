@@ -30,6 +30,8 @@ pub struct Cli {
 pub enum Command {
     /// Analyze code (working tree, a git revision, staged changes, or a remote repo)
     Scan(Box<ScanArgs>),
+    /// Apply the fixes of fixable findings: prints a diff, or --write applies it
+    Fix(Box<FixArgs>),
     /// Re-evaluate the quality gate from a saved results file (e.g. adding coverage later)
     Gate(GateArgs),
     /// Compare two saved results files: added, fixed and changed findings, measure deltas
@@ -214,6 +216,47 @@ pub struct ScanArgs {
     /// Print phase and per-language timings to stderr
     #[arg(long, help_heading = "Behavior")]
     pub timings: bool,
+}
+
+#[derive(Debug, Args)]
+pub struct FixArgs {
+    /// Root of the working tree to fix (default: the current directory)
+    #[arg(value_name = "PATH")]
+    pub path: Option<PathBuf>,
+    /// Only the fixes of these rules (repeatable or comma-separated; default: every enabled rule
+    /// that offers fixes)
+    #[arg(long, value_name = "RULE_ID", value_delimiter = ',')]
+    pub rule: Vec<String>,
+    /// Apply the fixes to the files (default: print a unified diff and change nothing)
+    #[arg(long)]
+    pub write: bool,
+    /// Only these paths: globs or path prefixes (repeatable)
+    #[arg(long, value_name = "GLOB")]
+    pub include: Vec<String>,
+    /// Config file (default: <root>/.mote.yaml if present)
+    #[arg(long, value_name = "FILE")]
+    pub config: Option<PathBuf>,
+    /// Triage file (default: `triage.file` of the config, `.mote-triage.yaml`)
+    #[arg(long, value_name = "FILE")]
+    pub triage: Option<PathBuf>,
+    /// Colorize the diff
+    #[arg(long, value_enum, default_value_t = ColorChoice::Auto)]
+    pub color: ColorChoice,
+    /// Disable the analysis cache
+    #[arg(long)]
+    pub no_cache: bool,
+    /// Cache location (default: <root>/.mote/cache, or $MOTE_CACHE_DIR)
+    #[arg(long, value_name = "DIR")]
+    pub cache_dir: Option<PathBuf>,
+    /// Worker threads (default: all cores)
+    #[arg(long, value_name = "N")]
+    pub threads: Option<usize>,
+    /// Not supported: `mote fix` works on the working tree only
+    #[arg(long, value_name = "REV", hide = true)]
+    pub rev: Option<String>,
+    /// Not supported: `mote fix` works on the working tree only
+    #[arg(long, hide = true)]
+    pub staged: bool,
 }
 
 /// Output format of `gate`.

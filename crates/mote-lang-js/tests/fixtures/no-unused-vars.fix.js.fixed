@@ -1,0 +1,15 @@
+// Unused imports in JavaScript: when no name of an import is used, the module is still
+// imported for its side effects.
+// expect-next-line: no-unused-vars
+import { used } from './a';
+// expect-next-line: no-unused-vars
+import Def2 from './b';
+// expect-next-line: no-unused-vars, no-unused-vars
+import './c';
+// expect-next-line: no-unused-vars
+import './d';
+// expect-next-line: no-unused-vars, no-unused-vars, no-unused-vars
+import './e';
+// A comment in the import: reported, not rewritten.
+import { kept, /* note */ also } from './f'; // expect: no-unused-vars
+used(Def2, kept);

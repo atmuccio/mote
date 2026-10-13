@@ -104,6 +104,7 @@ impl<'t> JavaRule<'t> for EqualsOverload {
         }
         let param_type = syntax::parameters(node)
             .next()
+            .filter(|p| kind(*p) == "formal_parameter")
             .and_then(|p| util::fld(p, F::Type))
             .map(|t| ctx.text(t))
             .unwrap_or("?");

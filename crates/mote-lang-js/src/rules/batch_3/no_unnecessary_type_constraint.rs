@@ -23,7 +23,12 @@ function first<T extends unknown>(items: T[]): T {}   // flagged
 function first<T>(items: T[]): T {}                   // compliant
 function byId<T extends { id: string }>(items: T[]) {} // compliant: a real constraint
 ```
+
+**Fix available.** `mote fix` deletes `extends unknown` / `extends any`: an unconstrained
+type parameter accepts the same types (TypeScript treats `extends any` like `extends unknown`
+since 3.9), and types do not exist at run time.
 "#,
+    fixable: true,
     ..RuleMeta::new(
         "js/no-unnecessary-type-constraint",
         "js",
@@ -72,12 +77,22 @@ impl JsRule for NoUnnecessaryTypeConstraint {
             .map_or(param.name.span.start, |pos| {
                 param.name.span.end + pos as u32
             });
-        ctx.emit(
+        let commented = ctx.has_comments_in(Span::new(param.name.span.end, constraint.span().end));
+        let emitted = ctx.emit(
             Span::new(start, constraint.span().end),
             format!(
                 "Remove the constraint 'extends {keyword}' from '{}': every type satisfies it",
                 param.name.name
             ),
         );
+        if !commented {
+            emitted.fix(
+                "Delete the constraint",
+                vec![Edit::delete(
+                    param.name.span.end as usize,
+                    constraint.span().end as usize,
+                )],
+            );
+        }
     }
 }

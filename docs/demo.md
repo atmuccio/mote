@@ -15,7 +15,7 @@ Nothing else needs installing (no JVM, no Node.js, no server); `git` is only nee
 
 ```sh
 mkdir -p ~/mote-demo/bin && cd ~/mote-demo
-version=0.1.0
+version=0.2.0
 target=aarch64-apple-darwin   # x86_64-apple-darwin, x86_64-unknown-linux-gnu, aarch64-unknown-linux-gnu
 base=https://github.com/atmuccio/mote/releases/download/v$version
 curl -fsSLO "$base/mote-$version-$target.tar.gz" -O "$base/mote-$version-$target.tar.gz.sha256"

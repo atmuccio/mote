@@ -5,6 +5,7 @@ mote <COMMAND>
 
 Commands:
   scan      Analyze code (working tree, a git revision, staged changes, or a remote repo)
+  fix       Apply the fixes of fixable findings: prints a diff, or --write applies it
   gate      Re-evaluate the quality gate from a saved results file (e.g. adding coverage later)
   compare   Compare two saved results files: added, fixed and changed findings, measure deltas
   rules     List rules or explain one
@@ -215,14 +216,17 @@ mote triage prune --results FILE [--dry-run] [--file FILE] [--config FILE]
 ### Output formats
 
 * **text** — grouped by file, colored on a TTY, then a summary and the gate verdict (and a line
-  counting the findings of incubating rules, which are reported but never gate).
+  counting the findings of incubating rules, which are reported but never gate). A finding
+  [`mote fix`](#mote-fix) can rewrite ends with `[fixable]`, and a summary line counts them.
 * **json** — the complete `ScanResult` (`format_version`, findings, files, measures with estimated
   effort, grades, duplication, new-code summary (with `baseline` for `--baseline` scans), new-lines
   map, gate, triage report (`triage`: file, entries, matched, stale entries), stats; see
   [Results format](#results-format)). Input for `mote gate --results`, `mote compare`,
-  `--baseline` and `mote triage`.
+  `--baseline` and `mote triage`. A finding whose rule can rewrite it carries `fix` (see
+  [Fixes in the results](#fixes-in-the-results)), and each rule says whether it is `fixable`.
 * **jsonl** — one compact finding per line: `{"id","rule","severity","quality","path","line","col",
-  "end_line","end_col","message","status","symbol"}`. Suppressed findings are never included.
+  "end_line","end_col","message","status","symbol"}`. Suppressed findings are never included. The
+  line shape is fixed: fixes are not part of it (use JSON or SARIF).
 * **sarif** — SARIF 2.1.0; `partialFingerprints.primaryLocationLineHash` = Mote fingerprint;
   `baselineState` from new-code status (`new` / `unchanged` / `updated`; the result keeps only
   counts of fixed findings, so no `absent` entries); suppressed findings carry `suppressions`
@@ -232,7 +236,11 @@ mote triage prune --results FILE [--dry-run] [--file FILE] [--config FILE]
   25,000 results (GitHub's limit per run): the most severe are kept, and `run.properties`
   (`totalResults`, `omittedResults`, `note`) plus a warning on stderr record the rest.
   `invocations[0].executionSuccessful` is `false` when a file could not be analyzed
-  (`mote/internal-error` findings or error diagnostics).
+  (`mote/internal-error` findings or error diagnostics). A result with a fix carries SARIF
+  `fixes`: one fix with its `description` and one `artifactChanges` entry for the finding's file,
+  whose `replacements` give each edit's `deletedRegion` (all four bounds, columns in Unicode code
+  points like every region; an empty region is an insertion) and `insertedContent` (absent for a
+  deletion).
 * **markdown** — summary for `$GITHUB_STEP_SUMMARY` and the sticky PR comment; begins with the
   marker `<!-- mote:summary -->`. Finding messages quote scanned code, so they are escaped for
   GitHub-flavored Markdown: code spans are re-fenced (a fence longer than any backtick run inside),
@@ -342,6 +350,33 @@ rely on:
 * The other formats follow their own specifications (SARIF 2.1.0, GitLab Code Quality,
   Checkstyle, JUnit); the JSONL line shape is fixed (see above). The text, Markdown and HTML
   outputs are for people and may change in any release.
+* `findings[].fix` and `rules[].fixable` are additions within `format_version` 1 (below):
+  results written before them read back without fixes.
+
+#### Fixes in the results
+
+A finding whose rule can rewrite it mechanically (see [`mote fix`](#mote-fix)) carries `fix`;
+the field is absent otherwise, and always on suppressed findings (in the source or by a triage
+decision), which are never rewritten:
+
+```json
+"fix": {
+  "description": "Remove the import",
+  "edits": [
+    {"start": 112, "end": 135,
+     "range": {"start_line": 5, "start_col": 1, "end_line": 6, "end_col": 1},
+     "replacement": ""}
+  ]
+}
+```
+
+* `edits` are sorted and do not overlap; apply all of them or none. `start` and `end` are byte
+  offsets into the file's text as UTF-8, after a byte-order mark (which is not part of the text);
+  `range` is the same span in lines and columns like a finding's range (the end is exclusive; an
+  insertion has an empty range); `replacement` is the new text.
+* The edits describe the file the scan read: after the file changes they may no longer apply.
+  `mote fix` and the MCP `fixes` tool analyze the current file again instead.
+* `rules[].fixable` (also in `mote rules --format json`) says whether a rule offers fixes.
 
 ### Measures and estimated effort
 
@@ -610,6 +645,89 @@ level: `mote scan backend` (the Action's `path:` input) reports `backend/src/A.j
 re-renders from a results file, which does not record the scan root's place in the repository, so
 its Markdown lists findings relative to the scan root.
 
+## `mote fix`
+
+> **New in 0.2.0.** Every fix is designed and verified not to change behaviour, but the command
+> is new: review the diff (the default output) before the first `--write` on a codebase.
+
+```
+mote fix [PATH] [--rule <RULE_ID>...] [--write]
+
+  --rule <RULE_ID>     Only the fixes of these rules (repeatable or comma-separated; default:
+                       every enabled rule that offers fixes)
+  --write              Apply the fixes (default: print a unified diff and change nothing)
+  --include <GLOB>...  Only these paths
+  --config <FILE>      Config file (default: <root>/.mote.yaml if present)
+  --triage <FILE>      Triage file (default: triage.file, .mote-triage.yaml)
+  --color <auto|always|never>   --no-cache   --cache-dir <DIR>   --threads <N>
+```
+
+Some rules can rewrite their findings mechanically, in a way that cannot change what the
+program does: deleting an unused import, putting modifiers in order, `let` → `const` for a
+variable that is never reassigned. `mote rules --format json` marks them `"fixable": true`,
+`mote rules explain` says "Fix available", and the text output of a scan ends their findings
+with `[fixable]`. `mote fix` scans the working tree under PATH like `mote scan` does — the same
+configuration, excludes, test globs and overrides, generated, minified and vendored files
+skipped — and applies the fixes of the findings:
+
+* **A dry run by default.** Nothing is written: the unified diff of every file that would change
+  goes to stdout (`--- a/<path>` / `+++ b/<path>`, paths relative to the scan root, so
+  `patch -p1` from the scan root applies it), and a summary — fixes per rule, files touched — to
+  stderr. With `--write` the files are rewritten and the summary goes to stdout.
+* **Only findings a scan reports.** A fix is applied only to a finding of a rule enabled for the
+  file (`extends`, `rules`, `overrides`), not suppressed in the source (`mote-ignore`, Java
+  `@SuppressWarnings`, the compatibility suppressions) and not accepted or marked a false
+  positive in the triage file. `--rule` narrows it to some rules; naming a rule that offers no
+  fixes is a usage error.
+* **Passes.** Every fix that does not overlap another one is applied, then the file is analyzed
+  again and the fixes found then are applied — at most 10 passes per file — so findings next to
+  each other (two unused imports on adjacent lines) are all fixed. The summary says when fixes
+  are still offered after the last pass; run `mote fix` again for them.
+* **Safety net.** After each pass the file is parsed again; when it has more syntax errors than
+  before, every change to that file is discarded and reported (`warning: <path>: changes
+  discarded: …`). A fix that breaks code is a bug: please report it. Other files are still fixed.
+* **Bytes kept.** Only UTF-8 files, with or without a byte-order mark, are edited (others are
+  reported and left alone). The byte-order mark is kept, and line breaks the fixes add follow the
+  file's own (CRLF stays CRLF). Before writing, each file is read again: one that changed in the
+  meantime is left alone and reported (exit 3).
+* **Idempotent.** After `mote fix --write`, `mote fix` finds nothing to fix.
+* **Working tree only.** `--rev` and `--staged` are refused (exit 2): fixes are written to files.
+
+| Code | Meaning |
+|---|---|
+| 0 | Nothing to fix, or `--write` applied every fix |
+| 1 | Dry run: there are fixes to apply (the diff was printed) |
+| 2 | Usage or configuration error |
+| 3 | The scan failed, or a file could not be read or written |
+
+Exit 1 makes a dry run usable as a check that no automatically fixable finding is left.
+
+The rules with fixes and what each fix does (the descriptions in [rules.md](rules.md) say why it
+is safe, and which cases are reported but not fixed):
+
+| Rule | Fix |
+|---|---|
+| `java/unused-import` | delete the import (not a used single-type `java.lang` import, which takes precedence over a same-package or wildcard-imported type of that name) |
+| `java/empty-statement` | delete a stray `;` among statements or members (not one that is the body of an `if`, a loop or a label) |
+| `java/modifier-order` | reorder the keyword modifiers; annotations and comments stay in place |
+| `java/long-literal-lowercase` | `10l` → `10L` |
+| `java/array-brackets-on-name` | `String args[]` → `String[] args`, `int f()[]` → `int[] f()` (one variable per declaration, brackets without annotations) |
+| `java/redundant-default-constructor` | delete the constructor (not in a class with an annotation other than `@Deprecated` / `@SuppressWarnings`, which may generate other constructors, nor in a class whose other members are all static) |
+| `java/missing-override` | add `@Override` (where the rule matched the overridden method in a known supertype) |
+| `java/redundant-annotation-value` | `@A(value = x)` → `@A(x)` |
+| `java/unnecessary-return` | delete a trailing `return;` / `continue;` that stands among other statements |
+| `js/no-unused-vars` | unused imports: delete the name from its import; when no name of a JavaScript import is used, keep `import 'x';` for its side effects (TypeScript: only `import type` is deleted whole) |
+| `js/no-useless-escape` | delete the backslash (not in strings before characters special in regular expressions, nor in directives) |
+| `js/prefer-const` | `let` → `const` when no variable of the declaration is reassigned |
+| `js/no-extra-boolean-cast` | drop `!!` / `Boolean(…)` where the value is converted to a boolean anyway |
+| `js/no-useless-return` | delete a trailing `return;` / `continue;` |
+| `js/prefer-as-const` | `'a' as 'a'` → `'a' as const`; `let x: 'a' = 'a'` → `let x = 'a' as const` |
+| `js/no-extra-non-null-assertion` | delete the extra `!` |
+| `js/no-unnecessary-type-constraint` | delete `extends unknown` / `extends any` |
+
+The results JSON and SARIF carry each finding's fix ([Fixes in the results](#fixes-in-the-results)),
+and the MCP server's `fixes` tool returns the edits and the diff for agents.
+
 ## `mote gate`
 
 ```
@@ -850,6 +968,38 @@ mote rules [--language <LANG>] [--format text|json|markdown] [--all]   List rule
 mote rules explain <RULE_ID>                                            Description, params, examples
 ```
 
+`rules explain` also prints the rule's measured precision: the share of its labeled findings on
+public open-source repositories that were correct, for example `Measured precision: 97% (40 of
+41 labeled findings correct, measured 2026-10-12 on 34 open-source repositories)`. A rule with
+too few labeled findings shows its counts only; a rule without findings in those repositories,
+or newer than the measurement, says so. [rules.md](rules.md#measured-precision) explains the
+method and its limits. The data ships with each release and is regenerated for it.
+
+**Rule JSON.** `rules --format json` (an array), `rules explain --format json` (one rule) and
+the MCP `rule` tool give each rule's fields (`id`, `name`, `language`, `kind`, `quality`,
+`severity`, `status`, `default_enabled`, `tags`, `params`, `description`,
+`remediation_minutes`, `origin`, `fixable`) and a `precision` object. `fixable` (the rule
+offers fixes, see [`mote fix`](#mote-fix)) and `precision` are additions: the other fields are
+unchanged, and consumers should ignore fields they don't know. `rules explain` prints "Fix
+available" for a fixable rule.
+
+| Field | Meaning |
+|---|---|
+| `state` | `measured` (enough labels: `precision` is set), `too-few-labels` (findings, but too few labeled for a percentage), `no-findings` (none in the repositories), `not-run` (deprecated at the time, not run), `not-measured-yet` (the rule is newer than the measurement; only `measured` and `repositories` follow) |
+| `precision` | `tp / (tp + fp)` rounded down to three decimals, or `null` unless `state` is `measured` |
+| `tp`, `fp` | Labeled findings that were correct by the rule's definition / false positives |
+| `labeled` | `tp + fp` |
+| `noise` | Findings labeled noise (code configuration should exclude, such as vendored or generated files): not part of the precision |
+| `findings` | All findings of the rule in the repositories, labeled or not |
+| `measured`, `repositories` | Date of the measurement and number of repositories scanned |
+
+For example, the `precision` object of a rule with 41 labeled findings:
+
+```json
+{"state": "measured", "precision": 0.975, "tp": 40, "fp": 1, "labeled": 41, "noise": 0,
+ "findings": 145, "measured": "2026-10-12", "repositories": 34}
+```
+
 ## `mote config`
 
 ```
@@ -952,8 +1102,9 @@ Model Context Protocol server over stdio (JSON-RPC 2.0, newline-delimited). Tool
 | `scan` | `{root?, paths?, base?, baseline?, rev?, changed_only?, new_only?}` → scan id + summary (with `triage` counts when a triage file applies). `baseline` is a results file relative to the root, like `scan --baseline`. Re-scans are incremental. |
 | `summary` | `{scan_id, group_by: severity\|rule\|file\|directory, new_only?}` → counts |
 | `work_units` | `{scan_id, severity?, rule?, max_findings_per_unit?, strategy: by_file\|by_directory}` → disjoint file groups for parallel fixers |
-| `findings` | `{scan_id, unit_id?, path?, rule?, severity?, new_only?, limit?, cursor?}` → findings grouped by file |
-| `rule` | `{id}` → description, rationale, examples, parameters |
+| `findings` | `{scan_id, unit_id?, path?, rule?, severity?, new_only?, limit?, cursor?}` → findings grouped by file; a finding its rule can rewrite carries `fix`: `{description, edits: [{line, col, end_line, end_col, text}]}` (the end is exclusive) |
+| `fixes` | `{scan_id, unit_id?, path?, rule?, finding_id?, max_files?}` → per file (at most `max_files`, default 20; `more_files` counts the rest): the fixes of its fixable findings and the unified `diff` that applying them gives — what `mote fix` would change, computed from the file as it is now. Read-only: nothing is written; apply the diff, then `verify`. Refused for a scan of a revision |
+| `rule` | `{id}` → description, rationale, examples, parameters, measured precision (`precision`, as in [Rule JSON](#mote-rules)) |
 | `verify` | `{scan_id, unit_id? \| paths?}` → re-analyzes only those files, against the rest of the scan (duplication is checked across the whole scan, other files come from the cache): each prior finding `fixed`/`still_present`, plus `introduced` |
 | `explain_config` | `{path}` → effective rules for a file |
 

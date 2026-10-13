@@ -154,6 +154,7 @@ mod tests {
             incubating: false,
             suppressed: None,
             secondary: vec![],
+            fix: None,
         }
     }
 

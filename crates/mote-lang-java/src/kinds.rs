@@ -5,9 +5,10 @@
 use std::sync::LazyLock;
 use tree_sitter::{Language, Node};
 
-/// The tree-sitter-java language.
+/// The Java grammar: tree-sitter-java-orchard, a maintained fork of tree-sitter-java that reads
+/// Java 25 (module imports, flexible constructor bodies, unnamed variables).
 pub(crate) static LANGUAGE: LazyLock<Language> =
-    LazyLock::new(|| Language::new(tree_sitter_java::LANGUAGE));
+    LazyLock::new(|| Language::new(tree_sitter_java_orchard::LANGUAGE));
 
 /// `kind_id → kind name`, so `kind(node)` avoids the C-string conversion done by `Node::kind`.
 static KIND_NAMES: LazyLock<Vec<&'static str>> = LazyLock::new(|| {
@@ -125,6 +126,7 @@ pub(crate) enum K {
     UpdateExpression,
     InferredParameters,
     StringLiteral,
+    ArrayType,
 }
 
 impl K {
@@ -240,6 +242,7 @@ const CLASSIFIED: &[(&str, K)] = &[
     ("update_expression", K::UpdateExpression),
     ("inferred_parameters", K::InferredParameters),
     ("string_literal", K::StringLiteral),
+    ("array_type", K::ArrayType),
 ];
 
 pub(crate) static TABLES: LazyLock<Tables> = LazyLock::new(|| {

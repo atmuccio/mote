@@ -40,7 +40,13 @@ type (`Object`, `Runnable`, `Callable`, `Comparable`, `Comparator`, `Iterator`, 
 streams, AWT/Swing listeners, SAX handlers, the JDBC and DOM interfaces, …). The method must
 match by name, number of parameters, and parameter types. Methods overriding supertypes from other files or libraries
 are not reported, nor are methods without a body (abstract or interface declarations), static
-and private methods, and methods declared in interfaces (including `default` methods)."#,
+and private methods, and methods declared in interfaces (including `default` methods).
+
+**Fix available.** `mote fix` adds `@Override` (on its own line, indented like the method) to
+the methods the rule reports — those it has matched with a method of a known supertype. The
+annotation is checked by the compiler and not kept in the class file, so the program does the
+same; it is not added where the file imports or declares another type named `Override`."#,
+    fixable: true,
     ..RuleMeta::new(
         "java/missing-override",
         "java",
@@ -54,6 +60,9 @@ pub struct MissingOverride<'t> {
     /// Override indexes of the classes seen, by node id (a list searched per method was
     /// quadratic in an enum of thousands of constants with bodies).
     indexes: FxHashMap<usize, Option<OverrideIndex<'t>>>,
+    /// Whether the file imports or declares a type named `Override` (asked once per file, when
+    /// the first finding gets its fix).
+    override_shadowed: Option<bool>,
 }
 
 /// A parameter type as written, without type arguments, annotations, or package:
@@ -127,7 +136,47 @@ impl<'t> JavaRule<'t> for MissingOverride<'t> {
             })
             .collect();
         let sig = format!("{}({})", ctx.text(name), params.join(", "));
-        ctx.emit(name, format!("Add @Override to `{sig}`"));
+        let emitted = ctx.emit(name, format!("Add @Override to `{sig}`"));
+        // `Override` must mean `java.lang.Override`: not imported or declared otherwise here.
+        let shadowed = *self.override_shadowed.get_or_insert_with(|| {
+            ctx.imports()
+                .iter()
+                .any(|i| !i.is_wildcard && i.simple_name() == "Override")
+                || declares_type(ctx.source(), "Override")
+        });
+        if !shadowed {
+            emitted.fix("Add `@Override`", vec![add_override(ctx.source(), node)]);
+        }
+    }
+}
+
+/// Whether `src` declares a type named `name` (`class Override`, `@interface Override`, …).
+fn declares_type(src: &str, name: &str) -> bool {
+    src.match_indices(name).any(|(at, _)| {
+        let before = src[..at].trim_end();
+        let word = before
+            .rsplit(|c: char| !c.is_ascii_alphanumeric() && c != '@')
+            .next()
+            .unwrap_or("");
+        before.len() < at
+            && matches!(
+                word,
+                "class" | "interface" | "@interface" | "enum" | "record"
+            )
+    })
+}
+
+/// Insert `@Override` in front of `method`: on a line of its own, indented like the method,
+/// when the method starts its line; else on the same line.
+fn add_override(src: &str, method: Node<'_>) -> Edit {
+    let at = method.start_byte();
+    let line_start = src[..at].rfind('\n').map_or(0, |i| i + 1);
+    let indent = &src[line_start..at];
+    if indent.bytes().all(|b| b == b' ' || b == b'\t') {
+        let nl = fix::line_break_at(src, at);
+        Edit::insert(at, format!("@Override{nl}{indent}"))
+    } else {
+        Edit::insert(at, "@Override ")
     }
 }
 

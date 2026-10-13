@@ -386,7 +386,7 @@ fn build_scope_with<'t>(member: Node<'t>, src: &'t str, skip_plain: bool) -> Vec
                 for c in named_children(n) {
                     match kind(c) {
                         "identifier" => name = Some(c),
-                        "underscore_pattern" | "record_pattern" => {}
+                        "underscore_pattern" | "record_pattern" | "modifiers" => {}
                         _ => ty = Some(c),
                     }
                 }

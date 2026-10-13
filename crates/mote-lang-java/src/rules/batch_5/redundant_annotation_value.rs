@@ -28,7 +28,11 @@ common form readers expect.
 @RequestMapping("/orders")
 ```
 
-Annotations that set any other element next to `value` are not reported."#,
+Annotations that set any other element next to `value` are not reported.
+
+**Fix available.** `mote fix` deletes `value =`: the Java Language Specification defines
+`@Anno(x)` as exactly `@Anno(value = x)`."#,
+    fixable: true,
     ..RuleMeta::new(
         "java/redundant-annotation-value",
         "java",
@@ -64,12 +68,20 @@ impl<'t> JavaRule<'t> for RedundantAnnotationValue {
         if ctx.text(key) != "value" {
             return;
         }
-        ctx.emit(
+        // `value = ` up to the element value, unless a comment sits in between.
+        let edit = util::fld(pair, F.value).and_then(|v| {
+            let between = ctx.source().get(key.end_byte()..v.start_byte())?;
+            (between.trim() == "=").then(|| Edit::delete(key.start_byte(), v.start_byte()))
+        });
+        let emitted = ctx.emit(
             key,
             format!(
                 "Remove `value =` from `@{}`: it is the only element given",
                 syntax::annotation_name(node, ctx.source())
             ),
         );
+        if let Some(edit) = edit {
+            emitted.fix("Delete `value =`", vec![edit]);
+        }
     }
 }

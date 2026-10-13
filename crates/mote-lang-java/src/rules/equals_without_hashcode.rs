@@ -69,7 +69,8 @@ fn is_member<'t>(ctx: &Ctx<'t>, method: Node<'t>, name: &str) -> bool {
     let mut params = syntax::parameters(method);
     match name {
         "equals" => match (params.next(), params.next()) {
-            (Some(p), None) => {
+            // `equals(Object... o)` does not override `Object.equals`.
+            (Some(p), None) if kind(p) == "formal_parameter" => {
                 p.field(Field::Type)
                     .is_some_and(|t| matches!(ctx.text(t), "Object" | "java.lang.Object"))
                     && p.field(Field::Dimensions).is_none()

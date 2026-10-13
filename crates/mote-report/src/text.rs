@@ -114,6 +114,8 @@ fn write_finding_padded(
     if let Some(s) = &f.suppressed {
         let why = s.justification.as_deref().unwrap_or("no reason");
         tags.push_str(&p.dim(&format!(" [suppressed: {why}]")));
+    } else if f.fix.is_some() {
+        tags.push_str(&format!(" {}", p.cyan("[fixable]")));
     }
     writeln!(
         w,
@@ -364,6 +366,22 @@ pub fn write_summary(
                 by_sev.join(", "),
                 if n_incubating == 1 { "is" } else { "are" },
                 if n_incubating == 1 { "s" } else { "" },
+            ))
+        )?;
+    }
+    let fixable = result
+        .findings
+        .iter()
+        .filter(|f| f.fix.is_some() && f.suppressed.is_none())
+        .count() as u64;
+    if fixable > 0 {
+        writeln!(
+            w,
+            "{}",
+            p.dim(&format!(
+                "{} {} can be fixed automatically: `mote fix` shows the changes, `mote fix --write` applies them",
+                thousands(fixable),
+                if fixable == 1 { "finding" } else { "findings" },
             ))
         )?;
     }

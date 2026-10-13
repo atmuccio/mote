@@ -46,7 +46,13 @@ public void connect(String host) { ... }
 ```
 
 Only Javadoc comments placed immediately before the declaration are considered; a
-`@deprecated` mentioned inside the text (not at the start of a line) is not a tag."#,
+`@deprecated` mentioned inside the text (not at the start of a line) is not a tag.
+
+Since Java 23 a run of `///` lines right before the declaration is a documentation comment
+too (Markdown syntax), with the same tags. It is read only when the file's Java release is
+known to be 23 or later (`java.release`, or the build file): in older code, and when the
+release is unknown, `///` may be an ordinary comment. In it, lines of fenced code blocks are not
+read as tags."#,
     ..RuleMeta::new(
         "java/deprecated-annotation-missing",
         "java",
@@ -65,10 +71,30 @@ fn has_deprecated_tag(javadoc: &str) -> bool {
     javadoc.lines().any(|line| {
         let l = line.trim_start();
         let l = l.strip_prefix("/**").unwrap_or(l);
-        let l = l.trim_start_matches('*').trim_start();
-        l.strip_prefix("@deprecated")
-            .is_some_and(|rest| !rest.starts_with(|c: char| c.is_alphanumeric()))
+        is_deprecated_tag(l.trim_start_matches('*').trim_start())
     })
+}
+
+/// Whether the normalized text of a Markdown documentation comment ([`DocComment::text`]:
+/// no `///`, fenced code left out) has a `@deprecated` block tag. There is no `*` margin: a
+/// line starting with `*` is a list item.
+fn markdown_has_deprecated_tag(text: &str) -> bool {
+    text.lines()
+        .any(|line| is_deprecated_tag(line.trim_start()))
+}
+
+/// Whether a content line starts with the `@deprecated` tag.
+fn is_deprecated_tag(line: &str) -> bool {
+    line.strip_prefix("@deprecated")
+        .is_some_and(|rest| !rest.starts_with(|c: char| c.is_alphanumeric()))
+}
+
+/// Whether a doc comment has a `@deprecated` block tag.
+fn tagged(ctx: &Ctx<'_>, doc: &DocComment<'_>) -> bool {
+    match doc {
+        DocComment::Javadoc(n) => has_deprecated_tag(ctx.text(*n)),
+        DocComment::Markdown(_) => markdown_has_deprecated_tag(&doc.text(ctx.source())),
+    }
 }
 
 fn has_deprecated_annotation(ctx: &Ctx<'_>, decl: Node<'_>) -> bool {
@@ -108,31 +134,35 @@ impl<'t> JavaRule<'t> for DeprecatedAnnotationMissing {
         if !tags && !reverse {
             return;
         }
-        let Some(prev) = ctx.prev_named_sibling(node) else {
+        // A `///` run (Java 23) only on a release known to read it as documentation: on an
+        // older or unknown one it may be an ordinary comment.
+        let Some(doc) = doc::doc_comment_before(ctx, node, DocUse::Reports) else {
             return;
         };
-        if kind(prev) != "block_comment" {
-            return;
-        }
-        let doc = ctx.text(prev);
-        if !doc.starts_with("/**") {
-            return;
-        }
-        let has_tag = tags && has_deprecated_tag(doc);
+        let has_tag = tags && tagged(ctx, &doc);
         if !has_tag && !reverse {
             return;
         }
         let annotated = has_deprecated_annotation(ctx, node);
         let at = report_node(node).unwrap_or(node);
+        let markdown = matches!(doc, DocComment::Markdown(_));
         if has_tag && !annotated {
             ctx.emit(
                 at,
-                "Add `@Deprecated` here to match the `@deprecated` Javadoc tag: without the annotation callers get no deprecation warning",
+                if markdown {
+                    "Add `@Deprecated` here to match the `@deprecated` tag of the doc comment: without the annotation callers get no deprecation warning"
+                } else {
+                    "Add `@Deprecated` here to match the `@deprecated` Javadoc tag: without the annotation callers get no deprecation warning"
+                },
             );
-        } else if reverse && annotated && !has_deprecated_tag(doc) {
+        } else if reverse && annotated && !tagged(ctx, &doc) {
             ctx.emit(
                 at,
-                "Add a `@deprecated` tag to this Javadoc saying why the element is deprecated and what to use instead",
+                if markdown {
+                    "Add a `@deprecated` tag to this doc comment saying why the element is deprecated and what to use instead"
+                } else {
+                    "Add a `@deprecated` tag to this Javadoc saying why the element is deprecated and what to use instead"
+                },
             );
         }
     }

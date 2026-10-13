@@ -2,7 +2,7 @@
 # One Mote step for any CI service: gate a merge/pull request on its new code, or (on the default
 # branch) produce the reports without failing on existing debt.
 #
-#   MOTE_VERSION=0.1.0 sh mote-ci.sh
+#   MOTE_VERSION=0.2.0 sh mote-ci.sh
 #
 # The target branch of a merge/pull request is read from the CI's own variables (GitHub Actions,
 # GitLab, Jenkins, Azure Pipelines, Bitbucket) or from MOTE_TARGET_BRANCH; without one, the scan

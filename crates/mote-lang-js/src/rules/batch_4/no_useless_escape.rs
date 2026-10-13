@@ -33,7 +33,15 @@ Not checked: tagged templates (the tag sees the raw text, as with `String.raw`),
 strings (backslashes are not escapes there), and regular expressions with the `u` or `v` flag
 (where an unnecessary escape is already a syntax error, or required by the syntax). Inside
 character classes, `\-`, `\^`, `\[`, `\]`, `\/`, and `\\` are never reported.
+
+**Fix available.** `mote fix` deletes the backslash: the literal keeps its value (an unknown
+escape stands for the character itself), and for a regular expression the pattern matches the
+same. In strings and templates, a backslash before a character that is special in regular
+expressions (`\d`, `\s`, `\w`, `\.`, `\(` …) is reported but not removed: the author may
+have meant a literal backslash (`'\\d'`), which only a person can tell. Directives such as
+`'use strict'` are never rewritten.
 "#,
+    fixable: true,
     ..RuleMeta::new(
         "js/no-useless-escape",
         "js",
@@ -56,6 +64,11 @@ impl JsRule for NoUselessEscape {
 
     fn run<'a>(&self, node: &AstNode<'a>, ctx: &mut Ctx<'a>) {
         let mut found: Vec<(u32, char)> = Vec::new();
+        // Strings and templates may be patterns for `RegExp`: a backslash before a character
+        // that is special there may have been meant literally, so it is not removed.
+        let mut in_string = true;
+        // `'use\ strict'` is not a directive; without the backslash it would be one.
+        let directive = matches!(ctx.parent_kind(node), Some(AstKind::Directive(_)));
         match node.kind() {
             AstKind::StringLiteral(s) => {
                 let text = ctx.text(s.span);
@@ -105,17 +118,32 @@ impl JsRule for NoUselessEscape {
                     return;
                 }
                 scan_regex(pattern, &mut |at, c| found.push((r.span.start + 1 + at, c)));
+                in_string = false;
             }
             _ => return,
         }
         for (at, c) in found {
             let span = Span::new(at, at + 1 + c.len_utf8() as u32);
-            ctx.emit(
+            let emitted = ctx.emit(
                 span,
                 format!("Remove the unnecessary backslash before '{c}'"),
             );
+            if !directive && !(in_string && special_in_regex(c)) {
+                emitted.fix(
+                    "Delete the backslash",
+                    vec![Edit::delete(at as usize, at as usize + 1)],
+                );
+            }
         }
     }
+}
+
+/// Characters a regular expression gives a meaning after a backslash (or by themselves).
+fn special_in_regex(c: char) -> bool {
+    matches!(
+        c,
+        'd' | 'D' | 'w' | 'W' | 's' | 'S' | 'B' | 'k' | 'p' | 'P' | 'c'
+    ) || ".*+?()[]{}|^$/-".contains(c)
 }
 
 fn is_line_terminator(c: char) -> bool {

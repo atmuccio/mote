@@ -1,0 +1,10 @@
+'use\ strict'; // expect: no-useless-escape
+function f() {
+  'use\ asm'; // expect: no-useless-escape
+  return 'a'; // expect: no-useless-escape
+}
+// A backslash before a regular-expression character in a string is reported, not removed:
+// `'\d'` may have been meant.
+const re = new RegExp('\d+\.\w'); // expect: no-useless-escape, no-useless-escape, no-useless-escape
+const ok = '%'; // expect: no-useless-escape
+f(re, ok);

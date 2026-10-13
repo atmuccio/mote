@@ -14,11 +14,13 @@
 //! * `SHOW_RELEASE` → `<id>/magic` with the message `release <java_release param or none>`.
 //! * `PKG dir` → `<id>/magic` unless the file's directory is `dir` (a path-dependent rule).
 //! * `MANY_LOUD` → `<id>/loud` at every `LOUD` of the line (and nothing else on it).
+//! * `FIX_ME` → `<id>/fixable` with a fix that writes `fixed` instead; `BREAK_IT` →
+//!   `<id>/fixable` with a fix that writes `SYNTAX_ERROR` instead (a fix that breaks the code).
 #![allow(dead_code)]
 
 use mote_core::{
-    FileAnalysis, FunctionMetric, LanguagePlugin, LexerSpec, RawFinding, RuleMeta, RuleSet,
-    RuleStatus, ScopedSuppression, Severity, SourceFile, TextRange,
+    Edit, FileAnalysis, Fix, FunctionMetric, LanguagePlugin, LexerSpec, RawFinding, RuleMeta,
+    RuleSet, RuleStatus, ScopedSuppression, Severity, SourceFile, TextRange,
 };
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
@@ -94,6 +96,11 @@ impl FakePlugin {
                 tags: &["conventions"],
                 ..m
             }),
+            mk("fixable", &|m| RuleMeta {
+                severity: Severity::Low,
+                fixable: true,
+                ..m
+            }),
         ];
         FakePlugin {
             id,
@@ -141,8 +148,38 @@ impl LanguagePlugin for FakePlugin {
         self.calls.fetch_add(1, Ordering::SeqCst);
         let mut out = FileAnalysis::default();
         let mut open: Option<FunctionMetric> = None;
+        let mut line_start = 0usize;
         for (i, line) in file.text.lines().enumerate() {
             let ln = i as u32 + 1;
+            let this_line = line_start;
+            line_start += file.text[line_start..]
+                .find('\n')
+                .map_or(file.text.len() - line_start, |p| p + 1);
+            let fixable = format!("{}/fixable", self.id);
+            for (marker, replacement) in [("FIX_ME", "fixed"), ("BREAK_IT", "SYNTAX_ERROR")] {
+                if let Some(pos) = line.find(marker) {
+                    if rules.is_enabled(&fixable) {
+                        let at = this_line + pos;
+                        out.findings.push(RawFinding {
+                            rule_id: fixable.clone(),
+                            message: format!("Replace {marker}"),
+                            range: TextRange {
+                                start_line: ln,
+                                start_col: pos as u32 + 1,
+                                end_line: ln,
+                                end_col: (pos + marker.len()) as u32 + 1,
+                            },
+                            symbol: None,
+                            value: None,
+                            secondary: Vec::new(),
+                            fix: Some(Fix::new(
+                                format!("Write {replacement}"),
+                                vec![Edit::replace(at, at + marker.len(), replacement)],
+                            )),
+                        });
+                    }
+                }
+            }
             if line.contains("PANIC_NOW") {
                 panic!("fake plugin asked to panic");
             }
@@ -226,6 +263,7 @@ impl LanguagePlugin for FakePlugin {
                         symbol: None,
                         value: None,
                         secondary: Vec::new(),
+                        fix: None,
                     });
                 }
             }
@@ -246,6 +284,7 @@ impl LanguagePlugin for FakePlugin {
                     symbol: None,
                     value: None,
                     secondary: Vec::new(),
+                    fix: None,
                 });
             }
             // `MANY_LOUD`: `<id>/loud` at every `LOUD` of the line (many findings on one line).
@@ -264,6 +303,7 @@ impl LanguagePlugin for FakePlugin {
                         symbol: None,
                         value: None,
                         secondary: Vec::new(),
+                        fix: None,
                     });
                 }
                 continue;
@@ -290,6 +330,7 @@ impl LanguagePlugin for FakePlugin {
                             symbol: open.as_ref().map(|f| f.name.clone()),
                             value: None,
                             secondary: Vec::new(),
+                            fix: None,
                         });
                     }
                 }

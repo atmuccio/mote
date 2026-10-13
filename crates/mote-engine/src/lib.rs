@@ -15,8 +15,9 @@
 //!
 //! Entry points: [`Registry::new`], [`Config::discover`] / [`scan::discover_config`],
 //! [`Scanner::new`], [`Scanner::scan`], [`Scanner::rescan`] (incremental update of a previous
-//! result), [`Scanner::analyze_paths`], [`gate::apply_coverage`] / [`gate::reevaluate_gate`]
-//! (coverage and gate on a saved result), and [`git::clone_remote`] for remote repositories.
+//! result), [`Scanner::analyze_paths`], [`Scanner::fix_files`] (the findings' fixes applied in
+//! memory, for `mote fix`), [`gate::apply_coverage`] / [`gate::reevaluate_gate`] (coverage and
+//! gate on a saved result), and [`git::clone_remote`] for remote repositories.
 //! See the crate README for a walkthrough.
 
 pub mod analyze;
@@ -26,6 +27,7 @@ pub mod config;
 pub mod coverage;
 pub mod cpd;
 pub mod fingerprint;
+pub mod fix;
 pub mod gate;
 pub mod generic;
 pub mod git;

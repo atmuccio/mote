@@ -476,6 +476,7 @@ fn meta_finding(rule: MetaRule, s: &Suppression, message: &str) -> RawFinding {
         symbol: None,
         value: None,
         secondary: Vec::new(),
+        fix: None,
     }
 }
 

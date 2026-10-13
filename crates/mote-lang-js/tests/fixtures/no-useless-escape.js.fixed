@@ -1,0 +1,56 @@
+// Strings.
+const time = '12:30'; // expect: no-useless-escape
+const quote = "it's"; // expect: no-useless-escape
+const both = 'a\-b#c'; // expect: no-useless-escape, no-useless-escape
+const digitish = '\d+'; // expect: no-useless-escape
+const accent = 'café'; // expect: no-useless-escape
+
+// Templates.
+const t1 = `price: \$5`; // expect: no-useless-escape
+const t2 = `say "hi"`; // expect: no-useless-escape, no-useless-escape
+const t3 = `a${x}:b`; // expect: no-useless-escape
+
+// Regular expressions.
+const r1 = /:\d+/; // expect: no-useless-escape
+const r2 = /[.*]/; // expect: no-useless-escape, no-useless-escape
+const r3 = /\d{3}-\d{4}/; // expect: no-useless-escape
+const r4 = /a,b/g; // expect: no-useless-escape
+const r5 = /[a-z()]+/; // expect: no-useless-escape, no-useless-escape
+const r6 = /e/; // expect: no-useless-escape
+
+// Compliant strings.
+const s1 = 'it\'s';
+const s2 = "say \"hi\"";
+const s3 = 'tab\tnew\nline\rcr\vvt\bbs\fff\\bs';
+const s4 = '\x41\u0041\u{41}\0';
+const s5 = 'line\
+continued';
+const s6 = 'no escapes at all';
+const s7 = '\\:\\';
+
+// Compliant templates.
+const u1 = `back\`tick`;
+const u2 = `\${notInterpolated}`;
+const u3 = `$\{alsoNot}`;
+const u4 = `tab\tand\nnewline and \\ backslash`;
+const u5 = String.raw`C:\Users\:path`;
+const u6 = css`a\:hover {}`;
+const u7 = `${a}\${b}`;
+const u8 = `line\
+continued`;
+
+// Compliant regular expressions.
+const v1 = /\d+\.\d*\s\S\w\W\b\B/;
+const v2 = /\/path\/to\?(a|b)\*\+\[\]\{\}\(\)\|\^\$\\/;
+const v3 = /[\-\]\^\\a-z]/;
+const v4 = /\cJ\x41\u0041\0\1\k<n>(?<n>a)/;
+const v5 = /\p{L}\:/u;
+const v6 = /[\p{L}--\:]/v;
+const v7 = /[/]/;
+const v8 = /[\d\D\s\S\w\W\b]/;
+const v9 = /\t\n\r\v\f/;
+const v10 = /[\\]:/; // expect: no-useless-escape
+const v11 = /^[\/\\][\[\]]/;
+const v12 = /\[\]/;
+
+export default { time, quote, both, digitish, accent, t1, t2, t3, r1, r2, r3, r4, r5, r6 };

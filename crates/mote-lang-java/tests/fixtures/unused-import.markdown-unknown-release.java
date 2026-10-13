@@ -1,0 +1,10 @@
+// No Java release is known: the links of a `///` run count as uses all the same.
+package com.acme.demo;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;                        // expect: unused-import
+
+/// Holds a [List] of values keyed as in [the map][Map].
+class UnusedImportsMarkdown {
+}

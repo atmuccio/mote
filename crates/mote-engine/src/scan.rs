@@ -155,10 +155,10 @@ struct CacheSlot {
 /// Scans one repository with one configuration. Cheap to keep alive (the MCP server keeps one and
 /// rescans changed files; the cache stays open between scans).
 pub struct Scanner {
-    registry: Arc<Registry>,
-    compiled: CompiledConfig,
-    root: PathBuf,
-    settings: AnalysisSettings,
+    pub(crate) registry: Arc<Registry>,
+    pub(crate) compiled: CompiledConfig,
+    pub(crate) root: PathBuf,
+    pub(crate) settings: AnalysisSettings,
     /// Analysis settings hash (part of the cache key) of the files the skip checks apply to …
     settings_hash: u64,
     /// … and of the others (`skip_generated: false`, or `skip_generated_except`).
@@ -200,11 +200,11 @@ struct Record {
 }
 
 /// Per-scan lookups of data outside a file that its analysis depends on (part of its cache key).
-struct Lookups {
+pub(crate) struct Lookups {
     /// The Java release of Java files.
-    releases: JavaReleases,
+    pub(crate) releases: JavaReleases,
     /// The npm packages of JavaScript files.
-    packages: PackageNames,
+    pub(crate) packages: PackageNames,
 }
 
 /// A freshly analyzed record, its cache write, and a read diagnostic.
@@ -359,7 +359,7 @@ impl Scanner {
 
     /// The Java release and npm package lookups for a discovery: its build files and
     /// `package.json` files, read with its loader (`listed`), or those on disk below the root.
-    fn lookups(&self, discovery: Option<&Discovery>) -> Lookups {
+    pub(crate) fn lookups(&self, discovery: Option<&Discovery>) -> Lookups {
         let configured = self.config().java.release;
         match discovery {
             Some(d) => Lookups {
@@ -375,7 +375,11 @@ impl Scanner {
 
     /// Whether the generated / minified / vendored checks apply to `path`, and the npm packages
     /// of the file when the vendored check needs them.
-    fn skip_checks(&self, path: &str, lookups: &Lookups) -> (bool, Option<Arc<[String]>>) {
+    pub(crate) fn skip_checks(
+        &self,
+        path: &str,
+        lookups: &Lookups,
+    ) -> (bool, Option<Arc<[String]>>) {
         let skip = self.compiled.skips_generated(path);
         let packages = (skip && vendored::applies_to(path))
             .then(|| lookups.packages.names_for(path))
@@ -669,7 +673,7 @@ impl Scanner {
     /// stack, never on the caller's thread: parsers recurse on deeply nested input, and a stack
     /// overflow aborts the process. (Running `f` itself on a worker matters: rayon runs a
     /// parallel iterator that does not split — one file — on the calling thread.)
-    fn with_pool<T: Send>(&self, opts: &ScanOptions, f: impl FnOnce() -> T + Send) -> T {
+    pub(crate) fn with_pool<T: Send>(&self, opts: &ScanOptions, f: impl FnOnce() -> T + Send) -> T {
         match analysis_pool(opts.threads) {
             Some(pool) => pool.install(f),
             // Not even a one-thread pool with the full stack could be reserved. Running on
@@ -1526,6 +1530,7 @@ impl Scanner {
                                     message: Some("Duplicate".into()),
                                 })
                                 .collect(),
+                            fix: None,
                         },
                         anchor: format!("dup:{hash:016x}").into(),
                         suppressed,
@@ -1914,7 +1919,7 @@ impl Scanner {
 
     /// The triage file of this scan: `opts.triage_file` from disk, else `triage.file` below the
     /// root (from the scanned commit when scanning a revision). `None` when there is none.
-    fn load_triage(
+    pub(crate) fn load_triage(
         &self,
         opts: &ScanOptions,
         info: &SourceInfo,
@@ -2016,6 +2021,8 @@ impl Scanner {
                         kind: entry.status.as_str().to_string(),
                         justification: Some(entry.reason.clone()),
                     });
+                    // A finding triaged to stay is never rewritten.
+                    f.fix = None;
                 }
             }
         }
@@ -2040,6 +2047,7 @@ impl Scanner {
                     symbol: None,
                     value: None,
                     secondary: Vec::new(),
+                    fix: None,
                 },
                 anchor: triage::stale_anchor(entry).into(),
                 suppressed: None,
@@ -2355,9 +2363,9 @@ impl Scanner {
 
 /// A triage file read for a scan; `rel` is its path relative to the scan root when it is below
 /// it (else as given), with `/` separators.
-struct LoadedTriage {
-    file: TriageFile,
-    rel: String,
+pub(crate) struct LoadedTriage {
+    pub(crate) file: TriageFile,
+    pub(crate) rel: String,
 }
 
 /// `path` relative to `root` when it is below it (both resolved), else `path` itself; `/`

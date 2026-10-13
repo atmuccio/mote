@@ -50,7 +50,7 @@ const FIELD_NAMES: [&str; 17] = [
 ];
 
 static FIELD_IDS: LazyLock<[u16; 17]> = LazyLock::new(|| {
-    let lang = tree_sitter::Language::new(tree_sitter_java::LANGUAGE);
+    let lang = tree_sitter::Language::new(tree_sitter_java_orchard::LANGUAGE);
     FIELD_NAMES.map(|n| lang.field_id_for_name(n).map(|f| f.get()).unwrap_or(0))
 });
 

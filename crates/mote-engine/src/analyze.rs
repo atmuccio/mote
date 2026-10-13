@@ -829,6 +829,7 @@ pub fn internal_error_result(job: &FileJob<'_>, message: &str) -> FileResult {
             symbol: None,
             value: None,
             secondary: Vec::new(),
+            fix: None,
         };
         findings = finalize(
             job.registry,
@@ -951,6 +952,14 @@ fn engine_pass(
         .into_iter()
         .map(|mut f| {
             sanitize_range(&mut f.range, line_count);
+            if let Some(fix) = &mut f.fix {
+                if fix.is_valid_for(text) {
+                    fix.locate(index);
+                } else {
+                    tracing::debug!("{}: dropped an invalid fix of {}", job.path, f.rule_id);
+                    f.fix = None;
+                }
+            }
             let suppressed = sup_index.suppress(&f.rule_id, f.range.start_line, &mut sups);
             let anchor = anchor_of(f.range.start_line);
             Pending {
@@ -969,6 +978,7 @@ fn engine_pass(
             symbol: None,
             value: None,
             secondary: Vec::new(),
+            fix: None,
         },
         anchor: "".into(),
         suppressed: None,
@@ -1103,6 +1113,12 @@ pub(crate) fn finalize(
                 .map(|r| r.severity)
                 .or(meta.map(|m| m.severity))
                 .unwrap_or(mote_core::Severity::Low);
+            // A suppressed finding is to stay: never offer to rewrite it.
+            let fix = if p.suppressed.is_some() {
+                None
+            } else {
+                raw.fix
+            };
             Finding {
                 id: finding_id(path, &fingerprint),
                 rule_id: raw.rule_id,
@@ -1118,6 +1134,7 @@ pub(crate) fn finalize(
                 incubating: meta.is_some_and(|m| m.status == RuleStatus::Incubating),
                 suppressed: p.suppressed,
                 secondary: raw.secondary,
+                fix,
             }
         })
         .collect()

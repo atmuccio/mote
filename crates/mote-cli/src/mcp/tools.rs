@@ -1,4 +1,4 @@
-//! MCP tools: scan, summary, work_units, findings, rule, verify, explain_config.
+//! MCP tools: scan, summary, work_units, findings, fixes, rule, verify, explain_config.
 //!
 //! The server keeps one [`Scanner`] per repository root (rebuilt when the config file changes)
 //! and the results of the last [`MAX_SCANS`] scans, addressed by `scan_id`. The analysis cache
@@ -24,6 +24,8 @@ pub const MAX_SCANS: usize = 8;
 const DEFAULT_LIMIT: usize = 50;
 const MAX_LIMIT: usize = 500;
 const DEFAULT_UNIT_SIZE: usize = 25;
+/// Files whose diff the `fixes` tool returns by default.
+const DEFAULT_FIX_FILES: usize = 20;
 
 /// A group of files that must stay together in one work unit: (key, files, findings).
 type Atom = (String, Vec<String>, usize);
@@ -175,6 +177,16 @@ struct FindingsArgs {
 }
 
 #[derive(Deserialize)]
+struct FixesArgs {
+    scan_id: String,
+    unit_id: Option<String>,
+    path: Option<String>,
+    rule: Option<String>,
+    finding_id: Option<String>,
+    max_files: Option<usize>,
+}
+
+#[derive(Deserialize)]
 struct RuleArgs {
     id: String,
 }
@@ -280,8 +292,21 @@ pub fn definitions() -> Vec<Value> {
             &["scan_id"],
         ),
         tool(
+            "fixes",
+            "Mechanical fixes for fixable findings (rules that offer them; see a finding's `fix`): per file, the fixes and the unified diff applying them gives — what `mote fix` would change, computed from the files as they are now. Read-only: nothing is written; apply the diff yourself, then call verify.",
+            json!({
+                "scan_id": {"type": "string"},
+                "unit_id": {"type": "string", "description": "Only the files of this work unit"},
+                "path": {"type": "string", "description": "A file or directory (repo-relative)"},
+                "rule": {"type": "string", "description": "Rule id, or a prefix ending in *"},
+                "finding_id": {"type": "string", "description": "Only this finding's fix"},
+                "max_files": {"type": "integer", "minimum": 1, "maximum": MAX_LIMIT, "default": DEFAULT_FIX_FILES}
+            }),
+            &["scan_id"],
+        ),
+        tool(
             "rule",
-            "What a rule detects, why it matters, how to fix it (with examples), and its parameters.",
+            "What a rule detects, why it matters, how to fix it (with examples), its parameters, and its measured precision.",
             json!({"id": {"type": "string", "description": "Rule id, e.g. java/empty-catch-block"}}),
             &["id"],
         ),
@@ -339,7 +364,29 @@ fn lean(f: &Finding, with_path: bool) -> Value {
             .collect();
         m.insert("related".into(), Value::Array(rel));
     }
+    if let Some(fix) = f.fix.as_ref().filter(|_| f.suppressed.is_none()) {
+        m.insert("fix".into(), fix_json(fix));
+    }
     Value::Object(m)
+}
+
+/// A fix as agents read it: what it does, and each edit's range (lines and columns, the end
+/// exclusive) with the text that replaces it.
+fn fix_json(fix: &mote_core::Fix) -> Value {
+    let edits: Vec<Value> = fix
+        .edits
+        .iter()
+        .map(|e| {
+            json!({
+                "line": e.range.start_line,
+                "col": e.range.start_col,
+                "end_line": e.range.end_line,
+                "end_col": e.range.end_col,
+                "text": e.replacement,
+            })
+        })
+        .collect();
+    json!({"description": fix.description, "edits": edits})
 }
 
 fn sev_counts<'a>(it: impl Iterator<Item = &'a Finding>) -> (u64, u64, u64) {
@@ -438,6 +485,7 @@ impl Server {
             "summary" => self.tool_summary(&args),
             "work_units" => self.tool_work_units(&args),
             "findings" => self.tool_findings(&args),
+            "fixes" => self.tool_fixes(&args),
             "rule" => self.tool_rule(&args),
             "verify" => self.tool_verify(&args),
             "explain_config" => self.tool_explain(&args),
@@ -827,10 +875,136 @@ impl Server {
         Ok(out)
     }
 
+    fn tool_fixes(&mut self, args: &Value) -> ToolResult {
+        let a: FixesArgs = parse_args(args)?;
+        let st = self.state(&a.scan_id)?;
+        if matches!(st.opts.source, SourceSpec::Rev(_)) {
+            return Err(failed(format!(
+                "scan {} is of a git revision: fixes apply to the working tree, so scan it without `rev`",
+                st.id
+            )));
+        }
+        let unit_files: Option<HashSet<&str>> = match &a.unit_id {
+            Some(u) => Some(
+                st.units
+                    .get(u)
+                    .ok_or_else(|| failed(format!("unknown unit_id `{u}` for scan {}", st.id)))?
+                    .files
+                    .iter()
+                    .map(String::as_str)
+                    .collect(),
+            ),
+            None => None,
+        };
+        let rules: Vec<String> = match &a.rule {
+            Some(r) => {
+                let ids: Vec<String> = self
+                    .registry
+                    .rule_ids()
+                    .into_iter()
+                    .filter(|id| rule_matches(r, id))
+                    .filter(|id| self.registry.rule(id).is_some_and(|e| e.meta.fixable))
+                    .map(str::to_string)
+                    .collect();
+                if ids.is_empty() {
+                    return Err(failed(format!("no rule with fixes matches `{r}`")));
+                }
+                ids
+            }
+            None => Vec::new(),
+        };
+        let opts = mote_engine::fix::FixOptions {
+            rules,
+            findings: a.finding_id.iter().cloned().collect(),
+            max_passes: 0,
+        };
+        let path = a
+            .path
+            .as_deref()
+            .map(|p| p.replace('\\', "/").trim_end_matches('/').to_string());
+        let candidates: Vec<&Finding> = st
+            .result
+            .findings
+            .iter()
+            .filter(|f| mote_engine::fix::is_selected(f, &opts))
+            .filter(|f| {
+                unit_files
+                    .as_ref()
+                    .is_none_or(|s| s.contains(f.path.as_str()))
+            })
+            .filter(|f| {
+                path.as_deref().is_none_or(|p| {
+                    p.is_empty()
+                        || f.path == p
+                        || f.path.strip_prefix(p).is_some_and(|r| r.starts_with('/'))
+                })
+            })
+            .collect();
+        if let (Some(id), true) = (&a.finding_id, candidates.is_empty()) {
+            return Err(failed(format!(
+                "finding `{id}` has no fix in scan {} (unknown, suppressed, or its rule offers none)",
+                st.id
+            )));
+        }
+        let mut files: Vec<String> = candidates.iter().map(|f| f.path.clone()).collect();
+        files.dedup();
+        let total_files = files.len();
+        files.truncate(a.max_files.unwrap_or(DEFAULT_FIX_FILES).clamp(1, MAX_LIMIT));
+        let scanner = st.scanner.clone();
+        let fixed = guarded(|| scanner.fix_files(&files, &opts, &st.opts))?.map_err(|e| {
+            failed(format!(
+                "fixing failed: {}",
+                crate::CliError::from(e).message
+            ))
+        })?;
+        let mut out_files = Vec::with_capacity(fixed.len());
+        for ff in &fixed {
+            let fixes: Vec<Value> = candidates
+                .iter()
+                .filter(|f| f.path == ff.path)
+                .filter_map(|f| {
+                    let mut v = fix_json(f.fix.as_ref()?);
+                    v["id"] = json!(f.id);
+                    v["rule"] = json!(f.rule_id);
+                    Some(v)
+                })
+                .collect();
+            let old = String::from_utf8_lossy(&ff.original);
+            let new = String::from_utf8_lossy(&ff.fixed);
+            let mut file = json!({
+                "path": ff.path,
+                "fixes": fixes,
+                "applied": ff.applied,
+                "diff": mote_report::diff::unified(&ff.path, &old, &new),
+            });
+            if let Some(p) = &ff.problem {
+                file["problem"] = json!(p.describe());
+            }
+            if ff.remaining > 0 {
+                file["remaining"] = json!(ff.remaining);
+            }
+            out_files.push(file);
+        }
+        let mut out = json!({
+            "scan_id": st.id,
+            "total_files": total_files,
+            "files": out_files,
+            "note": "Nothing was written. Each diff applies to the file as it is now (`git apply` or `patch -p1` from the scan root); the per-finding edits are those of the scan.",
+        });
+        if total_files > files.len() {
+            out["more_files"] = json!(total_files - files.len());
+        }
+        Ok(out)
+    }
+
     fn tool_rule(&mut self, args: &Value) -> ToolResult {
         let a: RuleArgs = parse_args(args)?;
         let info = crate::commands::rules::find_rule(&self.registry, &a.id).map_err(failed)?;
-        serde_json::to_value(info).map_err(|e| failed(e.to_string()))
+        serde_json::to_value(mote_report::rules::rule_json(
+            &info,
+            crate::precision::data(),
+        ))
+        .map_err(|e| failed(e.to_string()))
     }
 
     fn tool_verify(&mut self, args: &Value) -> ToolResult {

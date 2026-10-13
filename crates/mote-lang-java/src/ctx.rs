@@ -295,6 +295,14 @@ impl Emitted<'_, '_> {
         self.update(|f| f.symbol = Some(s));
         self
     }
+    /// Attach a fix: byte-range edits of the source that remove the finding and cannot change
+    /// what the program does (see `RULE_AUTHORING.md`, "Fixes"). Only for rules whose
+    /// `RuleMeta` says `fixable: true`.
+    pub fn fix(self, description: impl Into<String>, edits: Vec<mote_core::Edit>) -> Self {
+        let fix = mote_core::Fix::new(description, edits);
+        self.update(|f| f.fix = Some(fix));
+        self
+    }
 }
 
 /// Per-file analysis context handed to rules.
@@ -498,9 +506,10 @@ impl<'t> Ctx<'t> {
                         .map(|n| node_text(n, src));
                     header_end = header_end.max(c.end_byte());
                 }
-                // Imports containing syntax errors (e.g. Java 25 `import module`, unsupported by the
-                // grammar) are unreliable: ignore them.
-                "import_declaration" if !c.has_error() => {
+                // Imports containing syntax errors are unreliable: ignore them. Module imports
+                // (`import module java.base;`, Java 25) name a module, not a type or package:
+                // they are not listed either (see `Ctx::imports`).
+                "import_declaration" if !c.has_error() && !syntax::is_module_import(c) => {
                     let mut is_static = false;
                     let mut is_wildcard = false;
                     let mut path = "";
@@ -738,7 +747,10 @@ impl<'t> Ctx<'t> {
     pub fn package_name(&self) -> Option<&'t str> {
         self.package
     }
-    /// All import declarations, in source order.
+    /// The single-type and on-demand import declarations (static or not), in source order.
+    /// Module imports (`import module java.base;`, Java 25) are not listed: they import every
+    /// package a module exports, which a file-local analysis cannot enumerate, so the resolver
+    /// and the rules treat names they may provide as unknown.
     pub fn imports(&self) -> &[Import<'t>] {
         &self.imports
     }
@@ -823,6 +835,21 @@ impl<'t> Ctx<'t> {
             .and_then(|v| u32::try_from(v).ok())
             .filter(|v| *v > 0)
     }
+    /// Whether runs of `///` lines (Markdown documentation comments, Java 23) are documentation
+    /// in this file for a rule that uses documentation as `usage`: always for a rule that
+    /// recognizes documentation to stay silent ([`DocUse::Silences`]), only on a release known
+    /// to be 23 or later for one that reports about it ([`DocUse::Reports`]). See
+    /// [`crate::doc`].
+    ///
+    /// [`DocUse::Silences`]: crate::doc::DocUse::Silences
+    /// [`DocUse::Reports`]: crate::doc::DocUse::Reports
+    pub fn markdown_docs(&self, usage: crate::doc::DocUse) -> bool {
+        match usage {
+            // No parameter lookup: the release does not matter.
+            crate::doc::DocUse::Silences => true,
+            crate::doc::DocUse::Reports => crate::doc::markdown_docs(self.java_release(), usage),
+        }
+    }
     /// String parameter of the current rule.
     pub fn param_str(&self, name: &str) -> &str {
         let d = match self.param_default(name) {
@@ -844,6 +871,7 @@ impl<'t> Ctx<'t> {
             symbol,
             value: None,
             secondary: Vec::new(),
+            fix: None,
         };
         let index = match self.findings.try_borrow_mut() {
             Ok(mut all) => {

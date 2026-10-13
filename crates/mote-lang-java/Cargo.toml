@@ -1,6 +1,6 @@
 [package]
 name = "mote-lang-java"
-description = "Mote Java language plugin (tree-sitter-java): rules, metrics, resolver"
+description = "Mote Java language plugin (tree-sitter-java-orchard): rules, metrics, resolver"
 version.workspace = true
 authors.workspace = true
 edition.workspace = true
@@ -16,7 +16,7 @@ categories.workspace = true
 [dependencies]
 mote-core.workspace = true
 tree-sitter.workspace = true
-tree-sitter-java.workspace = true
+tree-sitter-java-orchard.workspace = true
 rustc-hash.workspace = true
 
 [dev-dependencies]

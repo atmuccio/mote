@@ -8,6 +8,7 @@ pub mod cli;
 mod commands;
 pub mod mcp;
 pub mod plugins;
+mod precision;
 #[cfg(feature = "test-plugin")]
 pub mod test_plugin;
 mod util;
@@ -183,6 +184,7 @@ where
     init_logging(cli.quiet, cli.verbose);
     let result = match cli.command {
         Command::Scan(args) => commands::scan::run(&args, cli.quiet, io),
+        Command::Fix(args) => commands::fix::run(&args, cli.quiet, io),
         Command::Gate(args) => commands::gate::run(&args, io),
         Command::Compare(args) => commands::compare::run(&args, cli.quiet, io),
         Command::Rules(args) => commands::rules::run(&args, io),

@@ -173,6 +173,9 @@ pub struct RuleMeta {
     pub description: &'static str,
     /// Rough effort to fix one occurrence.
     pub remediation_minutes: u32,
+    /// The rule attaches a [`Fix`](crate::fix::Fix) to (some of) its findings: a mechanical
+    /// rewrite that cannot change behaviour, which `mote fix` applies.
+    pub fixable: bool,
 }
 
 impl RuleMeta {
@@ -191,6 +194,7 @@ impl RuleMeta {
             params: &[],
             description: "",
             remediation_minutes: 5,
+            fixable: false,
         }
     }
 }
@@ -248,6 +252,9 @@ pub struct RawFinding {
     pub value: Option<f64>,
     #[serde(default)]
     pub secondary: Vec<Location>,
+    /// A rewrite that removes the finding (see [`Fix`](crate::fix::Fix)), for rules that offer one.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub fix: Option<crate::fix::Fix>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
@@ -279,7 +286,10 @@ pub struct SuppressionInfo {
 }
 
 /// A fully resolved finding as emitted by the engine.
-#[derive(Clone, Debug, Serialize, Deserialize, schemars::JsonSchema)]
+///
+/// `Serialize` is written out (see the impl) so that `fix` is left out of human-readable
+/// formats (JSON) when there is none, while compact binary formats (the cache) always carry it.
+#[derive(Clone, Debug, Deserialize, schemars::JsonSchema)]
 pub struct Finding {
     /// Short, stable identifier (derived from the fingerprint).
     pub id: String,
@@ -300,6 +310,40 @@ pub struct Finding {
     pub suppressed: Option<SuppressionInfo>,
     #[serde(default)]
     pub secondary: Vec<Location>,
+    /// A rewrite that removes the finding, when its rule offers one (never on a suppressed
+    /// finding). Absent from JSON when there is none.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub fix: Option<crate::fix::Fix>,
+}
+
+impl Serialize for Finding {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        use serde::ser::SerializeStruct;
+        // Positional formats (postcard, the cache) need every field; JSON leaves out a missing
+        // fix, as an addition within the results format.
+        let skip_fix = s.is_human_readable() && self.fix.is_none();
+        let mut st = s.serialize_struct("Finding", if skip_fix { 14 } else { 15 })?;
+        st.serialize_field("id", &self.id)?;
+        st.serialize_field("rule_id", &self.rule_id)?;
+        st.serialize_field("message", &self.message)?;
+        st.serialize_field("path", &self.path)?;
+        st.serialize_field("range", &self.range)?;
+        st.serialize_field("severity", &self.severity)?;
+        st.serialize_field("quality", &self.quality)?;
+        st.serialize_field("symbol", &self.symbol)?;
+        st.serialize_field("value", &self.value)?;
+        st.serialize_field("fingerprint", &self.fingerprint)?;
+        st.serialize_field("status", &self.status)?;
+        st.serialize_field("incubating", &self.incubating)?;
+        st.serialize_field("suppressed", &self.suppressed)?;
+        st.serialize_field("secondary", &self.secondary)?;
+        if skip_fix {
+            st.skip_field("fix")?;
+        } else {
+            st.serialize_field("fix", &self.fix)?;
+        }
+        st.end()
+    }
 }
 
 impl Finding {

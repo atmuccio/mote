@@ -16,7 +16,9 @@
 //! | [`bitbucket`] | Bitbucket Code Insights report and annotations |
 //! | [`summary`] | a one-line metrics record for trend archives |
 //! | [`compare`] | the differences between two saved results (text, Markdown, JSON) |
+//! | [`diff`] | unified diffs of the files `mote fix` changes |
 //! | [`rules`] | the rule catalog (text table, JSON, Markdown) |
+//! | [`precision`] | measured rule precision: data types and how the catalog shows it |
 //!
 //! Nothing here reads the file system, the clock, or the environment: the same result always
 //! renders to the same bytes (the only non-deterministic input is `ScanResult::stats`, which only
@@ -25,12 +27,14 @@
 pub mod bitbucket;
 pub mod checkstyle;
 pub mod compare;
+pub mod diff;
 pub mod github;
 pub mod gitlab;
 pub mod html;
 pub mod json;
 pub mod junit;
 pub mod markdown;
+pub mod precision;
 pub mod rules;
 pub mod sarif;
 mod sha256;

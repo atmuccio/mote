@@ -19,7 +19,7 @@ reports and exits with the gate's verdict.
   | Repository | Size | First scan | Re-scan (cache) |
   |---|---|--:|--:|
   | VS Code (TypeScript) | 14,036 files, 4.2 million lines | 1.4 s | 0.3 s |
-  | SymmetricDS (Java) | 1,763 files, 330,000 lines | 0.64 s | 0.07 s |
+  | SymmetricDS (Java) | 1,763 files, 330,000 lines | 0.63 s | 0.07 s |
   | Excalidraw (TypeScript/React) | 695 files, 216,000 lines | 0.10 s | 0.05 s |
 
   A pull-request scan only analyzes the changed files again; the rest comes from the analysis
@@ -87,7 +87,7 @@ false-positive traps, and two sample projects are checked against golden outputs
   tool for those. Its rules about risky code (such as `eval`) are code-quality checks.
 * **Languages.** Java and JavaScript/TypeScript today. Analysis is per file plus cross-file
   duplication; there is no whole-program type resolution or data-flow analysis.
-* **Status: 0.x.** Version 0.1.0 is the first public release. Rules, defaults and output details
+* **Status: 0.x.** The current release is 0.2.0. Rules, defaults and output details
   may still change between 0.x versions, so pin the version you use in CI. The results JSON has a
   `format_version` and only gains fields within it.
 * **License and contributions.** MIT or Apache-2.0, at your option. Bug reports, false positives

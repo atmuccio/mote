@@ -29,16 +29,24 @@ pub fn find_rule(registry: &Registry, id: &str) -> Result<RuleInfo, String> {
 
 pub fn run(args: &RulesArgs, io: &mut Io<'_>) -> CliResult {
     let registry = plugins::registry()?;
+    let precision = crate::precision::data();
     let out = match &args.command {
         Some(RulesCommand::Explain { rule_id, format }) => {
             let rule = find_rule(&registry, rule_id).map_err(CliError::usage)?;
             match format {
-                RulesFormat::Text => render(|w| mote_report::rules::explain_text(&rule, w)),
+                RulesFormat::Text => {
+                    render(|w| mote_report::rules::explain_text(&rule, precision, w))
+                }
                 RulesFormat::Json => render(|w| {
-                    serde_json::to_writer_pretty(&mut *w, &rule)?;
+                    serde_json::to_writer_pretty(
+                        &mut *w,
+                        &mote_report::rules::rule_json(&rule, precision),
+                    )?;
                     writeln!(w)
                 }),
-                RulesFormat::Markdown => mote_report::rules::explain_markdown(&rule).into_bytes(),
+                RulesFormat::Markdown => {
+                    mote_report::rules::explain_markdown(&rule, precision).into_bytes()
+                }
             }
         }
         None => {
@@ -65,9 +73,11 @@ pub fn run(args: &RulesArgs, io: &mut Io<'_>) -> CliResult {
             }
             match args.format {
                 RulesFormat::Text => render(|w| mote_report::rules::write_text(&rules, w)),
-                RulesFormat::Json => render(|w| mote_report::rules::write_json(&rules, w)),
+                RulesFormat::Json => {
+                    render(|w| mote_report::rules::write_json(&rules, precision, w))
+                }
                 RulesFormat::Markdown => {
-                    let mut s = mote_report::rules::render_markdown(&rules);
+                    let mut s = mote_report::rules::render_markdown(&rules, precision);
                     s.push('\n');
                     s.into_bytes()
                 }

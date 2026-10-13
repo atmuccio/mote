@@ -218,7 +218,7 @@ fn corpus_throughput() {
     let t = Instant::now();
     let mut parser = tree_sitter::Parser::new();
     parser
-        .set_language(&tree_sitter_java::LANGUAGE.into())
+        .set_language(&tree_sitter_java_orchard::LANGUAGE.into())
         .unwrap();
     for f in &files {
         let _ = parser.parse(f.text.as_bytes(), None);

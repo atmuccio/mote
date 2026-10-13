@@ -148,6 +148,7 @@ impl LanguagePlugin for TestPlugin {
                             symbol: open.as_ref().map(|f| f.name.clone()),
                             value: None,
                             secondary: Vec::new(),
+                            fix: None,
                         });
                     }
                 }

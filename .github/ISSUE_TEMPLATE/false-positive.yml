@@ -32,7 +32,7 @@ body:
     attributes:
       label: Mote version
       description: The output of `mote version`.
-      placeholder: mote 0.1.0
+      placeholder: mote 0.2.0
     validations:
       required: true
   - type: dropdown

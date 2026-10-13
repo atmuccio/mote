@@ -43,7 +43,7 @@ jobs:
 
       # Pin an exact release: 0.x releases may change rules and defaults. The action installs the
       # engine version of its own tag.
-      - uses: atmuccio/mote@v0.1.0
+      - uses: atmuccio/mote@v0.2.0
         with:
           code-scanning: true
           # Keep the same SARIF threshold on main and on pull requests (MEDIUM is the default).

@@ -44,7 +44,13 @@ With the parameter `type_use_annotations`, the rule also reports a nullness anno
 targets types (JSpecify's or the Checker Framework's `@Nullable` / `@NonNull`, recognized by
 their imports) placed before the keyword modifiers: such an annotation describes the type, so it
 is written right before it (`public @Nullable String name()`). Annotations in other positions
-are never reported. The rule is off by default: it is part of the `conventions` profile."#,
+are never reported. The rule is off by default: it is part of the `conventions` profile.
+
+**Fix available.** `mote fix` puts the keyword modifiers in the order above, each keyword
+moving into the place of another so that annotations and comments stay where they are. The
+order of modifiers means nothing to the compiler. Nullness annotations reported with
+`type_use_annotations` are not moved."#,
+    fixable: true,
     ..RuleMeta::new(
         "java/modifier-order",
         "java",
@@ -103,10 +109,7 @@ impl<'t> JavaRule<'t> for ModifierOrder {
         let mut max = 0;
         let mut seen = 0;
         let mut misplaced = None;
-        for c in syntax::children(node) {
-            if c.is_named() {
-                continue;
-            }
+        for c in syntax::modifier_keywords(node) {
             let Some(r) = rank(kind(c)) else {
                 continue;
             };
@@ -117,13 +120,25 @@ impl<'t> JavaRule<'t> for ModifierOrder {
             max = max.max(r);
         }
         if let Some(at) = misplaced {
-            let mut keywords: Vec<usize> = syntax::children(node)
-                .filter(|c| !c.is_named())
+            let mut keywords: Vec<usize> = syntax::modifier_keywords(node)
                 .filter_map(|c| rank(kind(c)))
                 .collect();
             keywords.sort_unstable();
             let order: Vec<&str> = keywords.iter().map(|&r| ORDER[r]).collect();
-            ctx.emit(at, format!("Order the modifiers as `{}`", order.join(" ")));
+            // The ranked keywords, in source order, each replaced by the keyword its slot gets.
+            let slots: Vec<Node<'t>> = syntax::modifier_keywords(node)
+                .filter(|c| rank(kind(*c)).is_some())
+                .collect();
+            let edits: Vec<Edit> = slots
+                .iter()
+                .zip(&order)
+                .filter(|(slot, want)| ctx.text(**slot) != **want)
+                .map(|(slot, want)| Edit::replace(slot.start_byte(), slot.end_byte(), *want))
+                .collect();
+            let emitted = ctx.emit(at, format!("Order the modifiers as `{}`", order.join(" ")));
+            if slots.len() == order.len() && !edits.is_empty() {
+                emitted.fix("Reorder the modifiers", edits);
+            }
         }
         if seen > 0 && ctx.param_bool("type_use_annotations") {
             self.check_type_use(node, ctx);
@@ -144,7 +159,8 @@ impl ModifierOrder {
         }
         let mut pending: Option<Node<'t>> = None;
         for c in syntax::children(node) {
-            if c.is_named() {
+            let keyword = syntax::modifier_keyword(c);
+            if keyword.is_none() && c.is_named() {
                 if pending.is_none()
                     && matches!(kind(c), "marker_annotation" | "annotation")
                     && matches!(
@@ -157,8 +173,8 @@ impl ModifierOrder {
                 }
                 continue;
             }
-            if let Some(ann) = pending {
-                if rank(kind(c)).is_some() {
+            if let (Some(ann), Some(kw)) = (pending, keyword) {
+                if rank(kind(kw)).is_some() {
                     ctx.emit(
                         ann,
                         format!(

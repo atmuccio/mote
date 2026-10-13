@@ -1,0 +1,29 @@
+enum Mode {
+    FAST, SLOW;
+
+    void run() {
+    } // expect: empty-statement
+
+    int weight() {
+        return 1;
+    }
+}
+
+enum Flags {
+    A, B; // expect: empty-statement
+}
+
+enum Plain {
+    A, B;
+}
+
+enum Trailing {
+    A, B,
+}
+
+enum NoConstants {
+    ;
+    static int count() {
+        return 0;
+    }
+}

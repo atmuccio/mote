@@ -18,7 +18,7 @@ pub(crate) struct FieldIds {
 }
 
 pub(crate) static FIELDS: LazyLock<FieldIds> = LazyLock::new(|| {
-    let lang = tree_sitter::Language::new(tree_sitter_java::LANGUAGE);
+    let lang = tree_sitter::Language::new(tree_sitter_java_orchard::LANGUAGE);
     let id = |n: &str| lang.field_id_for_name(n).map_or(0, NonZeroU16::get);
     FieldIds {
         name: id("name"),
@@ -219,7 +219,9 @@ impl<'t> Mods<'t> {
 
     /// The keyword modifier `kw` (`"static"`, `"final"`, `"private"`, …) is present.
     pub(crate) fn has(self, kw: &str) -> bool {
-        self.children().any(|c| !c.is_named() && kind(c) == kw)
+        self.children()
+            .filter_map(syntax::modifier_keyword)
+            .any(|c| kind(c) == kw)
     }
 
     /// Any annotation is present.

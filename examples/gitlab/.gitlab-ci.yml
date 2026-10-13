@@ -6,7 +6,7 @@
 # as posting the Markdown summary as a merge-request note: docs/ci.md.
 
 variables:
-  MOTE_VERSION: "0.1.0"   # pin an exact release; 0.x releases may change rules and defaults
+  MOTE_VERSION: "0.2.0"   # pin an exact release; 0.x releases may change rules and defaults
 
 mote:
   stage: test

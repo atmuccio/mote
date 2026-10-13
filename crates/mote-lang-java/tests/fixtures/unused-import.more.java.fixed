@@ -1,0 +1,22 @@
+// expect: unused-import
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.stream.Collectors;
+import org.junit.Test;
+// expect: unused-import
+import java.util.Map.Entry;
+
+class More {
+    @Test
+    void t() {
+        Object c = Comparator.naturalOrder();
+        for (Entry<String, String> e : java.util.Map.<String, String>of().entrySet()) { }
+    }
+
+    static class Inner {
+        java.util.function.Supplier<ArrayList<String>> s = ArrayList::new;
+        Object x = java.util.stream.Stream.of(1).collect(Collectors.toList());
+        // Before is mentioned only in a line comment, which is not a use.
+        String text = "Before";
+    }
+}

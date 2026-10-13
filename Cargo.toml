@@ -11,7 +11,7 @@ members = [
 exclude = ["spikes/parse-bench"]
 
 [workspace.package]
-version = "0.1.0"
+version = "0.2.0"
 authors = ["The Mote Authors"]
 edition = "2021"
 license = "MIT OR Apache-2.0"
@@ -51,7 +51,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "json"]
 mimalloc = { version = "0.1", default-features = false }
 anstyle-query = "1"
 tree-sitter = "=0.27.0"
-tree-sitter-java = "=0.23.5"
+tree-sitter-java-orchard = "=0.5.22"
 oxc_allocator = "=0.133.0"
 oxc_ast = "=0.133.0"
 oxc_ast_visit = "=0.133.0"

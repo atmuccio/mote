@@ -21,7 +21,7 @@ pub trait JavaRule<'t> {
     /// Static metadata; `meta().id` is the rule id (`java/<kebab-name>`).
     fn meta(&self) -> &'static RuleMeta;
 
-    /// Named tree-sitter-java node kinds this rule wants to see (e.g. `&["catch_clause"]`).
+    /// Named node kinds of the Java grammar this rule wants to see (e.g. `&["catch_clause"]`).
     /// An empty slice is fine for rules that only use [`finish`](JavaRule::finish).
     fn kinds(&self) -> &'static [&'static str];
 

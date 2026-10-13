@@ -184,22 +184,22 @@ Timings don't carry across machines, so add a table per machine rather than wide
 
 ### Results
 
-Measured 2026-10-11 with `bash scripts/bench.sh --checkout --reuse <clones> --runs 5` under Git Bash.
+Measured 2026-10-13 with `bash scripts/bench.sh --checkout --reuse <clones> --runs 5` under Git Bash.
 The machine: Intel Core i7-8700K (6 cores / 12 threads, 3.7 GHz), 32 GB RAM, Windows 10 22H2. The
 corpora sit on a SATA hard disk but are read from the OS file cache after the priming run; cache
-directories are on an NVMe SSD. Release build of Mote 0.1.0 (552 rules, 485 of them on by
+directories are on an NVMe SSD. Release build of Mote 0.2.0 (552 rules, 485 of them on by
 default), all default rules, no configuration file.
 
 | Corpus | Lang | Source | Files | Lines | Findings | Cold min | Cold median | Warm min | Warm median | Lines/s (cold) |
 |---|---|---|--:|--:|--:|--:|--:|--:|--:|--:|
 | spring-petclinic | java | `818c4136ea` rev | 50 | 4,214 | 20 | 0.17 s | 0.17 s | 0.15 s | 0.15 s | 25k/s |
 | spring-petclinic | java | `818c4136ea` worktree | 50 | 4,214 | 20 | 0.04 s | 0.05 s | 0.03 s | 0.03 s | 90k/s |
-| symmetric-ds | java | `876594332b` rev | 1,763 | 330,130 | 6,498 | 0.87 s | 0.88 s | 0.19 s | 0.19 s | 377k/s |
-| symmetric-ds | java | `876594332b` worktree | 1,763 | 330,130 | 6,498 | 0.64 s | 0.64 s | 0.07 s | 0.07 s | 517k/s |
-| excalidraw | ts | `438d89861f` rev | 695 | 215,689 | 2,264 | 0.27 s | 0.28 s | 0.17 s | 0.18 s | 784k/s |
+| symmetric-ds | java | `876594332b` rev | 1,763 | 330,130 | 6,498 | 0.86 s | 0.87 s | 0.19 s | 0.20 s | 380k/s |
+| symmetric-ds | java | `876594332b` worktree | 1,763 | 330,130 | 6,498 | 0.63 s | 0.63 s | 0.07 s | 0.07 s | 522k/s |
+| excalidraw | ts | `438d89861f` rev | 695 | 215,689 | 2,264 | 0.28 s | 0.28 s | 0.17 s | 0.17 s | 779k/s |
 | excalidraw | ts | `438d89861f` worktree | 695 | 215,689 | 2,264 | 0.10 s | 0.10 s | 0.05 s | 0.05 s | 2.1M/s |
-| vscode | ts | `987bbdddaf` rev | 14,036 | 4,152,081 | 35,812 | 2.54 s | 2.58 s | 0.42 s | 0.43 s | 1.6M/s |
-| vscode | ts | `987bbdddaf` worktree | 14,036 | 4,152,081 | 35,808 | 1.44 s | 1.44 s | 0.28 s | 0.29 s | 2.9M/s |
+| vscode | ts | `987bbdddaf` rev | 14,036 | 4,152,081 | 35,812 | 2.54 s | 2.55 s | 0.43 s | 0.43 s | 1.6M/s |
+| vscode | ts | `987bbdddaf` worktree | 14,036 | 4,152,081 | 35,808 | 1.44 s | 1.45 s | 0.28 s | 0.29 s | 2.9M/s |
 
 "Lines" are physical lines of the analyzed files, blank lines and comments included (SymmetricDS
 has 252k lines of code, VS Code 3.3M). VS Code has 14,130 matching files; the other 94 were
@@ -211,7 +211,7 @@ the `git` wrapper mentioned above.
 What the numbers mean:
 
 * **Cold is the first scan of a repository** (a fresh clone in CI with no cache restored):
-  VS Code's 4.2 million lines in 1.4 s, and SymmetricDS in 0.64 s. That is inside the
+  VS Code's 4.2 million lines in 1.4 s, and SymmetricDS in 0.63 s. That is inside the
   architecture target of 5 s per million lines of code on an 8-core laptop.
 * **Warm is every scan after that**: re-running on an unchanged tree, a CI job that restored the
   cache, or an agent re-scanning after an edit. It costs discovery, cache reads, duplication
@@ -357,6 +357,10 @@ Recall is published raw and with the declined and reference-wrong misses left ou
 sampled per rule and labeled true positive, false positive, or noise that configuration handles
 (vendored or generated files). A stable rule needs at least 95% precision on its labeled
 findings; incubating rules are promoted only once a sample of their findings is labeled.
+The per-rule results (labeled findings, true and false positives, and the precision once enough
+findings are labeled) are published with each release: in [rules.md](rules.md#measured-precision)
+(a *Measured precision* line per rule), in `mote rules explain <id>`, and in the `precision`
+object of `mote rules --format json` ([cli.md](cli.md#mote-rules)).
 
 **Protocol:**
 

@@ -158,7 +158,7 @@ reproduced below.
 | tracing-serde | 0.2.0 | MIT | [MIT](#mit) | https://github.com/tokio-rs/tracing |
 | tracing-subscriber | 0.3.23 | MIT | [MIT](#mit) | https://github.com/tokio-rs/tracing |
 | tree-sitter | 0.27.0 | MIT | [MIT](#mit) | https://github.com/tree-sitter/tree-sitter |
-| tree-sitter-java | 0.23.5 | MIT | [MIT](#mit) | https://github.com/tree-sitter/tree-sitter-java |
+| tree-sitter-java-orchard | 0.5.22 | MIT | [MIT](#mit) | https://codeberg.org/grammar-orchard/tree-sitter-java-orchard |
 | tree-sitter-language | 0.1.8 | MIT | [MIT](#mit) | https://github.com/tree-sitter/tree-sitter |
 | unicode-id-start | 1.5.0 | (MIT OR Apache-2.0) AND Unicode-3.0 | [MIT](#mit) AND [Unicode-3.0](#unicode-30) | https://github.com/Boshen/unicode-id-start |
 | unicode-ident | 1.0.26 | (MIT OR Apache-2.0) AND Unicode-3.0 | [MIT](#mit) AND [Unicode-3.0](#unicode-30) | https://github.com/dtolnay/unicode-ident |
@@ -1824,7 +1824,7 @@ obstacle to adoption, that text has been removed.
 
 #### MIT, text 51 of 54
 
-Used by: tree-sitter-java 0.23.5 (upstream text, https://github.com/tree-sitter/tree-sitter-java/blob/v0.23.5/LICENSE).
+Used by: tree-sitter-java-orchard 0.5.22 (LICENSE).
 
 ```text
 MIT License

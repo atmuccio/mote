@@ -89,6 +89,10 @@ impl<'t> JavaRule<'t> for InternalJdkApi {
             return;
         }
         let (target, name): (Node<'t>, String) = if kind(node) == "import_declaration" {
+            // A module import names a module, not a package or class.
+            if syntax::is_module_import(node) {
+                return;
+            }
             let Some(path) = named_children(node)
                 .find(|c| matches!(kind(*c), "scoped_identifier" | "identifier"))
             else {

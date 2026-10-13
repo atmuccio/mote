@@ -1,0 +1,4 @@
+/** @jsx h */
+import { h } from 'preact';
+import 'preact'; // expect: no-unused-vars
+export const View = () => <div className="view" />;

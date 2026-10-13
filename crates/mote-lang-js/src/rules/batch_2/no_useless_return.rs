@@ -40,7 +40,11 @@ function save(item) {
   store.put(item);
 }
 ```
+
+**Fix available.** `mote fix` deletes the statement: control reaches the end of the function (or
+of the loop body) the same way without it.
 "#,
+    fixable: true,
     ..RuleMeta::new(
         "js/no-useless-return",
         "js",
@@ -99,7 +103,9 @@ impl JsRule for NoUselessReturn {
         if ctx.state::<ValueReturning>().0.contains(&function.id()) {
             return;
         }
-        ctx.emit(ret.span, "Remove this redundant 'return'");
+        let edit = fix::delete_span(ctx.source(), ret.span.start as usize, ret.span.end as usize);
+        ctx.emit(ret.span, "Remove this redundant 'return'")
+            .fix("Delete the statement", vec![edit]);
     }
 }
 
@@ -128,6 +134,12 @@ fn check_continue<'a>(node: &AstNode<'a>, cont: &ContinueStatement<'a>, ctx: &mu
         _ => false,
     };
     if is_loop_body {
-        ctx.emit(cont.span, "Remove this redundant 'continue'");
+        let edit = fix::delete_span(
+            ctx.source(),
+            cont.span.start as usize,
+            cont.span.end as usize,
+        );
+        ctx.emit(cont.span, "Remove this redundant 'continue'")
+            .fix("Delete the statement", vec![edit]);
     }
 }

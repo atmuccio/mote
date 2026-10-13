@@ -1,0 +1,30 @@
+export {};
+const typed: number = 1; // expect: prefer-const
+let definite!: string;
+definite = 'a'; // expect: prefer-const
+declare let ambient: number;
+declare module 'm' {
+  let inModule: number;
+}
+namespace Space {
+  const inside = 1; // expect: prefer-const
+  export const value = inside;
+}
+class Holder {
+  method(): number {
+    const result = this.compute(); // expect: prefer-const
+    return result;
+  }
+  compute(): number {
+    let value: number | undefined;
+    if (Math.random() > 0.5) {
+      value = 1;
+    }
+    return value ?? 0;
+  }
+}
+const asserted = (1 as number)!; // expect: prefer-const
+let withCast = 1;
+(withCast as number) = 2;
+let nonNull: number | undefined = 1;
+nonNull! = 2;

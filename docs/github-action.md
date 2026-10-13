@@ -14,7 +14,7 @@ required status check is all it takes to block merges. Nothing depends on GitHub
 | Artifact `mote-results` | `results.json` (for `mote gate`), `results.sarif`, `summary.md`, `checks.json` | — |
 | Code Scanning (optional) | SARIF upload, category `mote` | `security-events: write` (+ Code Security on private repos) |
 
-> The action lives at **`atmuccio/mote`**. Pin it to a release tag such as `@v0.1.0`: the action
+> The action lives at **`atmuccio/mote`**. Pin it to a release tag such as `@v0.2.0`: the action
 > ref also pins the engine version. `@v0` follows the latest 0.x release, whose configuration and
 > results formats may still change.
 
@@ -43,7 +43,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: atmuccio/mote@v0.1.0
+      - uses: atmuccio/mote@v0.2.0
         with:
           fail-on-gate: ${{ github.event_name == 'pull_request' }}
 ```
@@ -184,7 +184,7 @@ job, so one maintainer label unblocks both jobs:
         with: { name: mote-results, path: mote-results }
       - uses: actions/download-artifact@v8
         with: { name: coverage, path: coverage-reports }
-      - uses: atmuccio/mote@v0.1.0
+      - uses: atmuccio/mote@v0.2.0
         with:
           mode: gate                          # mote gate --only coverage ...
           results: mote-results/results.json
@@ -239,7 +239,7 @@ The action writes `results.json`, `results.sarif`, `summary.md` and `checks.json
 reports can go into it with `extra-args`; for example the self-contained HTML report:
 
 ```yaml
-      - uses: atmuccio/mote@v0.1.0
+      - uses: atmuccio/mote@v0.2.0
         with:
           extra-args: --html ${{ runner.temp }}/mote-results/report.html
 ```

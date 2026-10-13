@@ -6,8 +6,8 @@
       "tool": {
         "driver": {
           "name": "Mote",
-          "version": "0.1.0",
-          "semanticVersion": "0.1.0",
+          "version": "0.2.0",
+          "semanticVersion": "0.2.0",
           "informationUri": "https://github.com/atmuccio/mote",
           "rules": [
             {
@@ -170,6 +170,31 @@
             "primaryLocationLineHash": "fp-new000000001"
           },
           "baselineState": "new",
+          "fixes": [
+            {
+              "description": {
+                "text": "Delete the statement"
+              },
+              "artifactChanges": [
+                {
+                  "artifactLocation": {
+                    "uri": "src/a/Order%20Service.java",
+                    "uriBaseId": "%SRCROOT%"
+                  },
+                  "replacements": [
+                    {
+                      "deletedRegion": {
+                        "startLine": 3,
+                        "startColumn": 1,
+                        "endLine": 4,
+                        "endColumn": 1
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
           "properties": {
             "id": "new000000001",
             "quality": "reliability",

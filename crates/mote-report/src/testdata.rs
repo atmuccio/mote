@@ -39,6 +39,7 @@ pub fn rule(id: &str, name: &str, severity: Severity, quality: Quality) -> RuleI
         ),
         remediation_minutes: 5,
         origin: RuleOrigin::Plugin,
+        fixable: false,
     }
 }
 
@@ -76,6 +77,7 @@ pub fn finding(
         incubating: false,
         suppressed: None,
         secondary: vec![],
+        fix: None,
     }
 }
 
@@ -198,16 +200,28 @@ pub fn with_base() -> ScanResult {
         message: Some("Duplicate".into()),
     }];
     dup.symbol = None;
+    let mut fixable = finding(
+        "new000000001",
+        "java/self-assignment",
+        "src/a/Order Service.java",
+        (3, 5, 3, 12),
+        High,
+        New,
+        "Remove this self-assignment of `total` | it has no effect",
+    );
+    let mut fix = mote_core::Fix::new(
+        "Delete the statement",
+        vec![mote_core::Edit::delete(40, 55)],
+    );
+    fix.edits[0].range = TextRange {
+        start_line: 3,
+        start_col: 1,
+        end_line: 4,
+        end_col: 1,
+    };
+    fixable.fix = Some(fix);
     let findings = vec![
-        finding(
-            "new000000001",
-            "java/self-assignment",
-            "src/a/Order Service.java",
-            (3, 5, 3, 12),
-            High,
-            New,
-            "Remove this self-assignment of `total` | it has no effect",
-        ),
+        fixable,
         worse,
         dup,
         finding(

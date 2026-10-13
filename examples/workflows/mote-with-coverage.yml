@@ -33,7 +33,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: atmuccio/mote@v0.1.0
+      - uses: atmuccio/mote@v0.2.0
         with:
           fail-on-gate: ${{ github.event_name == 'pull_request' }}
           # artifact-name: mote-results   # default; downloaded by mote-coverage below
@@ -81,7 +81,7 @@ jobs:
       # condition is judged here (the severity findings are the `mote` job's verdict), and the
       # override label is honored exactly as in the `mote` job (same label, same roles check).
       - name: Coverage gate on new code
-        uses: atmuccio/mote@v0.1.0
+        uses: atmuccio/mote@v0.2.0
         with:
           mode: gate
           results: mote-results/results.json

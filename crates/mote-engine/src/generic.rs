@@ -237,6 +237,7 @@ const fn meta_rule(id: &'static str, name: &'static str, description: &'static s
         params: &[],
         description,
         remediation_minutes: 2,
+        fixable: false,
     }
 }
 
@@ -430,6 +431,7 @@ pub fn evaluate(input: &GenericInput<'_>) -> Vec<RawFinding> {
                 symbol: None,
                 value: Some(f64::from(loc)),
                 secondary: Vec::new(),
+                fix: None,
             });
         }
     }
@@ -457,6 +459,7 @@ fn fn_finding(id: &str, f: &FunctionMetric, message: String, value: u32) -> RawF
         symbol: Some(f.name.clone()),
         value: Some(f64::from(value)),
         secondary: Vec::new(),
+        fix: None,
     }
 }
 
@@ -592,6 +595,7 @@ fn task_markers(
                         symbol: symbol(),
                         value: None,
                         secondary: Vec::new(),
+                        fix: None,
                     });
                 }
             }
@@ -614,6 +618,7 @@ fn task_markers(
                         symbol: symbol(),
                         value: None,
                         secondary: Vec::new(),
+                        fix: None,
                     });
                 }
             }
@@ -854,6 +859,7 @@ fn commented_out_code(input: &GenericInput<'_>, id: &'static str, out: &mut Vec<
             symbol,
             value: None,
             secondary: Vec::new(),
+            fix: None,
         });
     }
 }

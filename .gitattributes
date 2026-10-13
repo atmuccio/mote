@@ -6,7 +6,11 @@ action.yml text eol=lf
 *.yml text eol=lf
 *.yaml text eol=lf
 
-# Fixtures that contain raw control bytes or a byte-order mark on purpose: never normalise them.
+# Fixtures that contain raw control bytes or a byte-order mark on purpose: never normalise them
+# (nor their expected fixed text, `<fixture>.fixed`).
 crates/mote-lang-java/tests/fixtures/invisible-character*.java -text
 crates/mote-lang-js/tests/fixtures/invisible-character*.js -text
 crates/mote-lang-js/tests/fixtures/regex-control-character.js -text
+# Fixtures that check Markdown doc comments (`///` runs) with CRLF line ends: keep them CRLF.
+crates/mote-lang-java/tests/fixtures/*.markdown-crlf.java -text
+crates/mote-lang-java/tests/fixtures/*.markdown-crlf.java.fixed -text

@@ -1,0 +1,10 @@
+// A classic script: top-level bindings are shared with other scripts.
+let sharedTop = 1;
+function run() {
+  const local = sharedTop; // expect: prefer-const
+  return local;
+}
+{
+  const blockScoped = 2; // expect: prefer-const
+  run(blockScoped);
+}

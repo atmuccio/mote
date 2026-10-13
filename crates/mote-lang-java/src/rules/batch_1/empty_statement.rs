@@ -36,7 +36,13 @@ counter++;
 
 Not reported: the semicolons inside a `for (;;)` header, a classic `for` loop whose header
 does the work (`for (i = 0; a[i] != 0; i++);`), and a `while`/`do` whose condition calls a
-method (`while (it.next() != null);`), and the `;` that ends the constants of an enum."#,
+method (`while (it.next() != null);`), and the `;` that ends the constants of an enum.
+
+**Fix available.** `mote fix` deletes a stray `;` that stands among other statements or members
+(`foo();;`, a `;` after a method): there it is a statement that does nothing, or no statement
+at all. A `;` that is the body of an `if`, `else` or loop, or of a label, is reported but not
+fixed: deleting it would make the next statement the body."#,
+    fixable: true,
     ..RuleMeta::new("java/empty-statement", "java", "Empty statement")
 };
 
@@ -123,9 +129,17 @@ impl<'t> JavaRule<'t> for EmptyStatement {
                 let separator = (k == "enum_body_declarations")
                     .then(|| syntax::children(node).find(|c| is_semicolon(*c)))
                     .flatten();
+                // A labeled statement's `;` is its body: deleting it would label the next one.
+                let fixable = k != "labeled_statement";
                 for c in syntax::children(node) {
                     if is_semicolon(c) && separator.is_none_or(|sep| sep.id() != c.id()) {
-                        ctx.emit(c, "Remove this empty statement");
+                        let emitted = ctx.emit(c, "Remove this empty statement");
+                        if fixable {
+                            emitted.fix(
+                                "Delete the stray `;`",
+                                vec![fix::delete_span(ctx.source(), c.start_byte(), c.end_byte())],
+                            );
+                        }
                     }
                 }
             }

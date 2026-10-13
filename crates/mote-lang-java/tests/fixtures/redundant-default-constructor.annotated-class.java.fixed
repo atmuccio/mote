@@ -1,0 +1,31 @@
+import lombok.Builder;
+
+// A class annotation can generate constructors (Lombok's `@Builder` adds one taking every
+// field): the explicit no-argument constructor is then the only one without arguments, so the
+// finding is reported without a fix.
+@Builder
+public class Order {                                      // expect-next-line: redundant-default-constructor
+    public Order() {
+    }
+
+    private String id;
+}
+
+// Only static methods besides the constructor: without it the class would read as a utility
+// class (`java/utility-class-constructor`), so the finding gets no fix.
+class Codes {                                             // expect-next-line: redundant-default-constructor
+    Codes() {
+    }
+
+    static int parse(String s) {
+        return Integer.parseInt(s);
+    }
+}
+
+// `@Deprecated` generates no constructor: the finding is fixed.
+@Deprecated
+class Old {                                               // expect-next-line: redundant-default-constructor
+
+    void run() {
+    }
+}

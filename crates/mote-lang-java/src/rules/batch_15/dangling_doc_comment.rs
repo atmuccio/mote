@@ -1,5 +1,6 @@
-//! `java/dangling-doc-comment` — a `/** … */` comment that documents nothing: after the
-//! annotations of a declaration, inside a method body, or followed by no declaration.
+//! `java/dangling-doc-comment` — a `/** … */` comment (or a `///` run, Java 23) that documents
+//! nothing: after the annotations of a declaration, inside a method body, or followed by no
+//! declaration.
 
 use super::util;
 use crate::prelude::*;
@@ -53,7 +54,17 @@ void run() {
 Not reported: comments before a declaration of any kind (local classes and records included),
 comments before the `package` or `import` lines (file headers and package documentation),
 banner comments that start with three or more stars (`/*****`), and `/**` comments inside
-expressions. The rule is off by default: it is part of the `conventions` profile."#,
+expressions.
+
+Since Java 23 a run of `///` lines is a documentation comment too (Markdown syntax). Such a
+run is reported after annotations and in a type body with no declaration after it, and only
+when the file's Java release is known to be 23 or later (`java.release`, or the build file):
+in older code, and when the release is unknown, `///` may be an ordinary comment. A `///` run
+inside a method or initializer body is not reported, as `///` there is often an ordinary note
+or commented-out code; neither are `////` lines nor `///` comments after code on the same
+line.
+
+The rule is off by default: it is part of the `conventions` profile."#,
     ..RuleMeta::new(
         "java/dangling-doc-comment",
         "java",
@@ -91,52 +102,28 @@ impl<'t> JavaRule<'t> for DanglingDocComment {
     }
 
     fn kinds(&self) -> &'static [&'static str] {
-        &["block_comment"]
+        &["block_comment", "line_comment"]
     }
 
     fn check(&mut self, node: Node<'t>, ctx: &Ctx<'t>) {
+        if kind(node) == "line_comment" {
+            markdown_run(node, ctx);
+            return;
+        }
         if !util::is_doc_comment(ctx.text(node)) {
             return;
         }
         let Some(parent) = ctx.parent(node) else {
             return;
         };
-        let in_body = match kind(parent) {
-            "modifiers" => {
-                // Between annotations and keyword modifiers.
-                let after_annotation = syntax::children(parent)
-                    .take_while(|c| c.id() != node.id())
-                    .any(|c| matches!(kind(c), "annotation" | "marker_annotation"));
-                if after_annotation {
-                    ctx.emit(node, AFTER_ANNOTATIONS);
-                }
+        let in_body = match place(parent, node) {
+            Place::AfterAnnotations => {
+                ctx.emit(node, AFTER_ANNOTATIONS);
                 return;
             }
-            "block" | "constructor_body" | "switch_block_statement_group" => true,
-            "class_body"
-            | "interface_body"
-            | "enum_body"
-            | "enum_body_declarations"
-            | "annotation_type_body"
-            | "program" => false,
-            _ if is_documentable(parent) => {
-                // Right after the modifiers of a declaration that has no keyword modifier
-                // (`@Override /** … */ String name()`).
-                let previous = syntax::children(parent)
-                    .take_while(|c| c.id() != node.id())
-                    .filter(|c| c.is_named() && !syntax::is_comment(*c))
-                    .last();
-                let after_annotation = previous.is_some_and(|p| {
-                    kind(p) == "modifiers"
-                        && syntax::named_children(p)
-                            .any(|c| matches!(kind(c), "annotation" | "marker_annotation"))
-                });
-                if after_annotation {
-                    ctx.emit(node, AFTER_ANNOTATIONS);
-                }
-                return;
-            }
-            _ => return,
+            Place::Body => true,
+            Place::Container => false,
+            Place::Other => return,
         };
         match util::next_code(parent, node) {
             Some(next) if is_documentable(next) => {}
@@ -148,12 +135,102 @@ impl<'t> JavaRule<'t> for DanglingDocComment {
                 );
             }
             _ => {
-                ctx.emit(
-                    node,
-                    "Use a plain comment here, or move it before the declaration it describes: \
-                     no declaration follows it",
-                );
+                ctx.emit(node, NOTHING_FOLLOWS);
             }
+        }
+    }
+}
+
+const NOTHING_FOLLOWS: &str = "Use a plain comment here, or move it before the declaration it \
+                               describes: no declaration follows it";
+
+/// Where a doc comment `node`, a child of `parent`, sits.
+enum Place {
+    /// After the annotations of a declaration.
+    AfterAnnotations,
+    /// In a method, constructor, initializer or lambda body, or a `switch` group.
+    Body,
+    /// In a type body or at the top level of the file.
+    Container,
+    /// Anywhere else (inside the modifiers before any annotation, inside expressions, …).
+    Other,
+}
+
+fn place(parent: Node<'_>, node: Node<'_>) -> Place {
+    match kind(parent) {
+        "modifiers" => {
+            // Between annotations and keyword modifiers.
+            let after_annotation = syntax::children(parent)
+                .take_while(|c| c.id() != node.id())
+                .any(|c| matches!(kind(c), "annotation" | "marker_annotation"));
+            if after_annotation {
+                Place::AfterAnnotations
+            } else {
+                Place::Other
+            }
+        }
+        "block" | "constructor_body" | "switch_block_statement_group" => Place::Body,
+        "class_body"
+        | "interface_body"
+        | "enum_body"
+        | "enum_body_declarations"
+        | "annotation_type_body"
+        | "program" => Place::Container,
+        _ if is_documentable(parent) => {
+            // Right after the modifiers of a declaration that has no keyword modifier
+            // (`@Override /** … */ String name()`).
+            let previous = syntax::children(parent)
+                .take_while(|c| c.id() != node.id())
+                .filter(|c| c.is_named() && !syntax::is_comment(*c))
+                .last();
+            let after_annotation = previous.is_some_and(|p| {
+                kind(p) == "modifiers"
+                    && syntax::named_children(p)
+                        .any(|c| matches!(kind(c), "annotation" | "marker_annotation"))
+            });
+            if after_annotation {
+                Place::AfterAnnotations
+            } else {
+                Place::Other
+            }
+        }
+        _ => Place::Other,
+    }
+}
+
+/// A run of `///` lines (Java 23), reported once, from its first line, and only on a release
+/// known to read them as documentation. Inside bodies such runs are not reported: older code
+/// and ordinary notes use `///` there too.
+fn markdown_run<'t>(line: Node<'t>, ctx: &Ctx<'t>) {
+    let src = ctx.source();
+    // Cheapest first: the text, the release, then the position.
+    if !doc::is_markdown_text(ctx.text(line))
+        || !ctx.markdown_docs(DocUse::Reports)
+        || !doc::starts_line(src, line)
+        || !doc::starts_run(ctx, line)
+    {
+        return;
+    }
+    let Some(parent) = ctx.parent(line) else {
+        return;
+    };
+    let in_container = match place(parent, line) {
+        Place::AfterAnnotations => false,
+        Place::Container => true,
+        Place::Body | Place::Other => return,
+    };
+    let run = doc::run_from(src, parent, line);
+    let Some(&last) = run.last() else {
+        return;
+    };
+    if !in_container {
+        ctx.emit_range(Span::cover(line, last), AFTER_ANNOTATIONS);
+        return;
+    }
+    match util::next_code(parent, last) {
+        Some(next) if is_documentable(next) || kind(next) == "ERROR" => {}
+        _ => {
+            ctx.emit_range(Span::cover(line, last), NOTHING_FOLLOWS);
         }
     }
 }

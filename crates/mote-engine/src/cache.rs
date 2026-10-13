@@ -28,7 +28,8 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, RwLock};
 use xxhash_rust::xxh3::Xxh3;
 
-/// Bump when the cached value format or map-phase semantics change (10: the project is renamed
+/// Bump when the cached value format or map-phase semantics change (11: findings carry an
+/// optional fix, always encoded; 10: the project is renamed
 /// Mote, so cached findings carry `mote/…` rule ids and `mote-ignore` suppression kinds;
 /// 9: JavaScript test-suite callbacks are containers, not functions, and the tests in them are;
 /// 8: fingerprint anchors of lines longer than 1 KiB are capped; 7: a library banner naming
@@ -36,7 +37,7 @@ use xxhash_rust::xxh3::Xxh3;
 /// JavaScript is skipped (`SkipReason::Vendored`), compatibility suppressions per source; 5: line
 /// anchors carry a context hash for moved-code matching; 4: the `generated code … do not edit`
 /// header marker).
-pub const ENGINE_CACHE_VERSION: u32 = 10;
+pub const ENGINE_CACHE_VERSION: u32 = 11;
 
 /// Cache file name inside the cache directory.
 pub const CACHE_FILE: &str = "cache.redb";
@@ -633,6 +634,50 @@ mod tests {
         std::fs::write(dir.path().join(CACHE_FILE), b"garbage garbage garbage").unwrap();
         let c = Cache::open(dir.path(), 10).unwrap();
         assert_eq!(c.len(), 0);
+    }
+
+    #[test]
+    fn findings_keep_their_fix_through_the_cache() {
+        let finding = |fix: Option<mote_core::Fix>| mote_core::Finding {
+            id: "abc".into(),
+            rule_id: "x/rule".into(),
+            message: "m".into(),
+            path: "a.x".into(),
+            range: mote_core::TextRange::line(1),
+            severity: mote_core::Severity::Low,
+            quality: mote_core::Quality::Maintainability,
+            symbol: None,
+            value: None,
+            fingerprint: "f".into(),
+            status: Default::default(),
+            incubating: false,
+            suppressed: None,
+            secondary: Vec::new(),
+            fix,
+        };
+        let mut fix = mote_core::Fix::new("Write y", vec![mote_core::Edit::replace(0, 1, "y")]);
+        fix.edits[0].range = mote_core::TextRange {
+            start_line: 1,
+            start_col: 1,
+            end_line: 1,
+            end_col: 2,
+        };
+        let r = FileResult {
+            findings: vec![finding(Some(fix.clone())), finding(None)],
+            ..Default::default()
+        };
+        let key = [3u8; 16];
+        let bytes = encode(&key, &FileOutcome::Analyzed(Box::new(r))).unwrap();
+        let Some(FileOutcome::Analyzed(back)) = decode(&key, &bytes) else {
+            panic!("not decoded");
+        };
+        assert_eq!(back.findings[0].fix.as_ref(), Some(&fix));
+        assert!(back.findings[1].fix.is_none());
+        // JSON leaves a missing fix out (an addition to the results format).
+        let json = serde_json::to_string(&back.findings[1]).unwrap();
+        assert!(!json.contains("\"fix\""), "{json}");
+        let json = serde_json::to_string(&back.findings[0]).unwrap();
+        assert!(json.ends_with(r#""secondary":[],"fix":{"description":"Write y","edits":[{"start":0,"end":1,"range":{"start_line":1,"start_col":1,"end_line":1,"end_col":2},"replacement":"y"}]}}"#), "{json}");
     }
 
     #[test]

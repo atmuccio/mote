@@ -687,6 +687,17 @@ fn rules_catalog_and_schema() {
     let mut sorted = ids.clone();
     sorted.sort();
     assert_eq!(ids, sorted);
+    // Every rule carries the measured precision (additive): the embedded data covers the
+    // product's rules, the test plugin's are newer than it.
+    for r in v.as_array().unwrap() {
+        let state = r["precision"]["state"].as_str().unwrap_or_default();
+        if r["id"].as_str().unwrap().starts_with("tl/") {
+            assert_eq!(state, "not-measured-yet", "{r}");
+        } else {
+            assert!(!state.is_empty(), "{r}");
+        }
+        assert!(r["precision"]["measured"].is_string(), "{r}");
+    }
     let r = mote(
         d.path(),
         &["rules", "--language", "tl", "--all", "--format", "markdown"],
@@ -696,6 +707,20 @@ fn rules_catalog_and_schema() {
     let r = mote(d.path(), &["rules", "explain", "tl/high-bug"]);
     assert_eq!(r.code, 0);
     assert!(r.stdout.contains("Flags the `HIGHBUG` marker."), "{r:?}");
+    assert!(
+        r.stdout.contains(
+            "Measured precision: not measured yet: the rule is newer than the last measurement"
+        ),
+        "{r:?}"
+    );
+    let r = mote(d.path(), &["rules", "explain", "mote/internal-error"]);
+    assert!(
+        r.stdout.contains(
+            "
+Measured precision: "
+        ),
+        "{r:?}"
+    );
     let r = mote(
         d.path(),
         &[
@@ -706,9 +731,11 @@ fn rules_catalog_and_schema() {
             "json",
         ],
     );
-    assert!(json(&r.stdout)["params"]
+    let explained = json(&r.stdout);
+    assert!(explained["params"]
         .as_array()
         .is_some_and(|p| !p.is_empty()));
+    assert!(explained["precision"]["state"].is_string(), "{explained}");
 
     let r = mote(d.path(), &["config", "schema"]);
     assert_eq!(r.code, 0);

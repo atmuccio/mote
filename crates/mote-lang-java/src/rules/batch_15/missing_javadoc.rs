@@ -15,9 +15,9 @@ pub static META: RuleMeta = RuleMeta {
     tags: &["conventions", "documentation"],
     remediation_minutes: 5,
     description: r#"Detects declarations that other code can see but that carry no
-documentation comment (`/** … */`): public top-level types, and the public and protected
-nested types, methods, constructors and fields of such types (members of interfaces and
-annotation types are public unless declared `private`).
+documentation comment (`/** … */`, or a run of `///` lines since Java 23): public top-level
+types, and the public and protected nested types, methods, constructors and fields of such
+types (members of interfaces and annotation types are public unless declared `private`).
 
 **Why it matters.** The visible declarations of a type are its contract. Without
 documentation, every caller has to read the implementation to learn what a method expects,
@@ -51,8 +51,18 @@ methods annotated `@Override` (they inherit the documentation of the method they
 simple accessors (a getter `getX()` / `isX()` / `hasX()` whose body only returns a field, a
 setter `setX(v)` whose body only assigns it, optionally followed by `return this;`); compact
 record constructors; and enum constants. A doc comment placed after the annotations counts
-here (`java/dangling-doc-comment` reports its position). The rule is off by default and
-reports a lot on code that is not documented: it is part of the `conventions` profile."#,
+here (`java/dangling-doc-comment` reports its position).
+
+Since Java 23 a run of `///` lines is a documentation comment too (Markdown syntax), and counts
+as one here whatever release the file is compiled for: whether `///` is documentation depends
+on the JDK whose javadoc tool reads the code, not on the compile target (a project compiled for
+Java 17 may be documented that way), and taking a `///` run as documentation can only remove a
+finding. Not documentation: lines starting with four or more slashes (`////`), `///`
+comments written after code on the same line, and the shebang line and directives of the jbang
+script runner (`///usr/bin/env jbang`, `///DEPS …`, `///SOURCES …`).
+
+The rule is off by default and reports a lot on code that is not documented: it is part of
+the `conventions` profile."#,
     ..RuleMeta::new(
         "java/missing-javadoc",
         "java",
@@ -105,10 +115,7 @@ fn access(decl: Node<'_>) -> Access {
     let Some(m) = syntax::modifiers(decl) else {
         return Access::Package;
     };
-    for c in syntax::children(m) {
-        if c.is_named() {
-            continue;
-        }
+    for c in syntax::modifier_keywords(m) {
         match kind(c) {
             "public" => return Access::Public,
             "protected" => return Access::Protected,
@@ -259,8 +266,8 @@ fn modifier_facts<'t>(ctx: &Ctx<'t>, decl: Node<'t>) -> ModifierFacts<'t> {
         return facts;
     };
     for c in syntax::children(m) {
-        if !c.is_named() {
-            match kind(c) {
+        if let Some(kw) = syntax::modifier_keyword(c) {
+            match kind(kw) {
                 "public" => facts.access = Access::Public,
                 "protected" => facts.access = Access::Protected,
                 "private" => facts.access = Access::Private,
@@ -280,11 +287,26 @@ fn modifier_facts<'t>(ctx: &Ctx<'t>, decl: Node<'t>) -> ModifierFacts<'t> {
                     facts.overrides = true;
                 }
             }
-            K::BlockComment if util::is_doc_comment(ctx.text(c)) => facts.doc_inside = true,
+            K::BlockComment | K::LineComment if is_doc(ctx, c) => facts.doc_inside = true,
             _ => {}
         }
     }
     facts
+}
+
+/// Whether the comment `c` is documentation: a `/** … */` comment, or a line of a `///` run
+/// (Java 23; read on any release, see `DocUse::Silences`).
+fn is_doc<'t>(ctx: &Ctx<'t>, c: Node<'t>) -> bool {
+    match k(c) {
+        K::BlockComment => util::is_doc_comment(ctx.text(c)),
+        // Cheapest first: the text, then the line, then the release.
+        K::LineComment => {
+            doc::is_markdown_text(ctx.text(c))
+                && doc::starts_line(ctx.source(), c)
+                && ctx.markdown_docs(DocUse::Silences)
+        }
+        _ => false,
+    }
 }
 
 /// A doc comment right after the modifiers (`@Deprecated /** … */ void run();`).
@@ -295,7 +317,7 @@ fn doc_after_modifiers<'t>(ctx: &Ctx<'t>, decl: Node<'t>, modifiers: Node<'t>) -
             if !syntax::is_comment(n) {
                 return false;
             }
-            if kind(n) == "block_comment" && util::is_doc_comment(ctx.text(n)) {
+            if is_doc(ctx, n) {
                 return true;
             }
         }
@@ -324,8 +346,10 @@ impl MissingJavadoc {
 
     /// A doc comment that is a child of a container documents the next named child that is
     /// not a comment (anonymous tokens such as a stray `;` and other comments are skipped).
+    /// Each line of a `///` run comes here; the lines after the first one find the
+    /// declaration already recorded.
     fn doc_comment<'t>(&mut self, comment: Node<'t>, ctx: &Ctx<'t>) {
-        if !util::is_doc_comment(ctx.text(comment)) {
+        if !is_doc(ctx, comment) {
             return;
         }
         let Some(parent) = ctx.parent(comment) else {
@@ -357,6 +381,7 @@ impl<'t> JavaRule<'t> for MissingJavadoc {
     fn kinds(&self) -> &'static [&'static str] {
         &[
             "block_comment",
+            "line_comment",
             "class_declaration",
             "interface_declaration",
             "enum_declaration",
@@ -374,7 +399,7 @@ impl<'t> JavaRule<'t> for MissingJavadoc {
         if ctx.is_test() {
             return;
         }
-        if k(node) == K::BlockComment {
+        if matches!(k(node), K::BlockComment | K::LineComment) {
             self.doc_comment(node, ctx);
             return;
         }

@@ -521,7 +521,7 @@ dependencies = [
 
 [[package]]
 name = "mote-cli"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anstyle-query",
  "clap",
@@ -549,7 +549,7 @@ dependencies = [
 
 [[package]]
 name = "mote-core"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "rustc-hash",
  "schemars",
@@ -559,7 +559,7 @@ dependencies = [
 
 [[package]]
 name = "mote-engine"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "globset",
  "ignore",
@@ -584,18 +584,18 @@ dependencies = [
 
 [[package]]
 name = "mote-lang-java"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "mote-core",
  "rayon",
  "rustc-hash",
  "tree-sitter",
- "tree-sitter-java",
+ "tree-sitter-java-orchard",
 ]
 
 [[package]]
 name = "mote-lang-js"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "mote-core",
  "oxc_allocator",
@@ -611,7 +611,7 @@ dependencies = [
 
 [[package]]
 name = "mote-report"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "mote-core",
  "mote-engine",
@@ -1511,10 +1511,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "tree-sitter-java"
-version = "0.23.5"
+name = "tree-sitter-java-orchard"
+version = "0.5.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0aa6cbcdc8c679b214e616fd3300da67da0e492e066df01bcf5a5921a71e90d6"
+checksum = "2a10cd0f8dc49a03b748cfe30566469a850b4a168ad329a7f204046166b8ed6f"
 dependencies = [
  "cc",
  "tree-sitter-language",

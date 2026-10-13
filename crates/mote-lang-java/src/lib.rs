@@ -1,4 +1,4 @@
-//! Mote Java plugin, built on tree-sitter-java.
+//! Mote Java plugin, built on tree-sitter-java-orchard (a maintained fork of tree-sitter-java).
 //!
 //! * [`JavaPlugin`] implements [`mote_core::LanguagePlugin`].
 //! * Rules implement [`JavaRule`] and receive a [`Ctx`] (text, reporting, parameters, tree
@@ -16,6 +16,7 @@
 mod comments;
 mod ctx;
 mod declared;
+pub mod doc;
 pub mod intellij;
 mod kinds;
 mod lombok;
@@ -29,7 +30,6 @@ pub mod spotbugs;
 mod suppress;
 pub mod syntax;
 pub mod timing;
-mod varargs;
 mod walk;
 
 pub use ctx::{Ancestors, Ctx, Emitted, Import, Members};
@@ -45,12 +45,13 @@ use std::time::Duration;
 pub mod prelude {
     pub use crate::ctx::{Ctx, Import};
     pub use crate::declared::DeclaredTypes;
+    pub use crate::doc::{self, DocComment, DocUse};
     pub use crate::kinds::kind;
     pub use crate::resolve::{JType, Prim, VarDecl, VarKind};
     pub use crate::rule::{BoxedRule, JavaRule, Span};
     pub use crate::syntax::{self, named_children, Field, NodeExt};
     pub use mote_core::{
-        ParamDefault, ParamSpec, Quality, RuleKind, RuleMeta, RuleStatus, Severity,
+        fix, Edit, ParamDefault, ParamSpec, Quality, RuleKind, RuleMeta, RuleStatus, Severity,
     };
     pub use rustc_hash::{FxHashMap, FxHashSet};
     pub use tree_sitter::Node;
@@ -135,7 +136,16 @@ impl LanguagePlugin for JavaPlugin {
         //    varargs-annotation and case-pattern parse fixes; broader default test globs;
         //    test-class-naming accepts the `Test` prefix and the `TestCase` suffix by default;
         //    exception-not-thrown narrowed. (The engine cache version invalidates caches.)
-        4
+        // 5: grammar tree-sitter-java-orchard 0.5.22 instead of tree-sitter-java 0.23.5: Java 22-25
+        //    syntax parses (module imports, flexible constructor bodies, `case A _, B _`,
+        //    qualified record patterns, `1__000`), the varargs-annotation and case-pattern
+        //    pre-parse rewrites are gone, and a few old misparses are fixed.
+        // 6: Markdown documentation comments (runs of `///` lines, Java 23, JEP 467; not jbang
+        //    directives) count as documentation: missing-javadoc, unused-import and
+        //    collection-return-null accept them on any release; dangling-doc-comment,
+        //    javadoc-empty-tag and deprecated-annotation-missing read them on a known 23+.
+        // 7: findings of fixable rules carry a fix (`mote fix`).
+        7
     }
     fn rules(&self) -> Vec<&'static RuleMeta> {
         self.registry.metas.clone()

@@ -1,4 +1,4 @@
-//! Structural helpers over tree-sitter-java nodes. None of these walk the whole tree.
+//! Structural helpers over Java syntax-tree nodes. None of these walk the whole tree.
 //!
 //! Comments are *extra* nodes that tree-sitter may attach anywhere, so positional access
 //! (`node.named_child(0)`) can return a comment. Prefer field access
@@ -9,7 +9,7 @@ use tree_sitter::{Node, TreeCursor};
 
 // ------------------------------------------------------------------------------ fields
 
-/// A grammar field of tree-sitter-java. `syntax::field(node, Field::Name)` (or
+/// A field of the Java grammar. `syntax::field(node, Field::Name)` (or
 /// `node.field(Field::Name)` with [`NodeExt`]) is `node.child_by_field_name("name")` without
 /// the by-name lookup, which scans the grammar's field table on every call.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -258,10 +258,28 @@ pub fn modifiers(decl: Node<'_>) -> Option<Node<'_>> {
     children(decl).find(|c| k(*c) == K::Modifiers)
 }
 
+/// The keyword token of a `modifiers` child: the grammar wraps each keyword in a `visibility`
+/// (`public`, `protected`, `private`) or `modifier` (`static`, `final`, `abstract`, …) node,
+/// whose only child is the anonymous keyword token. `None` for annotations and comments.
+#[inline]
+pub fn modifier_keyword(child: Node<'_>) -> Option<Node<'_>> {
+    if child.is_named() && matches!(kind(child), "visibility" | "modifier") {
+        child.child(0)
+    } else {
+        None
+    }
+}
+
+/// The keyword tokens (`public`, `static`, `final`, …) of a `modifiers` node, in source order.
+/// Each is the anonymous token whose kind is the keyword itself.
+pub fn modifier_keywords(mods: Node<'_>) -> impl Iterator<Item = Node<'_>> {
+    children(mods).filter_map(modifier_keyword)
+}
+
 /// Whether the declaration has the keyword modifier `kw` (`"static"`, `"final"`, `"private"`,
 /// `"abstract"`, `"default"`, `"synchronized"`, …).
 pub fn has_modifier(decl: Node<'_>, kw: &str) -> bool {
-    modifiers(decl).is_some_and(|m| children(m).any(|c| !c.is_named() && kind(c) == kw))
+    modifiers(decl).is_some_and(|m| modifier_keywords(m).any(|c| kind(c) == kw))
 }
 
 /// Annotations (`annotation` / `marker_annotation`) on a declaration: those inside its
@@ -339,6 +357,26 @@ pub fn members(body: Node<'_>) -> impl Iterator<Item = Node<'_>> {
 /// The `variable_declarator`s of a field / local / constant declaration.
 pub fn declarators(decl: Node<'_>) -> impl Iterator<Item = Node<'_>> {
     named_children(decl).filter(|c| kind(*c) == "variable_declarator")
+}
+
+/// Whether an `import_declaration` is a module import (`import module java.base;`, Java 25),
+/// which names a module rather than a type or a package.
+pub fn is_module_import(import: Node<'_>) -> bool {
+    children(import).any(|c| !c.is_named() && kind(c) == "module")
+}
+
+/// The element type of an `array_type` through all its dimensions: `int` for `int[][]` (the
+/// grammar nests a multi-dimensional array type: the `element` of `int[][]` is the
+/// `array_type` `int[]`). `None` when `ty` is not an `array_type`.
+pub fn array_element(ty: Node<'_>) -> Option<Node<'_>> {
+    if k(ty) != K::ArrayType {
+        return None;
+    }
+    let mut t = ty;
+    while k(t) == K::ArrayType {
+        t = field(t, Field::Element)?;
+    }
+    Some(t)
 }
 
 /// The formal parameters (`formal_parameter` and `spread_parameter`, not the receiver
@@ -492,5 +530,32 @@ mod tests {
         );
         let method = ms[1];
         assert_eq!(parameters(method).count(), 2);
+    }
+
+    #[test]
+    fn modifier_keywords_arrays_and_module_imports() {
+        let src = "import module java.base;\nimport java.util.List;\n\
+                   class A { @Deprecated public static final int[][] T = {}; String[] u; int v; }";
+        let tree = parse(src, ParseBudget::DEFAULT, None).unwrap();
+        let root = tree.root_node();
+        let imports: Vec<_> = named_children(root)
+            .filter(|c| kind(*c) == "import_declaration")
+            .map(is_module_import)
+            .collect();
+        assert_eq!(imports, [true, false]);
+        let class = named_children(root)
+            .find(|c| is_type_declaration(*c))
+            .unwrap();
+        let ms: Vec<_> = members(type_body(class).unwrap()).collect();
+        let kws: Vec<_> = modifier_keywords(modifiers(ms[0]).unwrap())
+            .map(|c| node_text(c, src))
+            .collect();
+        assert_eq!(kws, ["public", "static", "final"]);
+        assert!(has_modifier(ms[0], "final") && !has_modifier(ms[1], "final"));
+        let element =
+            |m: Node<'_>| array_element(field(m, Field::Type).unwrap()).map(|e| node_text(e, src));
+        assert_eq!(element(ms[0]), Some("int"));
+        assert_eq!(element(ms[1]), Some("String"));
+        assert_eq!(element(ms[2]), None);
     }
 }

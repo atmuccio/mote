@@ -46,7 +46,10 @@ declared return type is known to be an array, a `java.util.Collection`, or a `ja
 Methods annotated `@Nullable` (or `@CheckForNull`) document the `null` deliberately and are
 not reported, and so are methods whose Javadoc `@return` mentions `null` (`@return the
 matched groups, or null if there is no match`): there `null` is a documented result of its
-own, often distinct from an empty one. Neither are `byte[]` and `char[]` results, which
+own, often distinct from an empty one. A run of `///` lines right before the method (a Java 23
+Markdown documentation comment) is read the same way, whatever release the file is compiled
+for: whether `///` is documentation depends on the JDK that runs javadoc, not on the compile
+target. Neither are `byte[]` and `char[]` results, which
 usually carry data where `null` means "no value" (a SQL `NULL`, as in `ResultSet.getBytes`), nor test code, where
 stubs and mocks return `null` on purpose."#,
     ..RuleMeta::new(
@@ -74,15 +77,18 @@ fn returned_null(value: Node<'_>, depth: u32) -> Option<Node<'_>> {
         .find_map(|arm| returned_null(arm, depth + 1))
 }
 
-/// Whether the method's Javadoc has an `@return` clause mentioning `null`.
+/// Whether the method's doc comment has an `@return` clause mentioning `null`: a Javadoc
+/// comment, or a `///` run (Java 23; read on any release, see `DocUse::Silences`).
 fn documents_null_return<'t>(ctx: &Ctx<'t>, method: Node<'t>) -> bool {
-    let Some(doc) = ctx.prev_named_sibling(method) else {
-        return false;
+    let markdown_text;
+    let text = match doc::doc_comment_before(ctx, method, DocUse::Silences) {
+        Some(DocComment::Javadoc(n)) => ctx.text(n),
+        Some(doc @ DocComment::Markdown(_)) => {
+            markdown_text = doc.text(ctx.source());
+            markdown_text.as_str()
+        }
+        None => return false,
     };
-    let text = ctx.text(doc);
-    if kind(doc) != "block_comment" || !text.starts_with("/**") {
-        return false;
-    }
     let Some(at) = text.find("@return") else {
         return false;
     };
@@ -151,7 +157,7 @@ impl<'t> JavaRule<'t> for CollectionReturnNull {
             // `byte[]` / `char[]` are data values: `null` usually means "no value" (SQL NULL),
             // which an empty array would silently change.
             let element = if kind(ret) == "array_type" {
-                util::fld(ret, F.element).map_or("", |e| ctx.text(e))
+                syntax::array_element(ret).map_or("", |e| ctx.text(e))
             } else {
                 ctx.text(ret)
             };

@@ -65,7 +65,7 @@ Done in       93 ms
 
 **Release binaries.** Each [GitHub release](https://github.com/atmuccio/mote/releases) has an
 archive per platform, `mote-<version>-<target>.tar.gz` (`.zip` on Windows; `<version>` without
-the leading `v`, e.g. `mote-0.1.0-x86_64-unknown-linux-gnu.tar.gz`), with a `.sha256` checksum
+the leading `v`, e.g. `mote-0.2.0-x86_64-unknown-linux-gnu.tar.gz`), with a `.sha256` checksum
 file next to it and all checksums in `SHA256SUMS`. Each archive holds the `mote` binary, the
 licenses, NOTICE, THIRD_PARTY_LICENSES.md and this README.
 
@@ -85,7 +85,7 @@ licenses, NOTICE, THIRD_PARTY_LICENSES.md and this README.
 Linux and macOS (set `version` to the release you want):
 
 ```sh
-version=0.1.0
+version=0.2.0
 target=x86_64-unknown-linux-gnu        # pick yours from the table
 archive="mote-$version-$target.tar.gz"
 base="https://github.com/atmuccio/mote/releases/download/v$version"
@@ -98,7 +98,7 @@ mote version
 Windows (PowerShell):
 
 ```powershell
-$version = '0.1.0'
+$version = '0.2.0'
 $archive = "mote-$version-x86_64-pc-windows-msvc.zip"
 $base = "https://github.com/atmuccio/mote/releases/download/v$version"
 Invoke-WebRequest -UseBasicParsing "$base/$archive" -OutFile $archive
@@ -187,7 +187,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: atmuccio/mote@v0.1.0   # the action ref pins the engine version
+      - uses: atmuccio/mote@v0.2.0   # the action ref pins the engine version
         with:
           fail-on-gate: ${{ github.event_name == 'pull_request' }}
 ```
@@ -281,8 +281,30 @@ rules).
 * The catalog: [docs/rules.md](docs/rules.md), or `mote rules --all`.
 * One rule in detail: `mote rules explain js/rules-of-hooks`.
 
-Rules favor precision over recall: a rule that cannot be sure stays silent. How precision and
-recall are measured is in [docs/benchmark.md](docs/benchmark.md).
+Rules favor precision over recall: a rule that cannot be sure stays silent. Each rule's measured
+precision on labeled findings in public open-source repositories, or why it has none yet, is
+listed in [docs/rules.md](docs/rules.md#measured-precision) and shown by `mote rules explain`;
+how precision and recall are measured is in [docs/benchmark.md](docs/benchmark.md).
+
+### Fixing findings automatically
+
+17 rules can rewrite their findings mechanically, where the rewrite cannot change what the
+program does — unused imports, modifier order, `10l` → `10L`, missing `@Override`, `let` →
+`const`, unnecessary escapes and the like (marked `[fixable]` in the scan output and "Fix
+available" in [docs/rules.md](docs/rules.md)). New in 0.2.0, so review the diff before your first
+`--write`:
+
+```sh
+mote fix                       # show the changes as a unified diff; writes nothing (exit 1 if any)
+mote fix --write               # apply them
+mote fix --rule java/unused-import --write
+```
+
+`mote fix` works on the working tree with your configuration; it never touches suppressed or
+triaged findings, keeps encodings and line endings, repeats until no fix is left, and throws
+away a file's changes if they would add a syntax error. The results JSON and SARIF carry the
+fixes, and the MCP server returns them to agents. Details:
+[docs/cli.md](docs/cli.md#mote-fix).
 
 ## AI agents: MCP server
 
@@ -298,8 +320,9 @@ to an MCP client, for example in `.mcp.json` at the repository root:
 ```
 
 It offers `scan`, `summary`, `work_units` (findings split into disjoint groups of files, one per
-parallel fixer), `findings`, `rule`, `verify` (re-analyzes only the edited files: each earlier
-finding is `fixed` or `still_present`, plus anything `introduced`) and `explain_config`. A typical
+parallel fixer), `findings`, `fixes` (the mechanical fixes of fixable findings as edits and a
+diff; read-only), `rule`, `verify` (re-analyzes only the edited files: each earlier finding is
+`fixed` or `still_present`, plus anything `introduced`) and `explain_config`. A typical
 agent loop: `scan` → `work_units` → one sub-agent per unit reads `findings`, edits, and calls
 `verify` until its unit is clean. Details: [docs/cli.md](docs/cli.md#mote-mcp).
 
@@ -307,23 +330,23 @@ agent loop: `scan` → `work_units` → one sub-agent per unit reads `findings`,
 
 Wall time of the whole process with all default rules, median of 5 runs on an Intel i7-8700K
 (6 cores / 12 threads) under Windows 10. *Cold* means an empty analysis cache, *warm* a primed
-one. Measured with Mote 0.1.0 (552 rules, 485 on by default); method, all numbers and the precision
+one. Measured with Mote 0.2.0 (552 rules, 485 on by default); method, all numbers and the precision
 sampling are in [docs/benchmark.md](docs/benchmark.md#results).
 
 | Repository (pinned commit) | Files | Lines | Cold | Warm | Cold, `--rev` (no checkout) |
 |---|--:|--:|--:|--:|--:|
 | [spring-petclinic](https://github.com/spring-projects/spring-petclinic) (Java) | 50 | 4,214 | 0.05 s | 0.03 s | 0.17 s |
-| [SymmetricDS](https://github.com/JumpMind/symmetric-ds) (Java) | 1,763 | 330,130 | 0.64 s | 0.07 s | 0.88 s |
+| [SymmetricDS](https://github.com/JumpMind/symmetric-ds) (Java) | 1,763 | 330,130 | 0.63 s | 0.07 s | 0.87 s |
 | [Excalidraw](https://github.com/excalidraw/excalidraw) (TypeScript/React) | 695 | 215,689 | 0.10 s | 0.05 s | 0.28 s |
-| [VS Code](https://github.com/microsoft/vscode) (TypeScript) | 14,036 | 4,152,081 | 1.44 s | 0.29 s | 2.58 s |
+| [VS Code](https://github.com/microsoft/vscode) (TypeScript) | 14,036 | 4,152,081 | 1.45 s | 0.29 s | 2.55 s |
 
 ## Scope
 
 Mote is a code-quality tool: bugs, smells, complexity, duplication and coverage of new code. It
 is **not a security scanner** and does not replace one: dependency vulnerabilities, taint
 tracking, secrets detection and infrastructure configuration belong to dedicated security tools.
-It analyzes Java and JavaScript/TypeScript (including JSX/TSX); other languages are not
-supported yet. Analysis is per file (duplication aside): Java types are resolved from the file,
+It analyzes Java (syntax up to Java 25) and JavaScript/TypeScript (including JSX/TSX); other
+languages are not supported yet. Analysis is per file (duplication aside): Java types are resolved from the file,
 its imports and common JDK classes, and there is no TypeScript type checker. Rules that would need
 whole-program types or data flow are left out rather than guessed at.
 

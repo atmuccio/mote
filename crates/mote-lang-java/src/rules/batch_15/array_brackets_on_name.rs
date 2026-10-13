@@ -35,7 +35,13 @@ int[] values() { … }
 ```
 
 Covered: fields, local variables, parameters (record components included), methods and
-annotation elements. The rule is off by default: it is part of the `conventions` profile."#,
+annotation elements. The rule is off by default: it is part of the `conventions` profile.
+
+**Fix available.** `mote fix` moves the brackets to the end of the type (`String args[]` →
+`String[] args`, `int values()[]` → `int[] values()`), which declares the same type. It
+leaves alone a declaration of several variables (`int a[], b;`: the brackets belong to `a`
+only) and brackets carrying annotations (their order would matter)."#,
+    fixable: true,
     ..RuleMeta::new(
         "java/array-brackets-on-name",
         "java",
@@ -77,6 +83,60 @@ impl<'t> JavaRule<'t> for ArrayBracketsOnName {
                 ctx.text(node)
             )
         };
-        ctx.emit(node, message);
+        let emitted = ctx.emit(node, message);
+        if let Some(edits) = move_brackets(ctx, decl, node) {
+            emitted.fix("Move the brackets to the type", edits);
+        }
     }
+}
+
+/// The edits moving `dims` (the brackets after the name or parameter list of `decl`) to the end
+/// of the declared type, when that is the same type: plain `[]` pairs, on a declaration of one
+/// variable, whose type carries no annotation.
+fn move_brackets<'t>(ctx: &Ctx<'t>, decl: Node<'t>, dims: Node<'t>) -> Option<Vec<Edit>> {
+    let src = ctx.source();
+    let pairs = ctx
+        .text(dims)
+        .bytes()
+        .filter(|b| !b.is_ascii_whitespace())
+        .count();
+    let plain = ctx
+        .text(dims)
+        .bytes()
+        .filter(|b| !b.is_ascii_whitespace())
+        .collect::<Vec<u8>>()
+        .chunks(2)
+        .all(|c| c == b"[]");
+    if pairs == 0 || pairs % 2 != 0 || !plain {
+        return None;
+    }
+    let ty = match kind(decl) {
+        "variable_declarator" => {
+            let owner = ctx.parent(decl)?;
+            let declarators = named_children(owner)
+                .filter(|c| kind(*c) == "variable_declarator")
+                .count();
+            if declarators != 1 {
+                return None;
+            }
+            owner.field(Field::Type)?
+        }
+        _ => decl.field(Field::Type)?,
+    };
+    if ctx.text(ty).contains('@') || ctx.text(ty).contains("/*") || ctx.text(ty).contains("//") {
+        return None;
+    }
+    // Delete the brackets with the blanks before them (not a comment).
+    let before = dims.prev_sibling()?;
+    let gap = src.get(before.end_byte()..dims.start_byte())?;
+    let start = if gap.bytes().all(|b| b.is_ascii_whitespace()) {
+        before.end_byte()
+    } else {
+        dims.start_byte()
+    };
+    let brackets = "[]".repeat(pairs / 2);
+    Some(vec![
+        Edit::insert(ty.end_byte(), brackets),
+        Edit::delete(start, dims.end_byte()),
+    ])
 }

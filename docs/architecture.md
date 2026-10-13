@@ -64,7 +64,7 @@ Parser measurements taken before the engine was written back these targets (tree
 
 ```
 mote-core        model + plugin contract + fixture harness      (small)
-  ├─ mote-lang-java   Java plugin (tree-sitter-java)
+  ├─ mote-lang-java   Java plugin (tree-sitter-java-orchard)
   ├─ mote-lang-js     JavaScript/TypeScript plugin (Oxc)
   └─ mote-engine      config, registry, generic rules, lexer/CPD, suppression,
                       sources (worktree/rev/staged/git), cache, scan, new-code, gate, coverage

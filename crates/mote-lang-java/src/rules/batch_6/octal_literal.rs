@@ -322,8 +322,8 @@ impl<'t> JavaRule<'t> for OctalLiteral<'t> {
 
     fn check(&mut self, node: Node<'t>, ctx: &Ctx<'t>) {
         let text = ctx.text(node);
-        // tree-sitter-java reads the float `07f` as `07` followed by an error: skip literals
-        // glued to a letter or digit.
+        // Skip literals glued to a letter or digit: a float such as `07f` that a grammar (or
+        // broken code) splits into `07` and an error.
         let next = ctx.source().as_bytes().get(node.end_byte()).copied();
         if next.is_some_and(|c| c.is_ascii_alphanumeric() || c == b'_' || c == b'.') {
             return;

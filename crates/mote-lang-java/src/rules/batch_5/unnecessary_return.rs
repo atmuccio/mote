@@ -49,7 +49,13 @@ for (Item item : items) {
 
 A `return;` that skips later statements, or that ends a loop body or a `switch` case, is
 not reported; neither is a `continue` that skips later statements, ends a `switch` case
-(removing it would fall through), or names a label."#,
+(removing it would fall through), or names a label.
+
+**Fix available.** `mote fix` deletes the statement when it stands in a block next to other
+statements: control reaches the same place without it. A `return;` or `continue;` that is the
+only statement of its block, or the unbraced body of an `if`, is reported but not fixed (the
+block would be left empty, or the `if` without a body)."#,
+    fixable: true,
     ..RuleMeta::new("java/unnecessary-return", "java", "Unnecessary return")
 };
 
@@ -151,12 +157,31 @@ impl<'t> JavaRule<'t> for UnnecessaryReturn {
         if util::first_named(node).is_some() {
             return;
         }
-        if kind(node) == "continue_statement" {
-            if ends_function(ctx, node, Target::LoopBody) {
-                ctx.emit(node, "Remove this redundant `continue`");
+        let emitted = if kind(node) == "continue_statement" {
+            if !ends_function(ctx, node, Target::LoopBody) {
+                return;
             }
+            ctx.emit(node, "Remove this redundant `continue`")
         } else if ends_function(ctx, node, Target::Function) {
-            ctx.emit(node, "Remove this redundant `return`");
+            ctx.emit(node, "Remove this redundant `return`")
+        } else {
+            return;
+        };
+        // Only a statement among others in a block: an `if (c) return;` needs its body, and a
+        // block left empty is a finding of its own.
+        let in_list = ctx.parent(node).is_some_and(|p| {
+            matches!(kind(p), "block" | "constructor_body")
+                && named_children(p).any(|s| s.id() != node.id() && !syntax::is_comment(s))
+        });
+        if in_list {
+            emitted.fix(
+                "Delete the statement",
+                vec![fix::delete_span(
+                    ctx.source(),
+                    node.start_byte(),
+                    node.end_byte(),
+                )],
+            );
         }
     }
 }

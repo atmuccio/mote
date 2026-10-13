@@ -8,7 +8,9 @@
 pub use crate::ctx::{AsNodeId, Ctx, Emitted};
 pub use crate::helpers;
 pub use crate::rule::JsRule;
-pub use mote_core::{ParamDefault, ParamSpec, Quality, RuleKind, RuleMeta, RuleStatus, Severity};
+pub use mote_core::{
+    fix, Edit, ParamDefault, ParamSpec, Quality, RuleKind, RuleMeta, RuleStatus, Severity,
+};
 pub use oxc_ast::ast::*;
 pub use oxc_ast::{AstKind, AstType};
 pub use oxc_semantic::{

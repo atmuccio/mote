@@ -1,0 +1,26 @@
+// mote-test: params destructuring=any
+import { load } from './load';
+
+export function partial() {
+  let { width, height } = load(); // expect: prefer-const
+  height = height * 2;
+  let [x1, y1, x2] = load(); // expect: prefer-const
+  x1 += 1;
+  y1 += 1;
+  let a = 1, b = 2; // expect: prefer-const
+  b++;
+  const all = 1; // expect: prefer-const
+  return [width, height, x1, y1, x2, a, b, all];
+}
+
+export function compliant() {
+  let { p, q } = load();
+  p = 1;
+  q = 2;
+  for (let i = 0, n = 10; i < n; i++) {
+    load(i);
+  }
+  let count = 0;
+  count++;
+  return [p, q, count];
+}

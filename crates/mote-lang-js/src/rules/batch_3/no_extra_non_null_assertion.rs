@@ -29,13 +29,24 @@ onDone!?.();                    // flagged
 const size = cache!.size;       // compliant
 const name = user?.name;        // compliant
 ```
+
+**Fix available.** `mote fix` deletes the reported `!`. Non-null assertions are erased when
+TypeScript compiles, so the program runs the same; with the optional chaining kept, a `null`
+value still short-circuits as before.
 "#,
+    fixable: true,
     ..RuleMeta::new(
         "js/no-extra-non-null-assertion",
         "js",
         "Non-null assertions should not be doubled or combined with optional chaining",
     )
 };
+
+/// A non-null assertion is erased by the compiler: deleting one changes only what the type
+/// checker assumes.
+fn delete_bang(bang: Span) -> Edit {
+    Edit::delete(bang.start as usize, bang.end as usize)
+}
 
 impl JsRule for NoExtraNonNullAssertion {
     fn meta(&self) -> &'static RuleMeta {
@@ -56,7 +67,8 @@ impl JsRule for NoExtraNonNullAssertion {
         };
         if matches!(expr.expression, Expression::TSNonNullExpression(_)) {
             if let Some(bang) = super::util::bang_span(ctx, expr.span) {
-                ctx.emit(bang, "Remove this repeated non-null assertion");
+                ctx.emit(bang, "Remove this repeated non-null assertion")
+                    .fix("Delete the `!`", vec![delete_bang(bang)]);
             }
             return;
         }
@@ -74,7 +86,8 @@ impl JsRule for NoExtraNonNullAssertion {
                 ctx.emit(
                     bang,
                     "Remove either this non-null assertion or the optional chaining that follows it",
-                );
+                )
+                .fix("Delete the `!`", vec![delete_bang(bang)]);
             }
         }
     }

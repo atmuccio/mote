@@ -8,6 +8,19 @@
 - [JavaScript / TypeScript](#javascript--typescript) — 221 rules
 - [Engine (meta rules)](#engine-meta-rules) — 5 rules
 
+## Measured precision
+
+Each rule has a *Measured precision* line. The findings of every rule on 34 public open-source repositories at pinned commits (measured 2026-10-13) were sampled per rule, and each sampled finding was labeled correct, false positive, or noise. Precision is correct / (correct + false positive), rounded down. Of the 552 rules listed here: 112 with a measured precision, 306 with findings but too few labeled ones for a percentage (their counts are shown), and 134 without findings in those repositories.
+
+Limits:
+
+- A finding is judged by the rule's own definition: it is correct when the code is what the rule describes, whether or not a team would choose to change it. Precision says how often a finding is right, not how many problems a rule catches.
+- Noise (findings in code that configuration should exclude, such as vendored or generated files) is counted apart and left out of the percentage.
+- A percentage needs at least 20 labeled findings, or, for a rule with at most 50 findings in the repositories, every finding labeled and at least 5 of them correct or false positive. Smaller samples show their counts only, and a percentage over few labels is still a rough figure.
+- Results on other code may differ.
+
+How the repositories were chosen and the findings labeled: [benchmark.md](benchmark.md#part-4-coverage-yardstick).
+
 ## Java
 
 | Rule | Name | Severity | Quality | Default |
@@ -345,6 +358,8 @@
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: numbers, overflow
 
+Measured precision: too few findings to measure (2 of 2 labeled findings correct, every finding reviewed)
+
 Detects `Math.abs(..)` applied directly to a hash code (`x.hashCode()`,
 `Objects.hash(..)`, `Objects.hashCode(..)`, `Arrays.hashCode(..)`) or to an unbounded random
 integer (`random.nextInt()`, `random.nextLong()`), and the same done by hand: `h < 0 ? -h : h` or
@@ -375,6 +390,8 @@ reported. Random receivers must provably be a `java.util.Random`.
 **Abstract class without methods**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: design
+
+Measured precision: not enough labeled findings yet (7 of 7 labeled findings correct so far)
 
 Detects `abstract` classes that declare no methods and no constructors, and
 (with `interface_candidates`, on by default) abstract classes that are an interface in
@@ -436,6 +453,8 @@ it.
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: copy-paste, suspicious
 
+Measured precision: too few findings to measure (1 of 1 labeled findings correct, every finding reviewed)
+
 Detects one-statement getters and setters that read or write a different field
 than the one their name refers to, while that field exists in the same class with the same
 type: `getWidth() { return height; }`, `setFirst(T v) { this.last = v; }`.
@@ -474,6 +493,8 @@ property kept for compatibility: `setColour(c) { color = c; colour = c; }` with
 **Ambiguous argument to a varargs parameter** (incubating)
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: varargs, null
+
+Measured precision: too few findings to measure (2 of 2 labeled findings correct, every finding reviewed)
 
 Detects a single argument in a variable-arity (`...`) position that does not
 become the one element it looks like:
@@ -517,6 +538,8 @@ arguments" by design.
 **Anonymous class could be a lambda**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: idiom, readability, java8
+
+Measured precision: not enough labeled findings yet (7 of 7 labeled findings correct so far)
 
 Detects an anonymous class that implements a functional interface — a JDK one
 such as `Runnable`, `Callable`, `Comparator`, the `java.util.function` types, `ThreadFactory`
@@ -568,6 +591,8 @@ variable, a receiver of a call, an argument of generic methods such as `List.of`
 
 Severity: **MEDIUM** · Quality: reliability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: error-handling, exceptions
 
+Measured precision: too few findings to measure (3 of 3 labeled findings correct, every finding reviewed)
+
 Detects classes declared with `extends Error` (`java.lang.Error`).
 
 **Why it matters.** `Error` is the branch of the throwable hierarchy for failures of the
@@ -602,6 +627,8 @@ alone.
 **Arithmetic operation without effect**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: arithmetic, redundant, suspicious
+
+Measured precision: not enough labeled findings yet (6 of 6 labeled findings correct so far)
 
 Detects operations that cannot change the value of an `int` or `long` operand:
 adding, subtracting, or-ing or xor-ing `0`, multiplying or dividing by `1`, and-ing with `-1`
@@ -638,7 +665,9 @@ expression is combined with other literals nearby (`buf[off + 0] = a; buf[off + 
 
 **Array brackets after the name instead of on the type**
 
-Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~1 min · Tags: conventions, arrays
+Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~1 min · Tags: conventions, arrays · Fix available (`mote fix`)
+
+Measured precision: **100%** (20 of 20 labeled findings correct)
 
 Detects array brackets placed after a variable, parameter or field name
 (`String args[]`) or after a method's parameter list (`int values()[]`) instead of on the type.
@@ -666,11 +695,18 @@ int[] values() { … }
 Covered: fields, local variables, parameters (record components included), methods and
 annotation elements. The rule is off by default: it is part of the `conventions` profile.
 
+**Fix available.** `mote fix` moves the brackets to the end of the type (`String args[]` →
+`String[] args`, `int values()[]` → `int[] values()`), which declares the same type. It
+leaves alone a declaration of several variables (`int a[], b;`: the brackets belong to `a`
+only) and brackets carrying annotations (their order would matter).
+
 ### java/array-hash-code
 
 **hashCode() of an array**
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: arrays, equality
+
+Measured precision: too few findings to measure (1 of 1 labeled findings correct, every finding reviewed)
 
 Detects `hashCode()` called on an array, and `Objects.hashCode(array)`.
 
@@ -698,6 +734,8 @@ Only expressions whose type the resolver proves to be an array are reported.
 **Array converted to a string**
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: arrays, strings
+
+Measured precision: not enough labeled findings yet (2 of 2 labeled findings correct so far)
 
 Detects an array converted to a string with `toString()`, `String.valueOf(..)`,
 or string concatenation (`"ids: " + ids`, `s += ids`).
@@ -727,6 +765,8 @@ whose type the resolver proves to be an array are reported.
 **Arrays.asList(..).stream() instead of Arrays.stream or Stream.of**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: streams, idiom
+
+Measured precision: **100%** (9 of 9 labeled findings correct, every finding reviewed)
 
 Detects `Arrays.asList(..).stream()`: a list is built only to be streamed.
 
@@ -758,6 +798,8 @@ a single argument whose type the resolver does not know (it may be an array or a
 **Expected and actual values swapped in an assertion**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: tests, junit
+
+Measured precision: not enough labeled findings yet (8 of 8 labeled findings correct so far)
 
 Detects JUnit equality assertions (`assertEquals`, `assertNotEquals`,
 `assertSame`, `assertNotSame`, `assertArrayEquals`) whose *actual* slot holds a constant — a
@@ -796,6 +838,8 @@ and swapping the arguments would test the constant's `equals` instead.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: tests, clarity
 
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
+
 Detects `assertEquals` calls where one of the compared values is the literal
 `true` or `false`.
 
@@ -824,6 +868,8 @@ reported when the file declares its own `assertEquals` helper.
 **assert used to check a public method's argument**
 
 Severity: **LOW** · Quality: reliability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: assertions, api
+
+Measured precision: **100%** (21 of 21 labeled findings correct)
 
 Detects an `assert` at the start of a `public` method of a `public` class that
 checks the method's parameters (`assert count >= 0;`, `assert name != null : "name";`).
@@ -863,6 +909,8 @@ not checked.
 **Several calls inside an assertThrows lambda**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: tests, junit
+
+Measured precision: not enough labeled findings yet (9 of 9 labeled findings correct so far)
 
 Detects `assertThrows`, `assertThrowsExactly`, and `assertDoesNotThrow` calls
 whose lambda does more than the one call under test: it holds several statements, or it
@@ -906,6 +954,8 @@ exceptions do count, since they can fail: file and reflection APIs such as
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: assertions, side-effects
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Detects `assert` statements whose condition changes state: an assignment, an
 increment or decrement, or a call to a well-known mutating method of a JDK collection,
 iterator, atomic variable, lock or file (`list.remove(x)`, `it.next()`,
@@ -937,6 +987,8 @@ condition are skipped.
 
 Severity: **LOW** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: tests, assertj
 
+Measured precision: **100%** (7 of 7 labeled findings correct, every finding reviewed)
+
 Detects AssertJ assertions that end with a description or failure-message call
 placed after the check: `assertThat(total).isEqualTo(10).as("order total")`.
 
@@ -966,6 +1018,8 @@ reported.
 **Assertion inside a thread body**
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~10 min · Tags: tests, concurrency
+
+Measured precision: **100%** (8 of 8 labeled findings correct, every finding reviewed)
 
 Detects test assertions (JUnit, AssertJ, Hamcrest, TestNG, Truth) inside a
 lambda or anonymous class that runs on another thread whose failure is never collected: the
@@ -1005,6 +1059,8 @@ install an uncaught-exception handler.
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: suspicious, confusing
 
+Measured precision: too few findings to measure (3 of 3 labeled findings correct, every finding reviewed)
+
 Detects an `if`, `while`, or `do … while` whose whole condition is an
 assignment, such as `if (found = true)`.
 
@@ -1034,6 +1090,8 @@ intentional.
 **Assignment or increment inside an expression**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: side-effects, readability
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Detects increments, decrements, and assignments buried inside a larger
 expression — a method argument, an operand of another operator, an array index, a ternary
@@ -1080,6 +1138,8 @@ the new value is exactly what readers get wrong. By default `++`/`--` used direc
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: equality, concurrency
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Detects `equals(..)` called on an `AtomicInteger`, `AtomicLong`, or
 `AtomicBoolean`.
 
@@ -1107,6 +1167,8 @@ reported.
 **BigDecimal constructed from a double**
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: numbers, precision
+
+Measured precision: not enough labeled findings yet (2 of 2 labeled findings correct so far)
 
 Detects `new BigDecimal(x)` (and `new BigDecimal(x, mathContext)`) where `x`
 is a floating-point literal or an expression of type `double`/`float`.
@@ -1140,6 +1202,8 @@ the exact decimal value and asks on purpose what the binary type makes of it.
 **Comparison with a boolean literal**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: clutter, readability
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Detects comparisons with a boolean literal (`x == true`, `x != false`,
 `false == x`), conditional expressions that just produce a boolean literal
@@ -1177,6 +1241,8 @@ Note that for a `Boolean` object both forms throw on `null`; if `null` must be t
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: null-safety, boxing
 
+Measured precision: not enough labeled findings yet (8 of 8 labeled findings correct so far)
+
 Detects an expression of type `java.lang.Boolean` (the wrapper, not the
 primitive) used directly as the condition of an `if`, `while`, `do`, `for`, or `?:`, or as
 the operand of `!`.
@@ -1211,6 +1277,8 @@ method involved is declared in this file with a type mentioning `Boolean`.
 **Deprecated wrapper-class constructor**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: performance, deprecated
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Detects `new Integer(..)`, `new Long(..)`, `new Short(..)`, `new Byte(..)`,
 `new Double(..)`, `new Float(..)`, `new Boolean(..)`, and `new Character(..)`; also other
@@ -1250,6 +1318,8 @@ gain little).
 **Throwaway boxing or temporary object**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: performance, boxing
+
+Measured precision: not enough labeled findings yet (14 of 14 labeled findings correct so far)
 
 Detects a wrapper created with `Integer.valueOf(..)` (or `Long`, `Double`,
 `Float`, `Short`, `Byte`, `Boolean`, `Character`) whose primitive value is taken right back:
@@ -1306,6 +1376,8 @@ choice).
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: tests, junit
 
+Measured precision: **100%** (37 of 37 labeled findings correct)
+
 Detects exception expectations that cover more than the one call meant to
 throw: a JUnit 4 `@Test(expected = X.class)` (or TestNG `expectedExceptions`) on a test whose
 body makes calls in more than one statement, and an `ExpectedException` rule (`thrown.expect(..)`)
@@ -1347,6 +1419,8 @@ expected exception), and calls inside lambdas or anonymous classes do not count.
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: numbers, bitwise, io
 
+Measured precision: too few findings to measure (1 of 1 labeled findings correct, every finding reviewed)
+
 Detects two ways a signed `byte` corrupts a wider value:
 
 * a `byte` OR-ed or added, unmasked, into a value assembled from shifted parts:
@@ -1383,6 +1457,8 @@ intentionally makes the result negative.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: i18n, locale
 
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
+
 Detects `String.toUpperCase()` and `String.toLowerCase()` called without a
 `Locale`.
 
@@ -1415,6 +1491,8 @@ comparisons, `equalsIgnoreCase` avoids the conversion altogether.
 **Case-converted strings compared with equals**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: strings, performance
+
+Measured precision: **100%** (5 of 5 labeled findings correct, every finding reviewed)
 
 Detects two strings compared after converting both to the same case in the
 default locale — `a.toLowerCase().equals(b.toLowerCase())`, the same with `toUpperCase`, or
@@ -1458,6 +1536,8 @@ mapping differs between the two approaches), `Objects.equals` (null-safe, unlike
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~10 min · Tags: error-handling
 
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
+
 Detects `catch` clauses for `java.lang.Exception` or
 `java.lang.RuntimeException`.
 
@@ -1496,6 +1576,8 @@ a comment; left to `java/empty-catch-block`), `try` blocks calling JDK methods d
 **Programming error caught instead of fixed**
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~10 min · Tags: error-handling, suspicious
+
+Measured precision: not enough labeled findings yet (6 of 6 labeled findings correct so far)
 
 Detects catch clauses for `NullPointerException` or
 `IllegalMonitorStateException` in production code.
@@ -1540,6 +1622,8 @@ reported.
 
 Severity: **MEDIUM** · Quality: reliability · Kind: code-smell · Enabled by default: yes · Remediation: ~10 min · Tags: error-handling
 
+Measured precision: not enough labeled findings yet (8 of 8 labeled findings correct so far)
+
 Detects `catch` clauses for `java.lang.Throwable` or `java.lang.Error`
 (also as one alternative of a multi-catch).
 
@@ -1579,6 +1663,8 @@ same `try`, which has already taken every `Error`.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~1 min · Tags: conventions, readability
 
+Measured precision: **100%** (20 of 20 labeled findings correct)
+
 Detects statements and declarations that assign one value to several
 variables through a chain of assignments: `a = b = 0;`, `int x = y = size();`.
 
@@ -1613,6 +1699,8 @@ is off by default: it is part of the `conventions` profile.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: idiom, clarity
 
+Measured precision: not enough labeled findings yet (7 of 7 labeled findings correct so far)
+
 Detects `isInstance` called on a class literal: `Foo.class.isInstance(x)`.
 
 **Why it matters.** With a class literal the type is known when the code is written, and
@@ -1645,6 +1733,8 @@ literals (`int.class.isInstance(x)` is always false: another problem).
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: types, refactoring
 
+Measured precision: not enough labeled findings yet (1 of 1 labeled findings correct so far)
+
 Detects a runtime class name compared with a string literal through `equals`:
 `x.getClass().getSimpleName().equals("Foo")`, and `x.getClass().getName()` (or
 `getCanonicalName()` / `getTypeName()`) compared with a name that has no package.
@@ -1675,6 +1765,8 @@ non-literal values.
 **Type naming convention**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: naming, convention
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Detects classes, interfaces, enums, records, and annotation types whose name
 does not follow the configured convention (by default PascalCase: an uppercase letter followed
@@ -1713,6 +1805,8 @@ through JNA, whose structure and callback types mirror native names (`SERVICE_ST
 **clone() implemented**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~20 min · Tags: design
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Detects implementations of `clone()`, and classes that implement `Cloneable`
 without declaring `clone()`.
@@ -1759,6 +1853,8 @@ copy method of its own), or in test code (fixtures that exercise `Cloneable` han
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~10 min · Tags: brain-overload, complexity
 
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
+
 Flags functions whose **cognitive complexity** is above a threshold (default 15).
 
 Cognitive complexity estimates how hard a function is to *read*: every break in linear flow (`if`, loops, `catch`, `switch`, jumps, chains of mixed boolean operators) adds a point, and nesting makes each of those cost more. Functions that score high take longer to understand, are harder to test exhaustively and attract bugs when changed.
@@ -1794,6 +1890,8 @@ process(items) {
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: readability, nesting
 
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
+
 Detects an `if` statement without `else` whose only content is another `if`
 statement without `else`.
 
@@ -1826,6 +1924,8 @@ conditions.
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: collections, suspicious, copy-paste
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Detects a collection or map passed as the argument of one of its own bulk
 methods: `c.addAll(c)`, `c.removeAll(c)`, `c.retainAll(c)`, `c.containsAll(c)`,
 `m.putAll(m)`.
@@ -1854,6 +1954,8 @@ they are a `Collection` or a `Map`.
 **Null returned instead of an empty collection or array**
 
 Severity: **MEDIUM** · Quality: reliability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: null, collections
+
+Measured precision: not enough labeled findings yet (8 of 8 labeled findings correct so far)
 
 Detects `return null;` in a method declared to return a collection
 (`Collection`, `List`, `Set`, `Queue`, … or any implementation), a `Map`, or an array.
@@ -1891,7 +1993,10 @@ declared return type is known to be an array, a `java.util.Collection`, or a `ja
 Methods annotated `@Nullable` (or `@CheckForNull`) document the `null` deliberately and are
 not reported, and so are methods whose Javadoc `@return` mentions `null` (`@return the
 matched groups, or null if there is no match`): there `null` is a documented result of its
-own, often distinct from an empty one. Neither are `byte[]` and `char[]` results, which
+own, often distinct from an empty one. A run of `///` lines right before the method (a Java 23
+Markdown documentation comment) is read the same way, whatever release the file is compiled
+for: whether `///` is documentation depends on the JDK that runs javadoc, not on the compile
+target. Neither are `byte[]` and `char[]` results, which
 usually carry data where `null` means "no value" (a SQL `NULL`, as in `ResultSet.getBytes`), nor test code, where
 stubs and mocks return `null` on purpose.
 
@@ -1900,6 +2005,8 @@ stubs and mocks return `null` on purpose.
 **Emptiness checked by comparing the size**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: collections, readability
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Detects emptiness checks written as size comparisons: `x.size() == 0`,
 `x.size() != 0`, `x.size() > 0`, `x.size() < 1`, `x.size() >= 1`, `x.size() <= 0` (and the
@@ -1928,6 +2035,8 @@ Only receivers whose type is known to be a `Collection`, a `Map`, or a `String` 
 **Switch expression with colon labels** (incubating)
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~2 min · Tags: conventions, switch
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Detects `switch` expressions (a `switch` that produces a value) whose cases
 use the old colon form, `case X:` followed by statements and `yield`, instead of arrow labels.
@@ -1968,6 +2077,8 @@ is part of the `conventions` profile.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: unused, clutter
 
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
+
 Flags runs of comments that contain source code rather than prose.
 
 Commented-out code distracts readers, rots as the surrounding code changes and is never compiled or tested. Version control already keeps old code.
@@ -1988,6 +2099,8 @@ Documentation comments, license headers and tool directives are ignored.
 **Comparison method returns Integer.MIN_VALUE**
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: comparison
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Detects a `compareTo(..)` or `compare(..)` implementation that returns
 `Integer.MIN_VALUE`.
@@ -2023,6 +2136,8 @@ Returns inside lambdas are not considered.
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: comparison
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Detects the result of `compareTo(..)` or `compare(..)` being tested for equality
 with `1` or `-1` (`== 1`, `== -1`, `!= 1`, `!= -1`).
 
@@ -2049,6 +2164,8 @@ considered.
 **compareTo() in a class that is not Comparable** (incubating)
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: api-misuse, comparison
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Detects a method `int compareTo(Foo other)` declared in class `Foo` when the class
 does not implement `Comparable` (it has no superclass and no interfaces).
@@ -2085,6 +2202,8 @@ Static methods and classes whose `compareTo` is used as a method reference in th
 **compareTo() without equals()**
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~15 min · Tags: equality, collections
+
+Measured precision: not enough labeled findings yet (5 of 5 labeled findings correct so far)
 
 Detects classes that implement `Comparable` with their own `compareTo` but do
 not override `equals` (and `hashCode`), so they inherit the identity comparison of `Object`.
@@ -2125,6 +2244,8 @@ classes with Lombok annotations are skipped.
 **Concrete collection type in a declaration**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: design, collections
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Detects fields, method parameters, and method return types declared with a
 concrete collection class — `ArrayList`, `LinkedList`, `Vector`, `HashMap`, `LinkedHashMap`,
@@ -2169,6 +2290,8 @@ serializable type is sometimes chosen on purpose.
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: boxing, suspicious
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Detects conditional expressions (`c ? a : b`) whose two results are numbers of
 different types where at least one is a wrapper object, and the code treats the result as an
 object: both operands are wrappers (`Integer` and `Long`), or one is a wrapper and the
@@ -2207,6 +2330,8 @@ are not reported.
 **Confusing member name** (incubating)
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: naming, confusing
+
+Measured precision: too few findings to measure (3 of 3 labeled findings correct, every finding reviewed)
 
 Detects member names that are easy to misread:
 
@@ -2253,6 +2378,8 @@ a supertype), and test code (tests of case-sensitive property handling need such
 
 Severity: **MEDIUM** · Quality: reliability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: suspicious, dead-code
 
+Measured precision: **100%** (6 of 6 labeled findings correct, every finding reviewed)
+
 Detects `if` statements whose condition is the literal `true` or `false`.
 
 **Why it matters.** The branch is decided at compile time: with `if (true)` the `else` part is
@@ -2296,6 +2423,8 @@ is the usual way to write a loop that exits from inside). Also not reported:
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: naming, convention
 
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
+
 Detects constants whose name does not follow the configured convention (by
 default UPPER_SNAKE: uppercase letters and digits, words separated by single underscores).
 A constant here is a `static final` field — or an interface field, which is implicitly
@@ -2334,6 +2463,8 @@ parameter takes a preset name; regular expressions are not supported.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~10 min · Tags: design
 
+Measured precision: not enough labeled findings yet (9 of 9 labeled findings correct so far)
+
 Detects interfaces that declare nothing but constants.
 
 **Why it matters.** An interface defines a type. Using one as a namespace for constants
@@ -2368,6 +2499,8 @@ reported.
 **Constructor calls an overridable method**
 
 Severity: **MEDIUM** · Quality: reliability · Kind: code-smell · Enabled by default: no · Remediation: ~10 min · Tags: inheritance, initialization
+
+Measured precision: **100%** (39 of 39 labeled findings correct)
 
 Detects constructors of non-final classes that call a method of the same class
 which a subclass can override (not `private`, `static` or `final`).
@@ -2418,6 +2551,8 @@ class is possible), enums and records.
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: collections, lambda
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Detects a constructor reference of a collection or string builder with a
 capacity constructor — `ArrayList::new`, `HashSet::new`, `HashMap::new`, `StringBuilder::new`,
 `ArrayDeque::new`, … — used where it receives a number:
@@ -2454,6 +2589,8 @@ are.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~10 min · Tags: complexity
 
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
+
 Flags functions whose **cyclomatic complexity** (the number of independent paths through the function) is above a threshold (default 10). Off by default: cognitive complexity usually reflects readability better.
 
 Many independent paths mean many test cases are needed to cover the function and a higher chance that some combination is wrong.
@@ -2479,6 +2616,8 @@ price(order) { return RULES[order.kind](order); }
 **Doc comment that documents nothing** (incubating)
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~1 min · Tags: conventions, documentation
+
+Measured precision: **90%** (18 of 20 labeled findings correct)
 
 Detects documentation comments (`/** … */`) in places where the
 documentation tool does not attach them to anything:
@@ -2521,13 +2660,25 @@ void run() {
 Not reported: comments before a declaration of any kind (local classes and records included),
 comments before the `package` or `import` lines (file headers and package documentation),
 banner comments that start with three or more stars (`/*****`), and `/**` comments inside
-expressions. The rule is off by default: it is part of the `conventions` profile.
+expressions.
+
+Since Java 23 a run of `///` lines is a documentation comment too (Markdown syntax). Such a
+run is reported after annotations and in a type body with no declaration after it, and only
+when the file's Java release is known to be 23 or later (`java.release`, or the build file):
+in older code, and when the release is unknown, `///` may be an ordinary comment. A `///` run
+inside a method or initializer body is not reported, as `///` there is often an ordinary note
+or commented-out code; neither are `////` lines nor `///` comments after code on the same
+line.
+
+The rule is off by default: it is part of the `conventions` profile.
 
 ### java/date-field-out-of-range
 
 **Date or time field out of range** (incubating)
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: dates, api-misuse
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Detects constant date and time fields outside their valid range:
 
@@ -2564,6 +2715,8 @@ roll-over there is sometimes used on purpose (day 0 as "last day of the previous
 **Local variable declared long before its first use**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~2 min · Tags: conventions, readability
+
+Measured precision: **100%** (20 of 20 labeled findings correct)
 
 Detects local variables declared without a value, or with a literal value,
 more than `max_statements` statements (5 by default) before the first statement of the same
@@ -2621,6 +2774,8 @@ part of the `conventions` profile.
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~10 min · Tags: brain-overload, complexity
 
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
+
 Flags functions whose control-flow statements (`if`, loops, `switch`, `try`) are nested more than `max` levels deep (default 4).
 
 Deeply nested code forces readers to keep many conditions in mind at once and hides the main path of the function.
@@ -2647,6 +2802,8 @@ for (...) processItem(...);
 **Hash or resource read with the platform default charset** (incubating)
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: charset, i18n
+
+Measured precision: too few findings to measure (1 of 1 labeled findings correct, every finding reviewed)
 
 Detects two conversions that depend on the JVM's default charset although their
 result must not depend on the machine, in code compiled for a Java release older than 18:
@@ -2687,6 +2844,8 @@ right one for console, process or local-file text, and that cannot be told from 
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: structure, convention
 
+Measured precision: too few findings to measure (every finding reviewed)
+
 Detects a source file that declares types but has no `package` statement, so
 its types live in the unnamed (default) package.
 
@@ -2722,6 +2881,8 @@ errors.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: deprecation, documentation
 
+Measured precision: **100%** (9 of 9 labeled findings correct, every finding reviewed)
+
 Detects a declaration whose Javadoc has a `@deprecated` tag but which is not
 annotated `@Deprecated`. With the `require-javadoc-tag` parameter, also reports the reverse:
 a `@Deprecated` declaration with a Javadoc comment that does not say why or what replaces it.
@@ -2753,6 +2914,12 @@ public void connect(String host) { ... }
 Only Javadoc comments placed immediately before the declaration are considered; a
 `@deprecated` mentioned inside the text (not at the start of a line) is not a tag.
 
+Since Java 23 a run of `///` lines right before the declaration is a documentation comment
+too (Markdown syntax), with the same tags. It is read only when the file's Java release is
+known to be 23 or later (`java.release`, or the build file): in older code, and when the
+release is unknown, `///` may be an ordinary comment. In it, lines of fenced code blocks are not
+read as tags.
+
 **Parameters**
 
 | Name | Default | Description |
@@ -2764,6 +2931,8 @@ Only Javadoc comments placed immediately before the declaration are considered; 
 **Unsafe Thread.stop/suspend/resume**
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~30 min · Tags: concurrency, deprecated
+
+Measured precision: too few findings to measure (1 of 1 labeled findings correct, every finding reviewed)
 
 Detects calls to `stop()`, `suspend()`, and `resume()` on a `Thread`
 (including `Thread.currentThread()`).
@@ -2794,6 +2963,8 @@ Only calls whose receiver is provably a `Thread` are reported (unqualified calls
 **Disabled test without a reason**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: tests
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Detects JUnit `@Disabled` / `@Ignore` (and TestNG `@Ignore`) annotations that
 don't give a reason.
@@ -2826,6 +2997,8 @@ file's imports are checked; an empty or blank string counts as no reason.
 **Double-brace initialization**
 
 Severity: **MEDIUM** · Quality: reliability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: collections, memory
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Detects "double-brace initialization": an anonymous subclass of a collection
 or map whose instance initializer fills it (`new ArrayList<>() {{ add(..); }}`).
@@ -2862,6 +3035,8 @@ Only anonymous classes whose body holds nothing but initializer blocks (and poss
 **Double-checked locking on a non-volatile field**
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~10 min · Tags: concurrency, multi-threading
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Detects double-checked locking on a field that is not `volatile`:
 
@@ -2903,6 +3078,8 @@ safe), and neither is the local-variable form of the idiom.
 **Double-checked initialization publishes the object before it is set up** (incubating)
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~10 min · Tags: concurrency, multi-threading
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Detects double-checked lazy initialization (`if (f == null) { synchronized (…) {
 if (f == null) { … } } }`) where the field is assigned first and the new object is then set
@@ -2947,6 +3124,8 @@ call on the field (`f.load()`) or a write to one of its fields (`f.size = 3`).
 **Branch repeats the code of another branch**
 
 Severity: **MEDIUM** · Quality: reliability · Kind: code-smell · Enabled by default: yes · Remediation: ~10 min · Tags: suspicious, copy-paste
+
+Measured precision: not enough labeled findings yet (8 of 8 labeled findings correct so far)
 
 Detects a `switch` group whose code is the same as that of an earlier group of the
 same `switch`, and an `else if` branch whose code is the same as that of the branch right
@@ -3009,6 +3188,8 @@ bind pattern variables (the same text can then call different overloads), are no
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: suspicious, copy-paste
 
+Measured precision: not enough labeled findings yet (1 of 1 labeled findings correct so far)
+
 Detects an `if / else if` chain that tests the same condition more than once.
 
 **Why it matters.** A branch is only reached when every earlier condition was false, so a
@@ -3047,6 +3228,8 @@ Conditions that assign, increment, or create objects are not reported.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: duplication
 
+Measured precision: not enough labeled findings yet (11 of 11 labeled findings correct so far)
+
 Detects string literals that appear `threshold` (default 3) or more times in
 the same file, with content at least `min_length` (default 5) characters long.
 
@@ -3084,6 +3267,8 @@ values is normal practice.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~15 min · Tags: duplication
 
+Measured precision: not enough labeled findings yet (9 of 9 labeled findings correct so far)
+
 Flags blocks of code that appear, token for token, in more than one place (by default at least 100 tokens spanning at least 10 lines; literal values and whitespace are ignored).
 
 Duplicated code must be changed in several places at once; sooner or later one copy is missed and the copies drift apart.
@@ -3095,6 +3280,8 @@ Duplicated code must be changed in several places at once; sooner or later one c
 **Unnecessary else after return**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~2 min · Tags: readability, nesting
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Detects an `else` block following an `if` branch that ends with `return` or
 `throw`.
@@ -3128,6 +3315,8 @@ where the symmetric form is often clearer.
 **Empty block**
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: unused, suspicious
+
+Measured precision: not enough labeled findings yet (4 of 4 labeled findings correct so far)
 
 Detects blocks with no statements and no comment: the body of an `if`,
 `else`, loop, `try`, `finally`, `synchronized`, or `switch`, a static or instance initializer,
@@ -3167,6 +3356,8 @@ the loop (`for (i = 0; a[i] != 0; i++) {}`).
 
 Severity: **MEDIUM** · Quality: reliability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: error-handling
 
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
+
 Detects `catch` blocks that contain no statements.
 
 **Why it matters.** Swallowing an exception silently hides failures: the program continues in
@@ -3197,6 +3388,8 @@ try { lock.close(); } catch (IOException e) { /* best effort: the lock file is r
 **Empty constructor without explanation**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~2 min · Tags: unused, documentation
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Detects constructors whose body is empty and contains no comment.
 
@@ -3239,6 +3432,8 @@ instantiation of utility classes and singletons), enum constructors, annotated c
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: suspicious, documentation
 
+Measured precision: not enough labeled findings yet (9 of 9 labeled findings correct so far)
+
 Detects methods whose body is empty and contains no comment.
 
 **Why it matters.** An empty method may be intentional (a no-op hook, an interface method
@@ -3273,6 +3468,8 @@ main source root (a class extending `TestCase` or a `…TestCase` base class).
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: unused, dead-code
 
+Measured precision: too few findings to measure (every finding reviewed)
+
 Detects Java source files that contain no class, interface, enum, record or
 annotation type: only a package line, imports, comments, or nothing at all.
 
@@ -3302,7 +3499,9 @@ where a declaration may have been lost by the parser.
 
 **Empty statement**
 
-Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: suspicious, clutter
+Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: suspicious, clutter · Fix available (`mote fix`)
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Detects empty statements — a lone `;` — such as `foo();;`, a `;` after a
 member declaration (in a class, interface or enum body), or `if (x);`.
@@ -3333,11 +3532,18 @@ Not reported: the semicolons inside a `for (;;)` header, a classic `for` loop wh
 does the work (`for (i = 0; a[i] != 0; i++);`), and a `while`/`do` whose condition calls a
 method (`while (it.next() != null);`), and the `;` that ends the constants of an enum.
 
+**Fix available.** `mote fix` deletes a stray `;` that stands among other statements or members
+(`foo();;`, a `;` after a method): there it is a statement that does nothing, or no statement
+at all. A `;` that is the body of an `if`, `else` or loop, or of a label, is reported but not
+fixed: deleting it would make the next statement the body.
+
 ### java/equals-asymmetric-subclass
 
 **Subclass equals is not symmetric with its superclass** (incubating)
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~15 min · Tags: equality
+
+Measured precision: too few findings to measure (1 of 1 labeled findings correct, every finding reviewed)
 
 Detects a class whose `equals(Object)` checks `o instanceof Sub`, when its
 superclass (declared in the same file) overrides `equals` with `o instanceof Super`.
@@ -3384,6 +3590,8 @@ Only classes declared in the same file are compared. Methods that use `getClass(
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~10 min · Tags: equality
 
+Measured precision: too few findings to measure (2 of 2 labeled findings correct, every finding reviewed)
+
 Detects an instance method `boolean equals(X)` whose parameter type is not
 `Object`.
 
@@ -3418,6 +3626,8 @@ the real override).
 **equals() between unrelated types** (incubating)
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: equality, suspicious
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Detects `a.equals(b)`, `Objects.equals(a, b)` and test assertions of equality
 (`assertEquals(a, b)`, `assertNotEquals(a, b)`, AssertJ `assertThat(a).isEqualTo(b)` /
@@ -3467,6 +3677,8 @@ declared type), such as `a.getX().equals(b.getY())`, are not checked.
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: null-safety, equality
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Detects `x.equals(null)`.
 
 **Why it matters.** By the `equals` contract, `x.equals(null)` is always `false` for a
@@ -3492,6 +3704,8 @@ Test code is not checked: `assertFalse(value.equals(null))` legitimately verifie
 **equals() and hashCode() not overridden together**
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~15 min · Tags: equality, collections
+
+Measured precision: not enough labeled findings yet (5 of 5 labeled findings correct so far)
 
 Detects classes that override `equals(Object)` without overriding
 `hashCode()`, or the other way round.
@@ -3538,6 +3752,8 @@ class writes one of them, so a hand-written `equals` in such a class still lacks
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: equality
 
+Measured precision: not enough labeled findings yet (2 of 2 labeled findings correct so far)
+
 Detects an `equals(Object)` implementation that casts its parameter without
 any `instanceof` test or `getClass()` comparison.
 
@@ -3573,6 +3789,8 @@ method first (for example `super.equals(o)` or a helper that may check the type)
 **Exception logged without its stack trace**
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: error-handling, logging
+
+Measured precision: **100%** (45 of 45 labeled findings correct)
 
 Detects a catch block that reports the caught exception at warning or error
 level through a logger, but hands the logger only its text — `e.getMessage()`,
@@ -3625,6 +3843,8 @@ code.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: naming, error-handling
 
+Measured precision: not enough labeled findings yet (1 of 1 labeled findings correct so far)
+
 Detects classes that extend an exception type but whose name doesn't end
 in `Exception` or `Error`.
 
@@ -3652,6 +3872,8 @@ data types).
 **Exception created but not thrown**
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: error-handling
+
+Measured precision: too few findings to measure (1 of 1 labeled findings correct, every finding reviewed)
 
 Detects an exception object that is created as a statement of its own and then
 dropped: `new IllegalArgumentException("bad id");` without `throw`.
@@ -3687,6 +3909,8 @@ assertion error. Anonymous subclasses (`new Foo() { … };`) are not reported.
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~10 min · Tags: finalization, resources
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Detects explicit calls to `finalize()` (other than `super.finalize()`) and
 calls to `System.runFinalizersOnExit(..)` / `Runtime.runFinalizersOnExit(..)`.
 
@@ -3716,6 +3940,8 @@ which may call a finalizer on purpose to exercise it.
 **Explicit garbage collection request**
 
 Severity: **MEDIUM** · Quality: reliability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: performance, gc
+
+Measured precision: **100%** (6 of 6 labeled findings correct, every finding reviewed)
 
 Detects explicit requests for a garbage collection: `System.gc()` and
 `Runtime.getRuntime().gc()` (or `gc()` on any `Runtime`) outside test code.
@@ -3750,6 +3976,8 @@ memory or time is part of the method.
 **Array created for a varargs parameter**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: varargs, clutter
+
+Measured precision: **100%** (37 of 37 labeled findings correct)
 
 Detects an array created in the argument list (`new Object[] { a, b }`,
 `new Class[0]`) and passed as the variable-arity (`...`) argument of a JDK method —
@@ -3786,6 +4014,8 @@ call).
 **Test failure swallowed by its own catch**
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: tests, exceptions
+
+Measured precision: **100%** (12 of 12 labeled findings correct, every finding reviewed)
 
 Detects `fail(..)`, or a test assertion (`assertEquals`, `assertThat`, …), inside a
 `try` block whose first handler able to catch an `AssertionError` — `catch (Throwable ..)`,
@@ -3831,6 +4061,8 @@ throw).
 **Field could be a local variable**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: design, scope
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Detects private instance fields that only one method uses, and that this
 method always assigns before reading.
@@ -3883,6 +4115,8 @@ fields by convention.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~10 min · Tags: spring, dependency-injection, design
 
+Measured precision: **100%** (37 of 37 labeled findings correct)
+
 Detects fields annotated with Spring's `@Autowired` or with `@Inject`
 (`javax.inject` / `jakarta.inject`) in production code.
 
@@ -3925,6 +4159,8 @@ into test fields is the normal way to write container tests).
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: naming, convention
 
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
+
 Detects fields that are not `static final` and whose name does not follow the
 configured convention (by default camelCase: a lowercase letter followed by letters and digits,
 no underscores).
@@ -3963,6 +4199,8 @@ name; regular expressions are not supported.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~2 min · Tags: conventions, structure
 
+Measured precision: too few findings to measure (2 of 2 labeled findings correct, every finding reviewed)
+
 Detects a source file whose only top-level type has a different name than
 the file (`Helpers.java` declaring `class Utils`), compared case-sensitively.
 
@@ -3993,6 +4231,8 @@ is off by default: it is part of the `conventions` profile.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~60 min · Tags: brain-overload, size
 
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
+
 Flags files with more than `max_lines` lines of code (default 1000; blank and comment-only lines are not counted).
 
 Very large files tend to mix responsibilities, are slow to navigate and review, and cause frequent merge conflicts.
@@ -4010,6 +4250,8 @@ Very large files tend to mix responsibilities, are slow to navigate and review, 
 **Constant final field could be static**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: design, performance
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Detects `final` instance fields of a primitive, boxed primitive or `String` type
 initialized with a compile-time constant (`private final int retries = 3;`).
@@ -4042,6 +4284,8 @@ serialization mechanism ignores it unless it is `static`.
 **finalize() declared**
 
 Severity: **MEDIUM** · Quality: reliability · Kind: code-smell · Enabled by default: yes · Remediation: ~20 min · Tags: resources, deprecated
+
+Measured precision: not enough labeled findings yet (1 of 1 labeled findings correct so far)
 
 Detects classes that declare a `finalize()` method.
 
@@ -4077,6 +4321,8 @@ finalizer — is not reported, nor a `final` one whose only statement is `super.
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~20 min · Tags: todo
 
+Measured precision: not enough labeled findings yet (8 of 8 labeled findings correct so far)
+
 Flags comments containing `FIXME`, `XXX` or `HACK` markers.
 
 A marker word used as placeholder text is not reported: quoted (`file name "XXX"`), as a member name (`Thread.XXX`), inside inline code or emphasis (`set<em>XXX</em>()`), or in a run of X placeholders (`XXXX XXX XX n`).
@@ -4095,6 +4341,8 @@ total = total * 1.1; // FIXME rounding is wrong for negative amounts
 **Floating-point values compared with == or !=**
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: numbers, precision
+
+Measured precision: not enough labeled findings yet (8 of 8 labeled findings correct so far)
 
 Detects `==` and `!=` comparisons where an operand is a `float` or `double`
 value.
@@ -4129,6 +4377,8 @@ with `MAX_VALUE`, `MIN_VALUE`, or the infinities, whole-number tests against the
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: suspicious, floating-point
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Detects `for` loops whose counter is a `float` or `double` (declared in
 the loop header, tested in its condition, and updated in its update part).
 
@@ -4161,6 +4411,8 @@ collections of numbers.
 **for loop counter changed outside its header**
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~10 min · Tags: loops, confusing
+
+Measured precision: **100%** (5 of 5 labeled findings correct, every finding reviewed)
 
 Detects `for` loops whose header does not say how the loop advances:
 
@@ -4221,6 +4473,8 @@ place that advances the counter, which the header shows plainly).
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: clarity, casts
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Detects a for-each loop whose variable is declared with a wider type than the
 known element type of the array or collection, when the loop body starts by casting the
 variable back to that element type.
@@ -4254,6 +4508,8 @@ casts that are not the first statement of the body.
 **Format placeholders and arguments don't match**
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: format, logging
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Detects a format call whose string-literal pattern expects a different number of
 arguments than it is given:
@@ -4292,6 +4548,8 @@ quotes.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~20 min · Tags: brain-overload, size
 
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
+
 Flags functions with more than `max_lines` lines of code (default 80; blank and comment-only lines are not counted).
 
 Long functions usually do several things at once. They are harder to name, to understand and to reuse, and changes to them are riskier.
@@ -4317,6 +4575,8 @@ importFile(path) { save(transform(validate(parse(path)))); notify(path); }
 **Generic exception thrown**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~10 min · Tags: error-handling
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Detects `throw new RuntimeException(…)`, `throw new Exception(…)`,
 `throw new Throwable(…)`, and `throw new Error(…)`.
@@ -4347,6 +4607,8 @@ Test code is not checked (tests throw generic exceptions to simulate failures).
 **Hard-coded absolute file-system path**
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~10 min · Tags: portability, configuration
+
+Measured precision: **100%** (5 of 5 labeled findings correct, every finding reviewed)
 
 Detects string literals in production code that are absolute file-system paths
 tied to one machine or one operating system:
@@ -4393,6 +4655,8 @@ service accounts); and URIs (`file:///C:/…`), which do not start with the path
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~10 min · Tags: iterators, api-misuse
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Detects a `hasNext()` method that calls the same object's `next()` (and
 `hasMoreElements()` calling `nextElement()`).
 
@@ -4428,6 +4692,8 @@ on another iterator (delegation) are fine.
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: strings, encoding
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Detects bytes converted with `Integer.toHexString(b & 0xFF)` (or
 `Long.toHexString`) and appended back to back to a string or builder inside a loop, with no
 padding to two digits.
@@ -4461,6 +4727,8 @@ the usual manual padding, or separators such as `':'` that keep the output unamb
 **Declaration hides another one** (incubating)
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~5 min · Tags: confusing, naming, conventions
+
+Measured precision: **87%** (34 of 39 labeled findings correct)
 
 Detects declarations that hide another declaration of the same file, so that one
 name means two things in the same place:
@@ -4519,6 +4787,8 @@ accept.
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: suspicious, copy-paste
 
+Measured precision: not enough labeled findings yet (9 of 9 labeled findings correct so far)
+
 Detects an `if` statement whose `then` and `else` branches contain the same
 code, and a conditional expression `c ? x : x` whose two results are the same.
 
@@ -4552,6 +4822,8 @@ left to `empty-block`.
 **Identical catch branches**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: duplication, exceptions
+
+Measured precision: not enough labeled findings yet (9 of 9 labeled findings correct so far)
 
 Detects `catch` clauses of the same `try` statement whose bodies are
 identical (the exception variable may have a different name in each).
@@ -4595,6 +4867,8 @@ declare (inherited or statically imported). Empty handlers are not reported (see
 **Methods with identical bodies**
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~10 min · Tags: duplication
+
+Measured precision: not enough labeled findings yet (7 of 7 labeled findings correct so far)
 
 Detects two methods of one class whose bodies are the same code token for
 token (comments and layout aside), with the same return type and the same parameter list.
@@ -4649,6 +4923,8 @@ separately.
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: suspicious, typo
 
+Measured precision: not enough labeled findings yet (1 of 1 labeled findings correct so far)
+
 Detects binary operations whose two operands are the same side-effect-free
 expression — `a == a`, `x < x`, `flag && flag`, `n - n`, `mask | mask` — and `a.equals(a)`.
 
@@ -4679,6 +4955,8 @@ different values); two literals; `x == x` / `x != x` and other comparisons or ar
 **Failure-reporting result ignored**
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: api-misuse, error-handling
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Detects calls whose return value is the only report of failure or of partial
 work, used as statements:
@@ -4721,6 +4999,8 @@ fields declared in this file with such a type, or objects created in place (`new
 **Result of a side-effect-free call ignored**
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: api-misuse, immutability
+
+Measured precision: not enough labeled findings yet (1 of 1 labeled findings correct so far)
 
 Detects a call whose only effect is to return a new value, used as a statement
 so that the value is thrown away:
@@ -4767,6 +5047,8 @@ either.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: clutter, redundant
 
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
+
 Detects a local variable that is declared with a value and then immediately
 returned or thrown by the next statement.
 
@@ -4800,6 +5082,8 @@ differs from the value's type (the conversion would change what is returned).
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: collections, suspicious
 
+Measured precision: too few findings to measure (1 of 1 labeled findings correct, every finding reviewed)
+
 Detects comparisons of a size or length with a constant whose result never
 changes because a size is never negative: `list.size() < 0` (always false),
 `name.length() >= 0` (always true), `array.length == -1`, `map.size() > -1`.
@@ -4827,6 +5111,8 @@ receiver's type; custom `size()` methods may return -1 and are not reported.
 **Collection lookup with an incompatible type**
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: collections, api-misuse
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Detects collection and map lookups whose argument can never be equal to an
 element or key: `Collection.contains/remove`, `List.indexOf/lastIndexOf`, and
@@ -4866,6 +5152,8 @@ is not a lookup and is not considered.
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: tests, assertj
 
+Measured precision: not enough labeled findings yet (7 of 7 labeled findings correct so far)
+
 Detects fluent assertions (AssertJ, Truth, FEST) that are started but never
 finished: a statement that is only `assertThat(actual)`, possibly followed by description
 calls (`.as(..)`, `.describedAs(..)`, `.withFailMessage(..)`) or by calls that only
@@ -4903,6 +5191,8 @@ skipped too.
 **Index loop could be an enhanced for**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: idiom, readability
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Detects counting loops over an array or a `List` —
 `for (int i = 0; i < a.length; i++)` or `for (int i = 0; i < list.size(); i++)` — whose body
@@ -4945,6 +5235,8 @@ lambda, with no `break`, `continue`, `return` or `throw` before it. Loops that c
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: strings, collections
 
+Measured precision: not enough labeled findings yet (8 of 8 labeled findings correct so far)
+
 Detects the result of `String.indexOf(..)` or `List.indexOf(..)` compared with
 `> 0` (or `0 <`).
 
@@ -4975,6 +5267,8 @@ prefix, as in `if (s.indexOf(':') > 0) key = s.substring(0, s.indexOf(':'));`.
 **Inner class could be static**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: memory, design
+
+Measured precision: **100%** (7 of 7 labeled findings correct, every finding reviewed)
 
 Detects private or package-private member classes that are not `static` although
 nothing in them uses the enclosing instance: no field or method of the enclosing class, no
@@ -5021,6 +5315,8 @@ nothing), nor are files that use Lombok, whose generated accessors cannot be see
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: exceptions, readability
 
+Measured precision: not enough labeled findings yet (9 of 9 labeled findings correct so far)
+
 Detects `instanceof` tests on the caught exception inside a `catch` block.
 
 **Why it matters.** Sorting exceptions by type is exactly what separate `catch` clauses do.
@@ -5061,6 +5357,8 @@ Only tests of the exception variable itself are reported (not of its cause, as i
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: java16, clarity
 
+Measured precision: **100%** (52 of 52 labeled findings correct)
+
 Detects `if (x instanceof T)` whose then-branch casts the same variable to
 the same type, `(T) x`.
 
@@ -5096,6 +5394,8 @@ condition, and the cast must use exactly the same type text.
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: numbers, overflow
 
+Measured precision: too few findings to measure (4 of 4 labeled findings correct, every finding reviewed)
+
 Detects arithmetic on `int` literals (`*`, `+`, `-`) whose exact result does not
 fit in an `int`: `24 * 60 * 60 * 1000 * 365`, `3 * 1024 * 1024 * 1024`.
 
@@ -5125,6 +5425,8 @@ sub-expression is reported.
 **int multiplication overflows before widening**
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: numbers, overflow
+
+Measured precision: **100%** (7 of 7 labeled findings correct, every finding reviewed)
 
 Detects a multiplication of `int` values by a large constant factor whose result is
 then used as a `long`, `float` or `double`: stored in such a variable, returned from such a
@@ -5173,6 +5475,8 @@ fields or locals of this file initialized with a constant expression (`final int
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: numbers, floating-point
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Detects `Double.longBitsToDouble(x)` where `x` is an `int` (or a `short`,
 `char`, `byte`, or their wrappers), including int literals written without the `L` suffix.
 
@@ -5202,6 +5506,8 @@ The literal `0` (the same bits either way) is not reported.
 **Integer division in a floating-point context**
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: numbers, precision
+
+Measured precision: too few findings to measure (3 of 3 labeled findings correct, every finding reviewed)
 
 Detects an integer division (both operands `int`/`long`/`short`/`byte`/`char`)
 whose result is immediately stored in, returned as, or cast to a `float` or `double`.
@@ -5234,6 +5540,8 @@ not reported.
 **JDK-internal API used** (incubating)
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~30 min · Tags: portability, jdk-internal
+
+Measured precision: too few findings to measure (3 of 3 labeled findings correct, every finding reviewed)
 
 Detects imports and fully qualified type references of JDK-internal packages:
 `sun.*`, `jdk.internal.*`, and the JDK's private copies of other libraries
@@ -5274,6 +5582,8 @@ a deliberate choice), and files that belong to such a package themselves.
 **InterruptedException handled without restoring the interrupt status**
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: concurrency, error-handling
+
+Measured precision: not enough labeled findings yet (15 of 15 labeled findings correct so far)
 
 Detects a `catch` block for `InterruptedException` that does something (logs,
 counts, retries) but neither calls `interrupt()` to restore the thread's interrupt status nor
@@ -5324,6 +5634,8 @@ thread's `run()` method does (the thread ends right after); and test code.
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~10 min · Tags: concurrency, multi-threading
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Detects the built-in monitor operations applied to a
 `java.util.concurrent.locks` object:
 
@@ -5359,6 +5671,8 @@ Only receivers the resolver proves to be one of these types are reported.
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: api-misuse, strings, collections
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Detects range arguments written as constants that can never be valid:
 
 * `substring`/`subSequence` on a string or builder, and `subList` on a list, with a negative
@@ -5388,6 +5702,8 @@ Only integer literals are evaluated, and only receivers the resolver proves (`St
 **Invalid regular expression literal**
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: regex
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Detects a string literal passed as a regular expression — to
 `Pattern.compile`, `Pattern.matches`, or `String.matches`, `replaceAll`, `replaceFirst`,
@@ -5422,6 +5738,8 @@ or intersected classes, comments mode, flags passed to `compile`) are never repo
 **Invisible or control character in source**
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: unicode, confusing, security
+
+Measured precision: **100%** (31 of 31 labeled findings correct)
 
 Detects characters in the source that readers cannot see but the compiler
 does:
@@ -5463,6 +5781,8 @@ append.
 **Iterator implementation breaks the iterator contract**
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~10 min · Tags: iterators, api-misuse
+
+Measured precision: **100%** (15 of 15 labeled findings correct, every finding reviewed)
 
 Detects two breaches of the iterator contracts in classes that implement
 `java.util.Iterator`:
@@ -5509,6 +5829,8 @@ they are never exhausted, so `next()` has no reason to throw.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~2 min · Tags: conventions, documentation
 
+Measured precision: **100%** (20 of 20 labeled findings correct)
+
 Detects block tags of a documentation comment that carry no description:
 `@param` with only the parameter name, `@throws` / `@exception` with only the exception type,
 and `@return` or `@deprecated` with nothing after them.
@@ -5543,13 +5865,23 @@ Either the tag has something to say, or it can go.
 A description may continue on the following lines; it is empty only when the next tag or the
 end of the comment comes first. Lines inside `<pre>` blocks and inside inline tags such as
 `{@code …}` are not read as tags. Other block tags (`@see`, `@since`, `@author`, custom tags)
-are not checked. The rule is off by default: it is part of the `conventions` profile.
+are not checked.
+
+Since Java 23 a run of `///` lines is a documentation comment too (Markdown syntax), with the
+same block tags. Such runs are read only when the file's Java release is known to be 23 or
+later (`java.release`, or the build file): in older code, and when the release is unknown,
+`///` may be an ordinary comment. In them, lines of fenced code blocks (```` ``` ```` or `~~~`) are
+not read as tags, and a line starting with `*` is a list item, not a margin.
+
+The rule is off by default: it is part of the `conventions` profile.
 
 ### java/jdbc-statement-in-loop
 
 **JDBC statement executed row by row in a loop** (incubating)
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~15 min · Tags: jdbc, performance
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Detects two inefficiencies of a `PreparedStatement` reused in a loop:
 
@@ -5596,6 +5928,8 @@ conditionally or to different values in the same loop is not a constant.
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: jdbc, api-misuse
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Detects JDBC calls that pass index `0` (or a negative index) where JDBC counts
 from 1: `PreparedStatement.setXxx(0, …)`, `CallableStatement.registerOutParameter(0, …)`,
 `ResultSet.getXxx(0)` / `updateXxx(0, …)`, and `ResultSetMetaData.getColumnXxx(0)`.
@@ -5626,6 +5960,8 @@ metadata are reported. Methods whose `int` argument is not an index (`setFetchSi
 **Public JUnit 5 test class or method**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: tests, junit
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Detects the `public` modifier on JUnit 5 test classes and on test and
 lifecycle methods (`@Test`, `@ParameterizedTest`, `@RepeatedTest`, `@TestFactory`,
@@ -5669,6 +6005,8 @@ not reported.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: performance, collections
 
+Measured precision: **100%** (40 of 40 labeled findings correct)
+
 Detects a for-each loop over `map.keySet()` whose body looks each key up again
 with `map.get(key)` on the same map.
 
@@ -5703,6 +6041,8 @@ lookups inside lambdas or anonymous classes in the body.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~10 min · Tags: control-flow
 
+Measured precision: not enough labeled findings yet (8 of 8 labeled findings correct so far)
+
 Detects labeled statements (`outer: for (…)`).
 
 **Why it matters.** Labels exist to support `break label` / `continue label` jumps across
@@ -5734,6 +6074,8 @@ found = findFirstMatch(rows, query);   // the inner loops `return cell;`
 **Lambda could be a method reference**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: idiom, readability
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Detects lambdas whose body does nothing but pass the lambda's parameters, in
 order, to one method or constructor: `x -> service.handle(x)`, `(a, b) -> merge(a, b)`,
@@ -5767,6 +6109,8 @@ references (`toString`, `hashCode`, …).
 **Linear-time list access inside a loop**
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~10 min · Tags: performance, collections
+
+Measured precision: not enough labeled findings yet (8 of 8 labeled findings correct so far)
 
 Detects, inside a loop, list operations whose cost grows with the size of the
 list:
@@ -5818,6 +6162,8 @@ most once per loop).
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: collections, loops
 
+Measured precision: not enough labeled findings yet (1 of 1 labeled findings correct so far)
+
 Detects `list.remove(i)` inside a `for` loop that counts `i` upwards (`i++`),
 when nothing compensates for the removal.
 
@@ -5849,6 +6195,8 @@ proven (`List` and `int`; with an `Integer` counter `remove` removes by value).
 **String literal should be the receiver of equals**
 
 Severity: **LOW** · Quality: reliability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: null, strings
+
+Measured precision: not enough labeled findings yet (8 of 8 labeled findings correct so far)
 
 Detects `s.equals("literal")` and `s.equalsIgnoreCase("literal")` where `s`
 may be `null`, and the same with a `String` constant declared in this file
@@ -5900,6 +6248,8 @@ of a class is a non-null constant.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: naming, convention
 
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
+
 Detects local variables and parameters whose name does not follow the
 configured convention (by default camelCase: a lowercase letter followed by letters and
 digits). Checked: local variables, method/constructor/lambda/catch parameters, record
@@ -5935,6 +6285,8 @@ Single-character names (`i`, `x`, `T`) and the unnamed variable `_` are always a
 **Exception logged and rethrown**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: error-handling, logging
+
+Measured precision: **100%** (40 of 40 labeled findings correct)
 
 Detects a catch block that writes the caught exception (or its message) to a
 logger at info level or above, and ends by throwing it on: the exception itself (`throw e`)
@@ -5980,6 +6332,8 @@ lambdas or nested `try` statements.
 **Eagerly built debug log or precondition message**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: logging, performance
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Detects debug- and trace-level logging calls (`debug`, `trace`; `fine`,
 `finer`, `finest` for `java.util.logging`) whose message is built eagerly — by string
@@ -6028,6 +6382,8 @@ constants are not reported, and neither is any call in a method that tests the l
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: logging, copy-paste
 
+Measured precision: **100%** (13 of 13 labeled findings correct, every finding reviewed)
+
 Detects a logger field initialized for another class than the one declaring it:
 `private static final Logger log = LoggerFactory.getLogger(OrderService.class);` inside
 `class InvoiceService` (SLF4J, Log4j 2, Log4j 1, Commons Logging, JBoss Logging and
@@ -6063,6 +6419,8 @@ created outside field initializers, and test code.
 **Nested block without declarations**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: confusing, structure
+
+Measured precision: not enough labeled findings yet (5 of 5 labeled findings correct so far)
 
 Detects a block statement `{ … }` nested directly in a method, constructor or
 initializer body (or in another such block) that declares no local variable or class.
@@ -6102,7 +6460,9 @@ and other statements.
 
 **Long literal with lowercase suffix**
 
-Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: readability, convention
+Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: readability, convention · Fix available (`mote fix`)
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Detects `long` integer literals written with a lowercase `l` suffix.
 
@@ -6119,11 +6479,15 @@ long timeout = 30000l;
 long timeout = 30000L;
 ```
 
+**Fix available.** `mote fix` writes the suffix as `L`: both spell the same `long` literal.
+
 ### java/loop-counter-wrong-direction
 
 **Loop counter moves away from its bound** (incubating)
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: loops, suspicious, typo
+
+Measured precision: too few findings to measure (1 of 1 labeled findings correct, every finding reviewed)
 
 Detects a `for` loop whose update moves the counter away from the bound tested
 by its condition: `i < n` with `i--`, or `i >= 0` with `i++` (also `+=` / `-=` by a constant
@@ -6154,6 +6518,8 @@ loops whose update also changes the bound are not reported.
 **Loop body always exits on the first pass**
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: loops, suspicious
+
+Measured precision: not enough labeled findings yet (6 of 6 labeled findings correct so far)
 
 Detects loops (`for`, enhanced `for`, `while`, `do`) whose body ends with an
 unconditional `break`, `return` or `throw` and contains no `continue` for that loop, so the
@@ -6198,6 +6564,8 @@ that are not the last statement of the body.
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: no · Remediation: ~5 min · Tags: loops, suspicious
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Detects `for` loops whose condition is `i != bound` while the counter does not
 move by exactly one each time: the update adds or subtracts a constant other than 1
 (`i += 2`), or the body changes the counter as well.
@@ -6226,6 +6594,8 @@ plain integer locals.
 **Loop condition false on entry** (incubating)
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: loops, suspicious, dead-code
+
+Measured precision: too few findings to measure (1 of 1 labeled findings correct, every finding reviewed)
 
 Detects `for` and `while` loops whose condition is false on entry, judging
 from the constant values the variables in it have just been given: `for (int i = 10; i < 5;
@@ -6259,6 +6629,8 @@ involve anything else (fields, method calls, other variables) are not evaluated.
 **Exception cause lost when rethrowing**
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: error-handling
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Detects exceptions thrown from a `catch (E e)` block — `throw new X(…)` or an
 exception built by a helper, `throw invalidInput(…)` — that do not receive `e` itself: either
@@ -6305,6 +6677,8 @@ reported when the catch block stores the caught exception somewhere (`this.failu
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~5 min · Tags: readability, conventions
 
+Measured precision: not enough labeled findings yet (5 of 5 labeled findings correct so far)
+
 Detects numeric literals ("magic numbers") used directly in code instead of
 through a named constant.
 
@@ -6348,6 +6722,8 @@ focused clean-ups but noisy on most code bases.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: performance, clutter, arrays
 
+Measured precision: not enough labeled findings yet (8 of 8 labeled findings correct so far)
+
 Detects loops whose only statement copies elements:
 
 * an index loop `for (int i = a; i < b; i++) dst[i + k] = src[i + m];` between two different
@@ -6389,6 +6765,8 @@ sources whose types are not known.
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: collections, null, api-misuse
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Detects `Map` callbacks that always return `null` where that cannot be what the
 author wants:
 
@@ -6426,6 +6804,8 @@ reported.
 **Members out of the conventional order**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~2 min · Tags: conventions, structure
+
+Measured precision: **100%** (20 of 20 labeled findings correct)
 
 Detects members of a class, enum, record or interface declared out of the
 conventional order: static fields first, then instance fields, then constructors, then methods.
@@ -6467,6 +6847,8 @@ it is part of the `conventions` profile.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: naming, convention
 
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
+
 Detects methods whose name does not follow the configured convention (by
 default camelCase: a lowercase letter followed by letters and digits).
 
@@ -6502,6 +6884,8 @@ preset name; regular expressions are not supported.
 **if laid out as if it were an else branch** (incubating)
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: confusing, braces
+
+Measured precision: too few findings to measure (1 of 1 labeled findings correct, every finding reviewed)
 
 Detects two layouts that make an `if` read differently from how it runs:
 
@@ -6558,6 +6942,8 @@ the outer `if`.
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: confusing, braces
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Detects a statement that follows a braceless `if`, `else`, `for`, or `while`
 body and is indented exactly like that body, so it looks guarded but always runs.
 
@@ -6590,6 +6976,8 @@ the literal leading whitespace of each line (tabs and spaces are never equated).
 **Control statement body without braces**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~1 min · Tags: conventions, braces
+
+Measured precision: **100%** (20 of 20 labeled findings correct)
 
 Detects `if`, `else`, `for`, `while` and `do` statements whose body is a
 single statement written without braces.
@@ -6628,10 +7016,12 @@ as a lone `;` (see `java/empty-statement`). The rule is off by default: it is pa
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~5 min · Tags: conventions, documentation
 
+Measured precision: **95%** (19 of 20 labeled findings correct)
+
 Detects declarations that other code can see but that carry no
-documentation comment (`/** … */`): public top-level types, and the public and protected
-nested types, methods, constructors and fields of such types (members of interfaces and
-annotation types are public unless declared `private`).
+documentation comment (`/** … */`, or a run of `///` lines since Java 23): public top-level
+types, and the public and protected nested types, methods, constructors and fields of such
+types (members of interfaces and annotation types are public unless declared `private`).
 
 **Why it matters.** The visible declarations of a type are its contract. Without
 documentation, every caller has to read the implementation to learn what a method expects,
@@ -6665,14 +7055,26 @@ methods annotated `@Override` (they inherit the documentation of the method they
 simple accessors (a getter `getX()` / `isX()` / `hasX()` whose body only returns a field, a
 setter `setX(v)` whose body only assigns it, optionally followed by `return this;`); compact
 record constructors; and enum constants. A doc comment placed after the annotations counts
-here (`java/dangling-doc-comment` reports its position). The rule is off by default and
-reports a lot on code that is not documented: it is part of the `conventions` profile.
+here (`java/dangling-doc-comment` reports its position).
+
+Since Java 23 a run of `///` lines is a documentation comment too (Markdown syntax), and counts
+as one here whatever release the file is compiled for: whether `///` is documentation depends
+on the JDK whose javadoc tool reads the code, not on the compile target (a project compiled for
+Java 17 may be documented that way), and taking a `///` run as documentation can only remove a
+finding. Not documentation: lines starting with four or more slashes (`////`), `///`
+comments written after code on the same line, and the shebang line and directives of the jbang
+script runner (`///usr/bin/env jbang`, `///DEPS …`, `///SOURCES …`).
+
+The rule is off by default and reports a lot on code that is not documented: it is part of
+the `conventions` profile.
 
 ### java/missing-override
 
 **Missing @Override on an overriding method**
 
-Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: convention, overrides
+Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: convention, overrides · Fix available (`mote fix`)
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Detects methods that override or implement a method of a supertype without being
 annotated with `@Override`.
@@ -6706,11 +7108,18 @@ match by name, number of parameters, and parameter types. Methods overriding sup
 are not reported, nor are methods without a body (abstract or interface declarations), static
 and private methods, and methods declared in interfaces (including `default` methods).
 
+**Fix available.** `mote fix` adds `@Override` (on its own line, indented like the method) to
+the methods the rule reports — those it has matched with a method of a known supertype. The
+annotation is checked by the compiler and not kept in the class file, so the program does the
+same; it is not added where the file imports or declares another type named `Override`.
+
 ### java/missing-switch-default
 
 **switch statement without default**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: switch, defensive
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Detects `switch` statements (classic `case X:` or arrow `case X ->` labels) that
 have no `default` label, and `switch` statements over an enum declared in the same file that
@@ -6751,6 +7160,8 @@ constants declared in this file, and enum switches that list every constant.
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: tests, mockito
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Detects calls whose arguments mix Mockito argument matchers (`any()`, `eq(..)`,
 `anyString()`, `argThat(..)`, …) with plain values (literals, variables, `new` objects), as in
 `when(repo.find(anyLong(), "active"))` or `verify(mailer).send(eq(to), subject)`.
@@ -6782,6 +7193,8 @@ to a helper method may itself return a matcher and is never counted.
 **Mockito annotations never processed** (incubating)
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: tests, mockito
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Detects test classes whose fields carry Mockito's `@Mock`, `@Spy`, `@Captor` or
 `@InjectMocks` while nothing in the file asks Mockito to process them: no
@@ -6820,7 +7233,9 @@ annotation may carry the extension, and so are files that mention Spring's test 
 
 **Modifiers out of the usual order**
 
-Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~1 min · Tags: conventions, readability
+Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~1 min · Tags: conventions, readability · Fix available (`mote fix`)
+
+Measured precision: **100%** (20 of 20 labeled findings correct)
 
 Detects keyword modifiers written out of the customary order, which is the
 order the Java Language Specification lists them in: `public` / `protected` / `private`,
@@ -6850,6 +7265,11 @@ their imports) placed before the keyword modifiers: such an annotation describes
 is written right before it (`public @Nullable String name()`). Annotations in other positions
 are never reported. The rule is off by default: it is part of the `conventions` profile.
 
+**Fix available.** `mote fix` puts the keyword modifiers in the order above, each keyword
+moving into the place of another so that annotations and comments stay where they are. The
+order of modifiers means nothing to the compiler. Nullness annotations reported with
+`type_use_annotations` are not moved.
+
 **Parameters**
 
 | Name | Default | Description |
@@ -6861,6 +7281,8 @@ are never reported. The rule is off by default: it is part of the `conventions` 
 **Several top-level types in one file**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~5 min · Tags: conventions, structure
+
+Measured precision: **100%** (20 of 20 labeled findings correct)
 
 Detects source files that declare more than one top-level class, interface,
 enum, record or annotation type.
@@ -6903,6 +7325,8 @@ are not checked. The rule is off by default: it is part of the `conventions` pro
 
 Severity: **LOW** · Quality: reliability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: suspicious, confusing
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Detects unary operators applied directly to another unary expression:
 `!!ready`, `- -delta`, `~~mask`, `-~n`.
 
@@ -6931,6 +7355,8 @@ stacked operators separated by parentheses (`-(-x)`), which mark the nesting as 
 **Mutable field in an exception class**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: exceptions, immutability
+
+Measured precision: not enough labeled findings yet (16 of 16 labeled findings correct so far)
 
 Detects instance fields that are not `final` in a class whose superclass chain
 provably reaches `Throwable` (through classes of this file or JDK exceptions).
@@ -6973,6 +7399,8 @@ their fields after construction).
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~1 min · Tags: readability
 
+Measured precision: **100%** (14 of 14 labeled findings correct, every finding reviewed)
+
 Detects a negated comparison that can be written with the opposite
 operator: `!(a == b)` is `a != b`, `!(a != b)` is `a == b`, and — for integer operands —
 `!(i < n)` is `i >= n` (likewise `<=`, `>`, `>=`).
@@ -7003,6 +7431,8 @@ is a readability preference.
 **Lambda, anonymous class or nested type too long**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~20 min · Tags: brain-overload, size
+
+Measured precision: **100%** (20 of 20 labeled findings correct)
 
 Detects code nested inside another unit that has grown too long to stay there:
 
@@ -7053,6 +7483,8 @@ Nested units are measured on their own; the enclosing method still counts their 
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: readability
 
+Measured precision: not enough labeled findings yet (13 of 13 labeled findings correct so far)
+
 Detects a conditional (ternary) expression nested inside another conditional
 expression — in its condition, in one of its branches, or in an argument of a call there.
 
@@ -7085,6 +7517,8 @@ class body that is itself inside a conditional is not considered nested.
 **Inner test class without @Nested is never run** (incubating)
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~1 min · Tags: tests, junit
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Detects a non-static inner class that declares JUnit 5 test methods (`@Test`,
 `@ParameterizedTest`, `@RepeatedTest`, `@TestFactory`, `@TestTemplate`) but is not annotated
@@ -7125,6 +7559,8 @@ reported, and only annotations that resolve to JUnit 5 through the imports count
 **Nested try-catch**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~10 min · Tags: exceptions, structure
+
+Measured precision: **100%** (36 of 36 labeled findings correct)
 
 Detects a `try` statement that is a statement of the body of another `try`
 statement when both have `catch` clauses for overlapping exception types: the same type, one
@@ -7173,6 +7609,8 @@ are common and deliberate).
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~10 min · Tags: concurrency, multi-threading
 
+Measured precision: not enough labeled findings yet (2 of 2 labeled findings correct so far)
+
 Detects `++`, `--`, and compound assignments (`+=`, `|=`, …) applied to a
 `volatile` field declared in this file.
 
@@ -7205,6 +7643,8 @@ shared yet) are not reported.
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: suspicious, null-safety
 
+Measured precision: not enough labeled findings yet (8 of 8 labeled findings correct so far)
+
 Detects the non-short-circuit operators `&` and `|` applied to two `boolean`
 operands.
 
@@ -7232,6 +7672,8 @@ integer bit operations or operands whose type is unknown.
 **Test depends on randomness or retries**
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~10 min · Tags: tests, flaky
+
+Measured precision: **97%** (40 of 41 labeled findings correct)
 
 Detects test code whose outcome can change from one run to the next:
 
@@ -7282,6 +7724,8 @@ in a variable that nothing reads (no data is drawn from them).
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: concurrency, multi-threading
 
+Measured precision: not enough labeled findings yet (2 of 2 labeled findings correct so far)
+
 Detects calls to `notify()`.
 
 **Why it matters.** `notify()` wakes exactly one thread, chosen arbitrarily, among those
@@ -7315,6 +7759,8 @@ can handle it; this rule is informational in that case.
 **Null check after the value was dereferenced**
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: null, suspicious
+
+Measured precision: **100%** (8 of 8 labeled findings correct, every finding reviewed)
 
 Detects an `if` that compares a local variable or parameter with `null` after an
 earlier statement of the same block has already dereferenced it (called a method on it, read
@@ -7354,6 +7800,8 @@ side of `&&` / `||`, a branch of `?:`, a loop body, a `try` block, or an `assert
 **Nullability annotation that cannot apply** (incubating)
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: null, annotations, confusing
+
+Measured precision: too few findings to measure (3 of 3 labeled findings correct, every finding reviewed)
 
 Detects nullability annotations that say something impossible or wrong:
 
@@ -7399,6 +7847,8 @@ use such declarations on purpose).
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~1 min · Tags: conventions, strings
 
+Measured precision: **100%** (10 of 10 labeled findings correct, every finding reviewed)
+
 Detects octal escapes (`\11`, `\12`, `\42`, `\134`, …) and Unicode escapes
 (`\u0009`, `\u0008`, `\u000c`) in string, text block and character literals for characters
 that have a short named escape: backspace `\b`, tab `\t`, line feed `\n`, form feed `\f`,
@@ -7431,6 +7881,8 @@ needs Java 15). The rule is off by default: it is part of the `conventions` prof
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: typo, equality, overrides
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Detects instance methods whose name and parameters almost match an `Object`
 method: `hashcode()` / `HashCode()`, `tostring()` / `ToString()`, `Equals(Object)`, and
 `equal(Object)` returning `boolean`; and a `finalize(..)` with parameters that is written as a
@@ -7462,6 +7914,8 @@ reported.
 **Octal integer literal** (incubating)
 
 Severity: **MEDIUM** · Quality: reliability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: suspicious, numbers
+
+Measured precision: too few findings to measure (1 of 1 labeled findings correct, every finding reviewed)
 
 Detects integer literals written with a leading zero, such as `010` or
 `030`. In Java a leading zero makes the literal octal: `010` is eight, not ten.
@@ -7516,6 +7970,8 @@ The rule looks for octal that looks accidental — a decimal-looking number with
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~1 min · Tags: conventions, readability
 
+Measured precision: **100%** (20 of 20 labeled findings correct)
+
 Detects field, constant and local variable declarations that declare more
 than one variable (`int width, height;`).
 
@@ -7548,6 +8004,8 @@ by default: it is part of the `conventions` profile.
 **Optional.get() without a presence check**
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: optional, null-safety
+
+Measured precision: not enough labeled findings yet (3 of 3 labeled findings correct so far)
 
 Detects `get()` on an `Optional` variable (and `getAsInt()`, `getAsLong()`,
 `getAsDouble()` on `OptionalInt`, `OptionalLong`, `OptionalDouble`) when the same method never
@@ -7582,6 +8040,8 @@ reported.
 **Optional compared with or set to null**
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: optional, null-safety
+
+Measured precision: **100%** (43 of 43 labeled findings correct, every finding reviewed)
 
 Detects an `Optional` (`java.util.Optional`, `OptionalInt`, `OptionalLong`,
 `OptionalDouble`, or Guava's `Optional`) that is compared with `null` (`opt == null`,
@@ -7627,6 +8087,8 @@ reporting skips `@Override` methods, whose signature is inherited, and annotated
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: optional, null-safety
 
+Measured precision: **100%** (10 of 10 labeled findings correct, every finding reviewed)
+
 Detects `return null;` in a method whose declared return type is `Optional<…>`,
 `OptionalInt`, `OptionalLong`, or `OptionalDouble` (the JDK types, or Guava's `Optional`).
 
@@ -7664,6 +8126,8 @@ returns from that inner function, whose type is not the method's).
 **Overload that looks like an override** (incubating)
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: inheritance, suspicious
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Detects methods of a subclass that have the name and the number of parameters of
 a superclass method, but where a parameter type differs only by boxing (`int` versus
@@ -7704,6 +8168,8 @@ other files are not considered.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~2 min · Tags: conventions, structure
 
+Measured precision: **100%** (20 of 20 labeled findings correct)
+
 Detects overloads that are not kept together: a method with the same name
 as an earlier method of the same type, or a constructor, with other members in between.
 
@@ -7741,6 +8207,8 @@ previous one as secondary location. The rule is off by default: it is part of th
 **Override drops synchronized** (incubating)
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: concurrency
+
+Measured precision: too few findings to measure (2 of 2 labeled findings correct, every finding reviewed)
 
 Detects a method overriding a `synchronized` method of a superclass declared
 in the same file, without being `synchronized` itself.
@@ -7781,6 +8249,8 @@ methods; superclasses declared in other files.
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: suspicious, copy-paste
 
+Measured precision: too few findings to measure (1 of 1 labeled findings correct, every finding reviewed)
+
 Detects two consecutive statements that write the same target, so the first
 value is replaced before anything can read it:
 
@@ -7817,6 +8287,8 @@ first value has side effects (`line = reader.readLine(); line = reader.readLine(
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: structure, convention
 
+Measured precision: too few findings to measure (every finding reviewed)
+
 Detects a `package` declaration whose names do not match the last directories of
 the file's path: `package com.acme.billing;` in `src/main/java/com/acme/orders/Invoice.java`.
 
@@ -7838,6 +8310,8 @@ template placeholders.
 **Package naming convention**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~10 min · Tags: naming, convention
+
+Measured precision: not enough labeled findings yet (9 of 9 labeled findings correct so far)
 
 Detects `package` declarations whose name is not all lowercase: each
 dot-separated segment must start with a lowercase letter or underscore and contain only
@@ -7871,6 +8345,8 @@ supported.
 **Parameter overwritten before it is read** (incubating)
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: suspicious, unused
+
+Measured precision: too few findings to measure (1 of 1 labeled findings correct, every finding reviewed)
 
 Detects a method, constructor or lambda parameter, a `catch` parameter, or an
 enhanced-`for` variable that is assigned a new value before its incoming value has been read.
@@ -7909,6 +8385,8 @@ reassigned and are skipped, as are values computed from the name itself (`s = s.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~5 min · Tags: readability, confusing
 
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
+
 Detects assignments (`=`, compound assignments, `++`, `--`) to a parameter of
 the enclosing method or constructor.
 
@@ -7943,6 +8421,8 @@ reassigning the parameters is the intended way to normalize component values, an
 **Stream.peek used for side effects** (incubating)
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~10 min · Tags: streams, side-effects
+
+Measured precision: too few findings to measure (4 of 4 labeled findings correct, every finding reviewed)
 
 Detects `peek(..)` on a `java.util.stream` pipeline whose action does real work —
 changes an element or some other state, collects into a list, validates, counts — instead of
@@ -7985,6 +8465,8 @@ visible).
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~1 min · Tags: suspicious, typo
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Detects `x = x++;` and `x = x--;`: a variable assigned the value of its own
 postfix increment or decrement.
 
@@ -8011,6 +8493,8 @@ not reported.
 **Enum-keyed map or set that could be an EnumMap or EnumSet** (incubating)
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: performance, collections, enum
+
+Measured precision: too few findings to measure (4 of 4 labeled findings correct, every finding reviewed)
 
 Detects a new `HashMap` or `TreeMap` whose keys are an enum, and a new `HashSet`
 or `TreeSet` of an enum, when the enum is declared in the same file or is a JDK enum
@@ -8046,6 +8530,8 @@ subclasses.
 **Resource closed in finally instead of try-with-resources**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: resources, modernization
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Detects local variables holding a file or database resource (the kinds tracked by
 `resource-not-closed-with-try`: file streams, readers and writers, `Files.newInputStream(…)`
@@ -8093,6 +8579,8 @@ statement variable (closed together with the statement).
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: collections, performance
 
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
+
 Detects `c.toArray(new T[c.size()])`: a collection converted to an array
 through a pre-sized array.
 
@@ -8124,6 +8612,8 @@ receiver is known not to be a `java.util.Collection` (for a view: when `m` is no
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: logging, error-handling
 
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
+
 Detects `e.printStackTrace()` (without arguments) on exceptions.
 
 **Why it matters.** `printStackTrace()` writes to the process's standard error stream: the
@@ -8150,6 +8640,8 @@ type.
 **Class with only private constructors is not final**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: design
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Detects classes whose constructors are all `private` but that are not
 declared `final`.
@@ -8187,6 +8679,8 @@ nested, local, or anonymous class).
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: design, visibility
 
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
+
 Detects `protected` fields, constructors, methods, and nested types declared
 in a `final` class or a record.
 
@@ -8221,6 +8715,8 @@ protected method without saying so; `finalize` and `clone` are never reported.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~10 min · Tags: design, encapsulation
 
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
+
 Detects `public` instance fields that are not `final`, in classes.
 
 **Why it matters.** A public mutable field exposes the internal representation of a class:
@@ -8252,6 +8748,8 @@ records, and files that bind native code through JNA (which maps the public fiel
 **Mutable public static field**
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~10 min · Tags: design, encapsulation, multi-threading
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Detects global state that any code can change: `public static` fields that
 are not `final`, `public static final` fields (and interface constants) whose value is still
@@ -8298,6 +8796,8 @@ and collections whose initializer is not a known mutable JDK collection (`List.o
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: numbers, random
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Detects `Math.random()`, `Random.nextDouble()` or `Random.nextFloat()` cast
 directly to an integer type: `(int) Math.random()`.
 
@@ -8324,6 +8824,8 @@ reported; `nextGaussian()` (which is not bounded by 1) is not.
 **Raw use of a generic type**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~5 min · Tags: generics, type-safety
+
+Measured precision: **100%** (54 of 54 labeled findings correct)
 
 Detects generic JDK types used without type arguments — `List items`,
 `new HashMap()`, `Map<String, List> index`, `Class type` — in the types of fields, local
@@ -8365,6 +8867,8 @@ cannot be written otherwise), supertypes in `extends` / `implements`, parameters
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~10 min · Tags: equality, records, arrays
 
+Measured precision: not enough labeled findings yet (1 of 1 labeled findings correct so far)
+
 Detects a `record` with an array component (`int[] values`, `String... parts`)
 that does not declare both `equals(Object)` and `hashCode()`.
 
@@ -8392,7 +8896,9 @@ Records that declare both `equals` and `hashCode` are not reported.
 
 **Redundant `value =` in an annotation**
 
-Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: clutter, annotations
+Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: clutter, annotations · Fix available (`mote fix`)
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Detects annotations written as `@Anno(value = x)` when `value` is the only
 element given.
@@ -8415,11 +8921,16 @@ common form readers expect.
 
 Annotations that set any other element next to `value` are not reported.
 
+**Fix available.** `mote fix` deletes `value =`: the Java Language Specification defines
+`@Anno(x)` as exactly `@Anno(value = x)`.
+
 ### java/redundant-cast
 
 **Cast to the expression's own type**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: clutter, types
+
+Measured precision: not enough labeled findings yet (14 of 14 labeled findings correct so far)
 
 Detects a cast to exactly the static type its operand already has: a local
 variable, field or parameter cast to its own declared type, a JDK method result cast to the
@@ -8459,6 +8970,8 @@ cast (`(List<String>) (List) objects`, a deliberate unchecked conversion).
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: resources, redundant
 
+Measured precision: too few findings to measure (2 of 2 labeled findings correct, every finding reviewed)
+
 Detects an explicit `close()` on a resource of a try-with-resources statement
 when that call is the last statement of the statement's body.
 
@@ -8492,7 +9005,9 @@ whose name is about closing (tests of idempotent or delegated closing).
 
 **Redundant default constructor**
 
-Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: clutter, redundant
+Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: clutter, redundant · Fix available (`mote fix`)
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Detects a class whose only constructor takes no arguments, has an empty body
 (or just `super();`), and has the same access as the class — exactly the default constructor
@@ -8527,11 +9042,21 @@ interface is implicitly `public`); enums and records; and
 classes with other constructors. `java/empty-constructor` (off by default) covers empty
 constructors in general.
 
+**Fix available.** `mote fix` deletes the constructor; the compiler then adds one with the same
+access, no parameters and the same implicit `super()` call. It leaves alone the constructor of
+a class with an annotation other than `@Deprecated` or `@SuppressWarnings` (an annotation such
+as Lombok's `@AllArgsConstructor` or `@Builder` generates a constructor, and the default one
+then exists only because this one is written), one with a comment inside its declaration, and
+that of a class whose other members are all static (there the written constructor says that
+instances are meant).
+
 ### java/redundant-inheritance-declaration
 
 **Redundant supertype or inherited method declaration**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: redundant, clarity
+
+Measured precision: **100%** (10 of 10 labeled findings correct, every finding reviewed)
 
 Detects parts of a type declaration that restate what the type already has:
 
@@ -8581,6 +9106,8 @@ methods that another listed interface also declares.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: clutter, redundant
 
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
+
 Detects a `null` check followed by an `instanceof` test of the same
 expression: `x != null && x instanceof T`, and its negated form `x == null || !(x instanceof
 T)`.
@@ -8610,6 +9137,8 @@ may return a different value the second time and are not compared.
 **Parentheses that group nothing**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~1 min · Tags: conventions, clutter
+
+Measured precision: **100%** (21 of 21 labeled findings correct)
 
 Detects parentheses that group nothing:
 
@@ -8651,6 +9180,8 @@ default: it is part of the `conventions` profile.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: clutter, redundant
 
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
+
 Detects `Name.this` where `Name` is the class the code is directly in, so
 `Name.this` and `this` are the same object.
 
@@ -8687,6 +9218,8 @@ as well.
 **Record member that repeats the generated one**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: redundant, record
+
+Measured precision: **100%** (5 of 5 labeled findings correct, every finding reviewed)
 
 Detects members of a `record` that repeat what the compiler already generates:
 
@@ -8727,6 +9260,8 @@ annotations.
 **Regular expression written the long way**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: regex, clarity
+
+Measured precision: not enough labeled findings yet (7 of 7 labeled findings correct so far)
 
 Detects constant regular expressions (given to `Pattern.compile`,
 `Pattern.matches`, `String.matches`, `replaceAll`, `replaceFirst`, `split`, or Bean Validation's
@@ -8776,6 +9311,8 @@ patterns the parser does not model (comments mode, `LITERAL`).
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: clutter, strings
 
+Measured precision: not enough labeled findings yet (2 of 2 labeled findings correct so far)
+
 Detects `toString()` called on an expression whose type is already `String`.
 
 **Why it matters.** `String.toString()` returns the string itself, so the call is noise that
@@ -8799,6 +9336,8 @@ Only receivers whose type is provably `String` are reported.
 **Case-insensitive regex with non-ASCII letters but no Unicode case** (incubating)
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: regex, i18n
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Detects a constant regular expression compiled case-insensitively — the
 `CASE_INSENSITIVE` flag or inline `(?i)` — without `UNICODE_CASE`, that contains a non-ASCII
@@ -8829,6 +9368,8 @@ constant.
 **Constant regular expression compiled repeatedly**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: performance, regex
+
+Measured precision: **97%** (40 of 41 labeled findings correct)
 
 Detects a constant regular expression that is compiled again and again:
 
@@ -8880,6 +9421,8 @@ initialization), `split` on a single ordinary character or an escaped punctuatio
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: regex
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Detects a `\c` control escape in a constant regular expression followed by a
 character other than `@`, an upper-case ASCII letter, `[`, `\`, `]`, `^`, `_` or `?`: `\ca`,
 `\cz`, `\c1`.
@@ -8909,6 +9452,8 @@ Only constant patterns are checked; text inside `\Q…\E` is literal and ignored
 **Empty alternative in a regular expression** (incubating)
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: regex
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Detects an explicit empty alternative in a constant regular expression:
 
@@ -8945,6 +9490,8 @@ replacement is the empty string (the extra empty matches then change nothing).
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: regex
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Detects a lazy quantifier (`*?`, `+?`, `??`, `{n,m}?`) at the very end of a
 constant regular expression that is searched for in the input — `split`, `replaceAll`,
 `replaceFirst`, or `Pattern.compile(..)` followed directly by `matcher(..).find()`, `split`
@@ -8976,6 +9523,8 @@ forces the quantifier to go on, and compiled patterns whose use is not visible a
 **Regular expression part that can never match** (incubating)
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~10 min · Tags: regex
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Detects a constant regular expression — passed to `Pattern.compile`,
 `Pattern.matches`, `String.matches` / `replaceAll` / `replaceFirst` / `split`, or given to a
@@ -9025,6 +9574,8 @@ and Unicode-class modes are taken into account; patterns using comments mode, `L
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: regex
 
+Measured precision: too few findings to measure (1 of 1 labeled findings correct, every finding reviewed)
+
 Detects an alternative of a constant regular expression that can never be
 chosen:
 
@@ -9064,6 +9615,8 @@ back-references or inline flags, whose meaning can differ between the copies.
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: regex, performance
 
+Measured precision: too few findings to measure (4 of 4 labeled findings correct, every finding reviewed)
+
 Detects a constant regular expression that repeats, without an upper
 bound, a group alternating between single characters: `(a|b)*`, `(?:\s|,)+`, and the classic
 "anything including newlines" `(.|\n)*`.
@@ -9096,6 +9649,8 @@ alternatives (`(ab|cd)*`), which cannot become a character class.
 **Suspicious character class in a regular expression** (incubating)
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: regex
+
+Measured precision: too few findings to measure (2 of 2 labeled findings correct, every finding reviewed)
 
 Detects character classes of constant regular expressions that match
 something else than they appear to:
@@ -9133,6 +9688,8 @@ which is a legitimate way to list separators.
 **Regular expression too complex** (incubating)
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~20 min · Tags: regex, complexity
+
+Measured precision: too few findings to measure (3 of 3 labeled findings correct, every finding reviewed)
 
 Detects a constant regular expression — passed to `Pattern.compile`,
 `Pattern.matches`, `String.matches`, `replaceAll`, `replaceFirst`, `split` or Bean Validation's
@@ -9182,6 +9739,8 @@ already laid out for reading) or `LITERAL`, and patterns the parser does not mod
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: regex, performance, clarity
 
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
+
 Detects `String.replaceAll(pattern, replacement)` where the pattern is a string
 literal without any regular-expression metacharacter and the replacement is a literal
 without `$` or `\`.
@@ -9210,6 +9769,8 @@ replacements are not reported.
 **Resource not closed with try-with-resources**
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~10 min · Tags: resources, leak
+
+Measured precision: **100%** (60 of 60 labeled findings correct)
 
 Detects local variables that open a file or database resource —
 `new FileInputStream/FileOutputStream/FileReader/FileWriter/RandomAccessFile/ZipFile(…)`,
@@ -9278,6 +9839,8 @@ Also not reported:
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~10 min · Tags: portability, java-upgrade
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Detects names that later Java releases restrict, used in a position where
 the newer compiler rejects them:
 
@@ -9318,6 +9881,8 @@ remain legal.
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~10 min · Tags: error-handling, control-flow
 
+Measured precision: not enough labeled findings yet (3 of 3 labeled findings correct so far)
+
 Detects `return`, `throw`, `break`, and `continue` statements that leave a
 `finally` block.
 
@@ -9355,6 +9920,8 @@ lambda or anonymous class declared there, a `throw` caught within it) are not re
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~1 min · Tags: suspicious, typo
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Detects assignments written `x =+ y`, `x =- y`, or `x =! y`: the `=` is glued
 to a unary `+`, `-` or `!` while a space separates that sign from its operand.
 
@@ -9385,6 +9952,8 @@ space after the sign); `x = -1`, `x=-1` and `x = +y` are left alone.
 **Scheduled executor without core threads** (incubating)
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: concurrency, executors
+
+Measured precision: too few findings to measure (1 of 1 labeled findings correct, every finding reviewed)
 
 Detects scheduled executors configured with a core pool size of 0:
 `Executors.newScheduledThreadPool(0)`, `new ScheduledThreadPoolExecutor(0, …)`, and
@@ -9419,6 +9988,8 @@ threads exit, not a live pool).
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: suspicious, typo
 
+Measured precision: not enough labeled findings yet (1 of 1 labeled findings correct so far)
+
 Detects assignments whose target and value are the same expression: `x = x;`,
 `this.x = this.x;`, `a[i] = a[i];`.
 
@@ -9450,6 +10021,8 @@ effects (`a[i++] = a[i++]`, calls) are not reported.
 **Assertion compares a value with itself**
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: tests, suspicious, copy-paste
+
+Measured precision: not enough labeled findings yet (1 of 1 labeled findings correct so far)
 
 Detects test assertions whose expected and actual values are the same
 expression:
@@ -9485,6 +10058,8 @@ which exercises the reflexivity of a custom `equals`.
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: regex, strings, portability
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Detects text meant literally that is passed to a method taking a regular
 expression:
 
@@ -9518,6 +10093,8 @@ every character) is deliberate and not reported.
 **Serializable class that cannot be deserialized** (incubating)
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: serialization
+
+Measured precision: too few findings to measure (1 of 1 labeled findings correct, every finding reviewed)
 
 Detects classes that Java serialization can write but not read back:
 
@@ -9562,6 +10139,8 @@ serializable).
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: serialization
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Detects serialization hooks of a `Serializable` class whose declaration makes
 Java serialization skip them:
 
@@ -9601,6 +10180,8 @@ serialization ignores all these hooks) and `Externalizable` classes are skipped.
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: numbers, bitwise
 
+Measured precision: too few findings to measure (1 of 1 labeled findings correct, every finding reviewed)
+
 Detects shifts (`<<`, `>>`, `>>>`, and their compound assignments) by a constant
 distance that is negative or not smaller than the width of the shifted value: 32 for `int`
 (and `short`, `byte`, `char`, which are promoted to `int`), 64 for `long`.
@@ -9630,6 +10211,8 @@ Only constant distances are checked, and only when the type of the shifted value
 **if/else that only differs in a boolean literal**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: readability, redundant
+
+Measured precision: **100%** (20 of 20 labeled findings correct)
 
 Detects an `if`/`else` whose two branches make the same call, or the same
 assignment, and differ only in a `true` / `false` literal: `if (c) button.setEnabled(true);
@@ -9673,6 +10256,8 @@ instead of failing).
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: readability, redundant
 
+Measured precision: not enough labeled findings yet (6 of 6 labeled findings correct so far)
+
 Detects an `if` statement that returns `true` in one branch and `false` in the
 other — either with an `else`, or with the second `return` directly after the `if`.
 
@@ -9708,6 +10293,8 @@ the last `if` is reported: `return x.isEmpty();` says the same in one line.
 **Stream pipeline with a shorter built-in form**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: streams, idiom
+
+Measured precision: not enough labeled findings yet (11 of 11 labeled findings correct so far)
 
 Detects stream pipelines written the long way when the stream API (or the
 collection itself) has an operation that says it directly:
@@ -9756,6 +10343,8 @@ nothing modifies the result.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: clutter, readability
 
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
+
 Detects conditional expressions with one boolean-literal branch and one boolean
 branch, which are just `&&` / `||` in disguise:
 
@@ -9790,6 +10379,8 @@ initializes or is assigned to a `boolean` variable, is returned from a method de
 **Thread.sleep while holding a lock** (incubating)
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~15 min · Tags: concurrency, multi-threading, performance
+
+Measured precision: too few findings to measure (2 of 2 labeled findings correct, every finding reviewed)
 
 Detects `Thread.sleep(..)` (and `TimeUnit.X.sleep(..)`) called inside a
 `synchronized` block or a `synchronized` method.
@@ -9829,6 +10420,8 @@ are not reported.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~15 min · Tags: tests, flaky
 
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
+
 Detects `Thread.sleep(…)` (and `TimeUnit.X.sleep(…)`) in test code.
 
 **Why it matters.** A fixed sleep is a guess about how long something takes. Too short and the
@@ -9858,6 +10451,8 @@ Only test files are checked.
 **Soft assertions never verified** (incubating)
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: tests, assertj
+
+Measured precision: too few findings to measure (2 of 2 labeled findings correct, every finding reviewed)
 
 Detects a local `SoftAssertions` (or `BDDSoftAssertions`) created with `new`
 whose `assertAll()` is never called in the method.
@@ -9894,6 +10489,8 @@ happen elsewhere), and `AutoCloseableSoftAssertions`, which verifies itself when
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~1 min · Tags: conventions, readability
 
+Measured precision: **100%** (20 of 20 labeled findings correct)
+
 Detects a local variable declared without a value whose very next statement
 assigns it: `String name;` followed by `name = user.getName();`.
 
@@ -9923,6 +10520,8 @@ split is needed. The rule is off by default: it is part of the `conventions` pro
 **Standard charset looked up by name**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: charset, clarity
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Detects charsets that `java.nio.charset.StandardCharsets` provides being
 looked up by name: `Charset.forName("UTF-8")`, `s.getBytes("UTF-8")`,
@@ -9958,6 +10557,8 @@ file holding such a literal; other charsets and names held in variables are left
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: confusing, static
 
+Measured precision: **100%** (18 of 18 labeled findings correct, every finding reviewed)
+
 Detects a static method or field reached through an expression of an instance
 (`worker.sleep(100)`, `order.COUNTER`) or through the name of a subclass that inherits it
 (`MyThread.currentThread()`), when the member is declared in this file or is one of the JDK's
@@ -9992,6 +10593,8 @@ same number of parameters, and receivers whose type the resolver does not know.
 **Non-thread-safe formatter in a static field**
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~10 min · Tags: concurrency, multi-threading
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Detects `static` fields whose type is `java.text.DateFormat`
 (`SimpleDateFormat`), `java.text.NumberFormat` (`DecimalFormat`), `java.text.MessageFormat`, or
@@ -10033,6 +10636,8 @@ are reported only with `report_unknown_message_patterns`.
 **Static field assigned in a constructor** (incubating)
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~10 min · Tags: suspicious, design
+
+Measured precision: **75%** (6 of 8 labeled findings correct, every finding reviewed)
 
 Detects constructors that assign (`=`) a non-final `static` field of their own
 class.
@@ -10077,6 +10682,8 @@ test code (test doubles that reset a static flag for each test).
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~20 min · Tags: concurrency, initialization
 
+Measured precision: **100%** (13 of 13 labeled findings correct, every finding reviewed)
+
 Detects a class whose static initialization — a static field initializer or
 a `static { }` block — creates an instance of one of its subclasses (`new Sub()`) or calls a
 static method of it, when the subclass is declared in the same file and can be used from
@@ -10117,6 +10724,8 @@ reach them), enum constants with bodies, interfaces, and subclasses declared in 
 **Stream overrides only its single-byte method**
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~15 min · Tags: io, performance
+
+Measured precision: not enough labeled findings yet (5 of 5 labeled findings correct so far)
 
 Detects a class extending `InputStream`, `FilterInputStream`, `OutputStream` or
 `FilterOutputStream` that overrides the single-byte `read()` or `write(int)` but not
@@ -10162,6 +10771,8 @@ hierarchy (their methods are unknown), and test code.
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: strings
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Detects `new StringBuilder(c)` and `new StringBuffer(c)` where `c` is a `char`
 (a character literal or a `char` variable).
 
@@ -10188,6 +10799,8 @@ Only arguments whose type is provably `char` are reported; an `int` capacity is 
 **StringBuilder kept in a field**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~10 min · Tags: design, memory
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Detects fields of type `StringBuilder` or `StringBuffer`.
 
@@ -10230,6 +10843,8 @@ disabled by default.
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: strings, redundant-code
 
+Measured precision: **100%** (5 of 5 labeled findings correct, every finding reviewed)
+
 Detects calls on a `String` whose result is fixed by their arguments:
 
 * `replace(x, x)` — the same literal, character or variable on both sides; likewise
@@ -10265,6 +10880,8 @@ return different values) are never compared.
 **String concatenation in a loop**
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~10 min · Tags: performance, strings
+
+Measured precision: not enough labeled findings yet (9 of 9 labeled findings correct so far)
 
 Detects `s += …` and `s = s + …` inside a loop body when `s` is a `String`
 declared outside that loop.
@@ -10304,6 +10921,8 @@ whose type is unknown.
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: strings, equality
 
+Measured precision: not enough labeled findings yet (2 of 2 labeled findings correct so far)
+
 Detects `==` and `!=` between two expressions whose static type is `String`, and
 between a string literal and any expression that is not known to have another type.
 
@@ -10334,6 +10953,8 @@ every other string, and `equals` would change the behaviour.
 **Search on a substring instead of an offset** (incubating)
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: performance, strings
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Detects a `String` search applied to the result of `substring(k)`:
 `s.substring(k).startsWith(p)` and `s.substring(k).indexOf(x)`.
@@ -10369,6 +10990,8 @@ not the same), `contains`, `endsWith` and `equals`, which have no offset overloa
 
 Severity: **LOW** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: suspicious, strings
 
+Measured precision: too few findings to measure (every finding reviewed)
+
 Detects octal escapes in string literals that are directly followed by a
 digit the escape does not include, such as `"\128"` or `"\477"`.
 
@@ -10398,6 +11021,8 @@ text blocks.
 **Arguments swapped with respect to parameter names** (incubating)
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: suspicious, typo
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Detects calls where two arguments are variables named exactly like the
 *other's* parameter: `resize(height, width)` for `void resize(int width, int height)`. Only
@@ -10434,6 +11059,8 @@ from types declared elsewhere (an inherited overload could be the one called).
 **switch case falls through**
 
 Severity: **MEDIUM** · Quality: reliability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: switch, suspicious
+
+Measured precision: not enough labeled findings yet (9 of 9 labeled findings correct so far)
 
 Detects a non-empty group of statements under classic `case X:` labels that
 can run on into the next label because it doesn't end with `break`, `return`, `throw`,
@@ -10480,6 +11107,8 @@ through`, `/* FALLTHROUGH */`).
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: concurrency, multi-threading
 
+Measured precision: not enough labeled findings yet (2 of 2 labeled findings correct so far)
+
 Detects `synchronized (getClass())` (or `this.getClass()`) in a class that can
 be subclassed.
 
@@ -10510,6 +11139,8 @@ reported.
 **Synchronized block replaces its own lock** (incubating)
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~10 min · Tags: concurrency, multi-threading
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Detects a `synchronized (field)` block that assigns a new object to that same
 field.
@@ -10547,6 +11178,8 @@ reported.
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~10 min · Tags: concurrency, multi-threading
 
+Measured precision: not enough labeled findings yet (1 of 1 labeled findings correct so far)
+
 Detects `synchronized` blocks whose lock is a string literal, or a
 variable/field of type `String` or of a boxed primitive (`Integer`, `Boolean`, `Long`, …).
 
@@ -10581,6 +11214,8 @@ reported.
 **JVM terminated outside main**
 
 Severity: **MEDIUM** · Quality: reliability · Kind: code-smell · Enabled by default: yes · Remediation: ~15 min · Tags: design, error-handling
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Detects calls to `System.exit(…)`, `Runtime.getRuntime().exit(…)`, and
 `Runtime.getRuntime().halt(…)` outside a `main` method.
@@ -10618,6 +11253,8 @@ are not reported.
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: logging
 
+Measured precision: not enough labeled findings yet (8 of 8 labeled findings correct so far)
+
 Detects `print`, `println`, `printf`, `format`, `write`, and `append` calls on
 `System.out` or `System.err` outside test files.
 
@@ -10647,6 +11284,8 @@ class of the same name declared in the file is not confused with it).
 **Test assertion in production code** (incubating)
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~10 min · Tags: tests, dependencies
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Detects production code (not a test file) that calls the assertions of a test
 library: JUnit's `Assert`/`Assertions`, AssertJ, Hamcrest's `assertThat`, TestNG, Truth.
@@ -10689,6 +11328,8 @@ are not checked.
 **Test catch block only calls fail()**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: tests, junit
+
+Measured precision: **100%** (27 of 27 labeled findings correct)
 
 Detects `catch` blocks in test code whose only statement is a `fail(..)` call
 of a test library (JUnit, AssertJ, TestNG).
@@ -10734,6 +11375,8 @@ declare the exception either) and `private` helpers called only from such method
 **Test class name without a test prefix or suffix**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~2 min · Tags: conventions, naming, tests
+
+Measured precision: **100%** (30 of 30 labeled findings correct, every finding reviewed)
 
 Detects top-level test classes, classes with JUnit or TestNG test methods,
 whose name neither starts with `Test` nor ends with `Test`, `Tests`, `TestCase` or `IT`.
@@ -10786,6 +11429,8 @@ The rule is off by default: it is part of the `conventions` profile.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~15 min · Tags: tests, duplication
 
+Measured precision: **100%** (20 of 20 labeled findings correct)
+
 Detects JUnit 5 `@Test` methods of one class whose bodies are the same token
 for token except for literal values (numbers, strings, characters, booleans, `null`), when at
 least three of them (`min_tests`) share the shape.
@@ -10827,6 +11472,8 @@ per class), and methods that are already parameterized.
 **JUnit set-up or tear-down method that does not run** (incubating)
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: tests, junit
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Detects JUnit set-up and tear-down methods that JUnit will not run as intended:
 
@@ -10888,6 +11535,8 @@ per-class lifecycle in `junit-platform.properties` should turn the rule off.
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: tests, junit
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Detects JUnit test methods (`@Test`, and JUnit 5 `@ParameterizedTest` /
 `@RepeatedTest`) that are `private`, `static`, or return a value.
 
@@ -10921,6 +11570,8 @@ are considered; `@TestFactory` methods legitimately return values and are not ch
 **Test without assertion**
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~10 min · Tags: tests
+
+Measured precision: not enough labeled findings yet (7 of 7 labeled findings correct so far)
 
 Detects `@Test` methods (JUnit 4, JUnit 5, TestNG) that contain no assertion
 and no interaction verification.
@@ -10965,6 +11616,8 @@ and tests with `expected`/`expectedExceptions` are not reported. Only test files
 **this escapes from a constructor**
 
 Severity: **MEDIUM** · Quality: reliability · Kind: code-smell · Enabled by default: no · Remediation: ~15 min · Tags: concurrency, initialization
+
+Measured precision: not enough labeled findings yet (8 of 8 labeled findings correct so far)
 
 Detects constructors that let `this` escape before construction is over:
 registering it with another object (`source.addListener(this)`, `registry.register(this)`,
@@ -11012,6 +11665,8 @@ lambdas or anonymous classes of the constructor, and constructors (or classes) m
 
 Severity: **MEDIUM** · Quality: reliability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: concurrency, thread
 
+Measured precision: too few findings to measure (4 of 4 labeled findings correct, every finding reviewed)
+
 Detects a `Thread` object (a `new Thread(..)`, a variable declared as `Thread` or
 a subclass of it) passed where only a `Runnable` is needed: to a `Thread` constructor, to
 `Executor.execute`, `ExecutorService.submit`, `ScheduledExecutorService.schedule…` or
@@ -11045,6 +11700,8 @@ recognized by their declared JDK types.
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: concurrency
 
+Measured precision: not enough labeled findings yet (1 of 1 labeled findings correct so far)
+
 Detects calls to `run()` on an expression whose type is `java.lang.Thread` (or
 a subclass).
 
@@ -11073,6 +11730,8 @@ unqualified `run()` calls inside a `Thread` subclass are not.
 **Thread subclass without run()** (incubating)
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~10 min · Tags: concurrency
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Detects a class extending `java.lang.Thread` directly — named or anonymous —
 that does not override `run()` and never passes a `Runnable` to the `Thread` constructor.
@@ -11110,6 +11769,8 @@ thread group to `super(..)`.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~10 min · Tags: error-handling, api-design
 
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
+
 Detects methods and constructors that declare `throws Exception` or
 `throws Throwable`.
 
@@ -11140,6 +11801,8 @@ lifecycle methods, and test code.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~10 min · Tags: todo
 
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
+
 Flags comments containing a `TODO` marker.
 
 A TODO records work that was knowingly left unfinished. Left in place, it silently becomes permanent and the missing behaviour may surprise users.
@@ -11156,6 +11819,8 @@ A TODO records work that was knowingly left unfinished. Left in place, it silent
 **Test method with too many assertions**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~20 min · Tags: tests, size
+
+Measured precision: **95%** (19 of 20 labeled findings correct)
 
 Detects test methods (`@Test`, `@ParameterizedTest`, `@RepeatedTest`, and JUnit 3
 `test…` methods) that contain more assertions than `max` (25 by default). An assertion is a
@@ -11203,6 +11868,8 @@ counted, and neither are verifications of mocks (`verify`).
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~60 min · Tags: design, size
 
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
+
 Detects classes, enums, and records that declare more than `max` (default 20)
 fields that are not `static final`. Each variable of a multi-variable declaration
 (`int a, b;`) counts.
@@ -11243,6 +11910,8 @@ Constants (`static final` fields) are not counted.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~60 min · Tags: design, size
 
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
+
 Detects classes, enums, and records that declare more than `max` (default 35)
 methods. Constructors, methods of nested types, and methods of anonymous classes are not
 counted.
@@ -11281,6 +11950,8 @@ reported: interfaces and test files (a test class naturally has one method per t
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~20 min · Tags: brain-overload
 
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
+
 Flags functions that declare more than `max` parameters (default 7).
 
 Long parameter lists are hard to call correctly (arguments of the same type are easily swapped) and often signal that the function does too much or that several values belong together.
@@ -11306,6 +11977,8 @@ createUser(name, contact, address) { ... }
 **toString() or clone() returns null** (incubating)
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: null-safety, api-misuse
+
+Measured precision: too few findings to measure (4 of 4 labeled findings correct, every finding reviewed)
 
 Detects `return null;` in an overriding `toString()` or `clone()`.
 
@@ -11346,6 +12019,8 @@ are skipped.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: naming, convention
 
+Measured precision: not enough labeled findings yet (14 of 14 labeled findings correct so far)
+
 Detects type parameters whose name is not a single uppercase letter,
 optionally followed by one digit (`T`, `E`, `K`, `V`, `R`, `T2`).
 
@@ -11373,6 +12048,8 @@ class Cache<K, V> { ... }
 **Operators of different precedence mixed without parentheses**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~1 min · Tags: clarity, operators
+
+Measured precision: **100%** (22 of 22 labeled findings correct)
 
 Detects an operand that is itself an operation of a different precedence
 level, written without parentheses, for the operator pairs that are commonly misread:
@@ -11411,6 +12088,8 @@ code. Not reported: chains of one operator (`a || b || c`), arithmetic mixed wit
 **Debug log argument computed without a level check** (incubating)
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: logging, performance
+
+Measured precision: **94%** (37 of 39 labeled findings correct)
 
 Detects debug- and trace-level logging calls (`debug`, `trace`; `fine`,
 `finer`, `finest` and `log(Level.FINE, …)` for `java.util.logging`) with an argument that does
@@ -11458,6 +12137,8 @@ fix is its `Supplier` overload (`log.debug(() -> "Loaded " + rows)`).
 **Unnecessary fully qualified name**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: clutter, imports
+
+Measured precision: not enough labeled findings yet (13 of 13 labeled findings correct so far)
 
 Detects fully qualified type names (`java.util.List`, `java.lang.String`,
 `com.acme.model.Order`) where the simple name already refers to the same type — because it is
@@ -11519,7 +12200,9 @@ arguments (`Util.<T>cast(x)` has no unqualified form). Qualifiers naming the cla
 
 **Unnecessary return**
 
-Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: clutter, redundant
+Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: clutter, redundant · Fix available (`mote fix`)
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Detects a `return;` that is the last statement executed by a `void` method,
 a constructor, or a block lambda — directly at the end of the body, or at the end of an
@@ -11562,11 +12245,18 @@ A `return;` that skips later statements, or that ends a loop body or a `switch` 
 not reported; neither is a `continue` that skips later statements, ends a `switch` case
 (removing it would fall through), or names a label.
 
+**Fix available.** `mote fix` deletes the statement when it stands in a block next to other
+statements: control reaches the same place without it. A `return;` or `continue;` that is the
+only statement of its block, or the unbraced body of an `if`, is reported but not fixed (the
+block would be left empty, or the `if` without a body).
+
 ### java/unreachable-code
 
 **Unreachable code**
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: unused, control-flow
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Detects statements that follow a `return`, `throw`, `break`, `continue`, or
 `yield` in the same block and therefore can never run.
@@ -11596,6 +12286,8 @@ Only the first unreachable statement of each block is reported. Stray `;` are le
 **Reflective lookup of an annotation that is not retained** (incubating)
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: reflection, annotations
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Detects reflective annotation lookups — `isAnnotationPresent`,
 `getAnnotation`, `getDeclaredAnnotation`, `getAnnotationsByType`,
@@ -11630,6 +12322,8 @@ Annotation types declared in other files are unknown and not reported.
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: concurrency, multi-threading
 
+Measured precision: too few findings to measure (1 of 1 labeled findings correct, every finding reviewed)
+
 Detects a getter and a setter of the same field where one is declared
 `synchronized` and the other is not: `synchronized void setLimit(int v) { limit = v; }` next
 to `int getLimit() { return limit; }`.
@@ -11663,6 +12357,8 @@ Classes with Lombok annotations are skipped.
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: collections, api-misuse
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Detects the result of a no-argument `toArray()` on a collection or stream cast
 to a more specific array type: `(String[]) names.toArray()`.
 
@@ -11689,12 +12385,17 @@ Only receivers the resolver proves to be a `Collection` or a `Stream` are report
 
 **Unused or redundant import**
 
-Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: imports, clutter
+Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: imports, clutter · Fix available (`mote fix`)
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Detects imports that serve no purpose:
 
 * single-type imports whose name is never used in the file (Javadoc references such as
-  `{@link Foo}`, `@see Foo`, and `@throws FooException` count as uses);
+  `{@link Foo}`, `@see Foo`, and `@throws FooException` count as uses, and so do the links and
+  tags of Java 23 Markdown documentation comments, `/// [Foo]`, `[Foo#bar(Baz)]`, `[text][Foo]`,
+  whatever release the file is compiled for: whether `///` is documentation depends on the JDK
+  that runs javadoc, not on the compile target, and counting a use can only remove a finding);
 * the same import written twice;
 * imports of `java.lang` classes, which are always visible;
 * imports of classes from the file's own package.
@@ -11713,13 +12414,23 @@ import java.lang.String;    // implicit
 import java.util.Map;       // used below
 ```
 
-Wildcard imports are never reported as unused.
+Wildcard imports and module imports (`import module java.base;`, Java 25) are never reported
+as unused: which of their names a file uses cannot be told from the file alone.
+
+**Fix available.** `mote fix` deletes the import (its whole line when nothing else is on it).
+That never changes what the code means: an unused name resolves nowhere, a duplicate or an
+import of the file's own package names a type that is visible anyway, and `import java.lang.*;`
+repeats the implicit import. An explicit `import java.lang.X;` whose name *is* used is reported
+but not fixed: it takes precedence over a type `X` of the file's own package or of a wildcard
+import, so deleting it could make `X` mean another class.
 
 ### java/unused-local-variable
 
 **Unused local variable**
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: dead-code, unused
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Detects local variables whose value is never read. Assigning to a variable
 (`x = …`, `x += …`, `x++` as a statement) does not count as reading it.
@@ -11754,6 +12465,8 @@ a local class) counts as a use.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: dead-code, unused
 
+Measured precision: **100%** (6 of 6 labeled findings correct, every finding reviewed)
+
 Detects `private` nested classes, interfaces, enums, records, and annotation
 types that are not referenced anywhere outside their own declaration.
 
@@ -11787,6 +12500,8 @@ not reported.
 **Unused private field**
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: dead-code
+
+Measured precision: not enough labeled findings yet (9 of 9 labeled findings correct so far)
 
 Detects `private` fields that are never read anywhere in the file: either not
 referenced at all, or only assigned (`this.cache = build();`, `count++;`) and never read.
@@ -11827,6 +12542,8 @@ keeps the field quiet.
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: dead-code, unused
 
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
+
 Detects `private` methods that are never called or referenced from anywhere
 else in the file.
 
@@ -11866,6 +12583,8 @@ and `readResolve`.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: dead-code, unused
 
+Measured precision: not enough labeled findings yet (15 of 15 labeled findings correct so far)
+
 Detects parameters of `private` methods that the method body never uses.
 
 **Why it matters.** A private method is only called from its own file, so its signature is
@@ -11903,6 +12622,8 @@ must stay as it is.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: generics, unused
 
+Measured precision: **100%** (7 of 7 labeled findings correct, every finding reviewed)
+
 Detects a type parameter of a generic method (`<T> void f(..)`) that appears
 nowhere else in the method: not in the return type, the parameters, the `throws` clause, the
 bounds of other type parameters, or the body.
@@ -11936,6 +12657,8 @@ counts as a use.
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~10 min · Tags: performance, network, equality
 
+Measured precision: not enough labeled findings yet (9 of 9 labeled findings correct so far)
+
 Detects `java.net.URL` used as the key type of a `Map` or the element type of a
 `Set`, and direct calls to `URL.equals(..)` or `URL.hashCode()`.
 
@@ -11964,6 +12687,8 @@ that never calls `equals`).
 **Catch block that only rethrows**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: error-handling, redundant
+
+Measured precision: not enough labeled findings yet (3 of 3 labeled findings correct so far)
 
 Detects `catch` clauses whose only statement rethrows the caught exception
 unchanged: `catch (IOException e) { throw e; }`.
@@ -11995,6 +12720,8 @@ meaningful.
 **Override that only calls super**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: redundant, inheritance
+
+Measured precision: not enough labeled findings yet (9 of 9 labeled findings correct so far)
 
 Detects an `@Override` method whose whole body is `super.sameMethod(..)` (or
 `return super.sameMethod(..)`) called with its own parameters, in the same order.
@@ -12037,6 +12764,8 @@ same-named method with other parameter types is an overload that narrows what is
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: design
 
+Measured precision: not enough labeled findings yet (8 of 8 labeled findings correct so far)
+
 Detects utility classes — classes whose members are all `static`, with at
 least one static method — that declare no constructor and therefore get an implicit public
 one.
@@ -12077,6 +12806,8 @@ annotations (`@Slf4j`, `@Log4j2`, …).
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: equality, boxing
 
+Measured precision: **100%** (9 of 9 labeled findings correct, every finding reviewed)
+
 Detects `==` and `!=` between two expressions whose static types are both boxed
 numbers or characters (`Integer`, `Long`, `Short`, `Byte`, `Character`, `Double`, `Float`), or
 both the same JDK value type that defines equality by content (`BigDecimal`, `BigInteger`,
@@ -12114,6 +12845,8 @@ enums and `Class` objects (identity is equality for them), `String` (see
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: concurrency, virtual-threads
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Detects settings that only platform threads support, applied to a thread
 created as a virtual thread (`Thread.ofVirtual()…unstarted(..)` / `.start(..)`,
 `Thread.startVirtualThread(..)`):
@@ -12150,6 +12883,8 @@ reassigned are followed; `setDaemon(true)` (a no-op) is not reported.
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: no · Remediation: ~15 min · Tags: concurrency
 
+Measured precision: **100%** (8 of 8 labeled findings correct, every finding reviewed)
+
 Detects a `volatile` field holding an array or a non-thread-safe JDK
 collection (`ArrayList`, `HashMap`, …) whose elements the class modifies in place —
 `values[i] = x`, `items.add(x)`, `cache.put(k, v)` — outside any `synchronized` code.
@@ -12185,6 +12920,8 @@ class's accesses to be judged.
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~15 min · Tags: concurrency, multi-threading
 
+Measured precision: not enough labeled findings yet (4 of 4 labeled findings correct so far)
+
 Detects `wait()`, `notify()` and `notifyAll()` called on a `Thread` object
 (including unqualified calls inside a `Thread` subclass).
 
@@ -12215,6 +12952,8 @@ Only receivers the resolver proves to be a `java.lang.Thread` are reported.
 **wait/notify outside synchronized code**
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~10 min · Tags: concurrency, multi-threading
+
+Measured precision: not enough labeled findings yet (2 of 2 labeled findings correct so far)
 
 Detects `wait()`, `notify()`, and `notifyAll()` called on the current object
 (unqualified or through `this`) outside any `synchronized` block or `synchronized` method.
@@ -12252,6 +12991,8 @@ Calls inside lambdas (whose calling context is unknown) and classes that declare
 **wait/notify on an object whose monitor is not held** (incubating)
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~10 min · Tags: concurrency, multi-threading
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Detects `wait()`, `notify()` and `notifyAll()` called on an object (`lock.wait()`)
 from synchronized code that holds some other monitor: inside `synchronized (other) { … }` or a
@@ -12298,6 +13039,8 @@ calls whose arguments are not proven numeric are skipped (they may be overloads)
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~20 min · Tags: concurrency, multi-threading, deadlock
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Detects `wait()` called inside nested `synchronized` regions that hold two or
 more different monitors, e.g. `synchronized (a) { synchronized (b) { b.wait(); } }`, when the
 same file notifies that monitor (`b.notify()`) while holding one of the other monitors (`a`).
@@ -12341,6 +13084,8 @@ notifier in the file that needs the outer lock, keeping it while waiting can be 
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~10 min · Tags: concurrency, multi-threading
 
+Measured precision: **100%** (8 of 8 labeled findings correct, every finding reviewed)
+
 Detects untimed `Object.wait()` calls, and untimed `await()` / `awaitUninterruptibly()`
 calls on a `java.util.concurrent.locks.Condition`, that are not inside a loop in the same method.
 
@@ -12382,6 +13127,8 @@ woken spuriously).
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: date-time
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Detects a date pattern passed to `new SimpleDateFormat(..)`,
 `SimpleDateFormat.applyPattern(..)`, or `DateTimeFormatter.ofPattern(..)` that uses `Y`
 (week-based year) together with month (`M`/`L`) or day-of-month (`d`) fields, and no week
@@ -12414,6 +13161,8 @@ Quoted text in the pattern (`'Year' YYYY`) is ignored; only string literals are 
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~2 min · Tags: conventions, imports
 
+Measured precision: **100%** (20 of 20 labeled findings correct)
+
 Detects on-demand imports, with or without `static`: `import java.util.*;`,
 `import static java.lang.Math.*;`.
 
@@ -12439,8 +13188,8 @@ import static java.util.Objects.requireNonNull;
 
 Parameter `allow_static` accepts static on-demand imports, which some teams allow for
 assertion and matcher libraries in tests. The rule is off by default: it is part of the
-`conventions` profile. Module imports (`import module java.base;`, Java 25) are not reported
-yet: the parser does not read that syntax.
+`conventions` profile. Module imports (`import module java.base;`, Java 25) are a different
+declaration, made to import the API of a whole module at once, and are not reported.
 
 **Parameters**
 
@@ -12453,6 +13202,8 @@ yet: the parser does not read that syntax.
 **Bounded wildcard in a return type or final type as a bound** (incubating)
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~10 min · Tags: generics, api-design
+
+Measured precision: too few findings to measure (2 of 2 labeled findings correct, every finding reviewed)
 
 Detects two ways of using generic bounds that give callers nothing:
 
@@ -12724,6 +13475,8 @@ signature they do not choose; bounds with several types.
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: suspicious
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Flags a class getter or setter that reads or writes the field of *another* accessor of the class,
 while the class has a field that matches its own name: `get width() { return this._height; }` in
 a class with a `_width` field and a `height` accessor.
@@ -12755,6 +13508,8 @@ deliberate design and is not reported; nor are static accessors.
 **A property with a setter should also have a getter**
 
 Severity: **MEDIUM** · Quality: reliability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: suspicious, confusing
+
+Measured precision: not enough labeled findings yet (6 of 6 labeled findings correct so far)
 
 Flags a property that has a setter but no getter: a `set` accessor in a class or an object
 literal without a `get` accessor of the same name (and, in a class, the same `static`-ness), and a
@@ -12792,6 +13547,8 @@ same name, and object literals with a spread (which may bring the getter).
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: typescript, convention
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Flags overloads of the same function or method that are separated by other
 declarations.
 
@@ -12825,6 +13582,8 @@ interface Emitter {
 **Array method callbacks should return a value**
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: suspicious
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Flags block-bodied callbacks passed to array methods that use the callback's return value
 (`map`, `filter`, `find`, `findIndex`, `findLast`, `findLastIndex`, `some`, `every`, `reduce`,
@@ -12861,6 +13620,8 @@ and not reported either.
 **Array types should use one consistent syntax**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~1 min · Tags: conventions, typescript
+
+Measured precision: **100%** (20 of 20 labeled findings correct)
 
 Flags array types written in the other of the two equivalent forms, `T[]` and `Array<T>`
 (and `readonly T[]` / `ReadonlyArray<T>`). With the default `array-simple` style, a simple
@@ -12899,6 +13660,8 @@ Off by default: part of the opt-in `conventions` set.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: tests, confusing
 
+Measured precision: not enough labeled findings yet (5 of 5 labeled findings correct so far)
+
 Flags equality assertions whose *actual* slot holds a literal while the *expected* slot holds
 the computed value: `expect(3).toBe(items.length)`, `assert.equal('ready', job.state)`.
 
@@ -12930,6 +13693,8 @@ named like an expectation (`expected`, `expectedTotal`), and files that are not 
 **Assignments and increments should not be nested in other expressions**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~5 min · Tags: confusing, side-effects
+
+Measured precision: **100%** (41 of 41 labeled findings correct)
 
 Flags increments, decrements and assignments buried inside a larger expression (a call
 argument, an operand of another operator, an array or object literal, a template, a ternary
@@ -12976,6 +13741,8 @@ set `report_array_index` to report them too. Off by default: short-circuit updat
 **Constructors should not start asynchronous work they cannot wait for** (incubating)
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~20 min · Tags: async, design
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Flags constructors that start asynchronous work which sets up the object's own state, and drop
 the promise: a call to an `async` method of the same class, an `async` arrow function called on the
@@ -13029,6 +13796,8 @@ listeners, timers), which run later.
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~10 min · Tags: typescript, suppression
 
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
+
 Flags TypeScript comment directives that switch type checking off:
 `@ts-ignore`, `@ts-nocheck` at the top of a file, and `@ts-expect-error` without an explanation.
 
@@ -13067,6 +13836,8 @@ legacy.call(1);                          // compliant
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: suspicious, typo
 
+Measured precision: too few findings to measure (every finding reviewed)
+
 Flags the bitwise operators `&` and `|` applied to two boolean expressions, such as
 `a > 0 & b > 0` or `!done | failed === true`.
 
@@ -13094,6 +13865,8 @@ write "exactly one of" for booleans), nor are the compound forms `|=` and `&=`.
 **Variables declared with var should not be used outside the block that declares them**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~5 min · Tags: confusing, es2015
+
+Measured precision: **100%** (36 of 36 labeled findings correct)
 
 Flags a `var` declared inside a block (an `if`, a loop, a `switch`, a plain `{ }`) that is used
 outside that block.
@@ -13128,6 +13901,8 @@ this is a style rule for code that still uses `var`.
 **Functions passed to array methods should not receive the index as an argument they misread** (incubating)
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: suspicious, callback
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Flags a function passed by name to an array method (`map`, `flatMap`, `filter`, `some`,
 `every`, `find`, `findIndex`, `findLast`, `findLastIndex`, or the mapping function of
@@ -13173,6 +13948,8 @@ named like an index (`i`, `index`, `idx`, `key`, …) or the function reads
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~10 min · Tags: brain-overload, complexity
 
+Measured precision: not enough labeled findings yet (7 of 7 labeled findings correct so far)
+
 Flags functions whose **cognitive complexity** is above a threshold (default 15).
 
 Cognitive complexity estimates how hard a function is to *read*: every break in linear flow (`if`, loops, `catch`, `switch`, jumps, chains of mixed boolean operators) adds a point, and nesting makes each of those cost more. Functions that score high take longer to understand, are harder to test exhaustively and attract bugs when changed.
@@ -13208,6 +13985,8 @@ process(items) {
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: readability
 
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
+
 Flags an `if` statement without `else` whose body is nothing but another `if`
 without `else`.
 
@@ -13236,6 +14015,8 @@ if (user && user.isAdmin) {  // compliant
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: unused, clutter
 
+Measured precision: not enough labeled findings yet (9 of 9 labeled findings correct so far)
+
 Flags runs of comments that contain source code rather than prose.
 
 Commented-out code distracts readers, rots as the surrounding code changes and is never compiled or tested. Version control already keeps old code.
@@ -13256,6 +14037,8 @@ Documentation comments, license headers and tool directives are ignored.
 **A function should either always or never return a value**
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: confusing, suspicious
+
+Measured precision: not enough labeled findings yet (7 of 7 labeled findings correct so far)
 
 Flags a predicate, a function whose `return` statements give booleans (`true`, `false`, a
 comparison, a negation), that also uses a bare `return;`, which gives `undefined`.
@@ -13296,6 +14079,8 @@ generators, and TypeScript functions whose declared return type includes `undefi
 **Type assertions should use 'as' and should not be applied to object literals**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~2 min · Tags: conventions, typescript
+
+Measured precision: **95%** (19 of 20 labeled findings correct)
 
 Flags two forms of TypeScript type assertion: the angle-bracket form `<T>value`, and an
 assertion applied to an object literal (`{ … } as T`).
@@ -13340,6 +14125,8 @@ Off by default: part of the opt-in `conventions` set.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~2 min · Tags: conventions, typescript
 
+Measured precision: **100%** (16 of 16 labeled findings correct, every finding reviewed)
+
 Flags `const enum` declarations.
 
 **Why:** a `const enum` has no runtime object: the compiler replaces every use with the literal
@@ -13368,6 +14155,8 @@ Off by default: part of the opt-in `conventions` set.
 **Lengths should not be compared in a way that is always true or always false** (incubating)
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: suspicious
+
+Measured precision: too few findings to measure (1 of 1 labeled findings correct, every finding reviewed)
 
 Flags comparisons of a `.length` with zero or a negative number that can only have one outcome:
 `list.length >= 0` (always true), `text.length < 0` (always false), `items.length > -1`.
@@ -13401,6 +14190,8 @@ file with such a value and never reassigned (`seen.size < 0`).
 **Constructors of derived classes should call super()** (incubating)
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: classes, suspicious
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Flags the constructor of a derived class (`class A extends B`) that never calls `super()`.
 
@@ -13453,6 +14244,8 @@ class Admin extends User {
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~1 min · Tags: conventions, braces
 
+Measured precision: **100%** (20 of 20 labeled findings correct)
+
 Flags `if`, `else`, `for`, `while` and `do` bodies that are a single statement without braces.
 
 **Why:** a braceless body ends after one statement, whatever the indentation says. A second
@@ -13492,6 +14285,8 @@ Off by default: part of the opt-in `conventions` set.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~10 min · Tags: complexity
 
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
+
 Flags functions whose **cyclomatic complexity** (the number of independent paths through the function) is above a threshold (default 10). Off by default: cognitive complexity usually reflects readability better.
 
 Many independent paths mean many test cases are needed to cover the function and a higher chance that some combination is wrong.
@@ -13517,6 +14312,8 @@ price(order) { return RULES[order.kind](order); }
 **Control flow should not be nested too deeply**
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~10 min · Tags: brain-overload, complexity
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Flags functions whose control-flow statements (`if`, loops, `switch`, `try`) are nested more than `max` levels deep (default 4).
 
@@ -13544,6 +14341,8 @@ for (...) processItem(...);
 **'switch' statements should have a 'default' clause**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~2 min · Tags: convention, conventions
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Flags `switch` statements that have no `default` clause.
 
@@ -13576,6 +14375,8 @@ switch (kind) {         // compliant
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~2 min · Tags: conventions
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Flags a `default` clause that is not the last clause of its `switch`.
 
 **Why:** readers expect `default` at the end, as the case that handles "everything else". A
@@ -13605,6 +14406,8 @@ Off by default: part of the opt-in `conventions` set.
 **Modules should use named exports instead of a default export** (incubating)
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~5 min · Tags: conventions, modules
+
+Measured precision: **89%** (25 of 28 labeled findings correct)
 
 Flags default exports: `export default …` and `export { name as default }`.
 
@@ -13645,6 +14448,8 @@ Off by default: part of the opt-in `conventions` set.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: api-design, confusing
 
+Measured precision: **100%** (24 of 24 labeled findings correct)
+
 Flags a parameter with a default value that comes before a parameter without one.
 
 **Why:** a default only applies when the argument is missing or `undefined`, and arguments are
@@ -13675,6 +14480,8 @@ signature the store dictates.
 **Type assertions should not be chained through 'any'**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~5 min · Tags: conventions, typescript
+
+Measured precision: **100%** (29 of 29 labeled findings correct, every finding reviewed)
 
 Flags a type assertion chained through `any` or `{}` to reach another type:
 `value as any as T`, `value as {} as T`, `<T><any>value`.
@@ -13711,6 +14518,8 @@ Off by default: part of the opt-in `conventions` set.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~15 min · Tags: duplication
 
+Measured precision: not enough labeled findings yet (9 of 9 labeled findings correct so far)
+
 Flags blocks of code that appear, token for token, in more than one place (by default at least 100 tokens spanning at least 10 lines; literal values and whitespace are ignored).
 
 Duplicated code must be changed in several places at once; sooner or later one copy is missed and the copies drift apart.
@@ -13722,6 +14531,8 @@ Duplicated code must be changed in several places at once; sooner or later one c
 **Collections that are never filled should not be read** (incubating)
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: suspicious
+
+Measured precision: too few findings to measure (2 of 2 labeled findings correct, every finding reviewed)
 
 Flags reads of a local array, `Map`, or `Set` that starts empty and is never filled: iterating
 it, looking something up, or checking its length.
@@ -13763,6 +14574,8 @@ is not counted as a read: tests often pass an empty list on purpose.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: typescript, enums, pitfall
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Flags TypeScript enums that mix members with explicit values and members numbered implicitly
 in a way that breaks when the enum changes: implicit members placed before the first explicit one
 (`enum State { Idle, Busy, Done = 2 }`), and implicit members whose number coincides with an
@@ -13796,6 +14609,8 @@ computed for plain numeric values.
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: suspicious
 
+Measured precision: not enough labeled findings yet (8 of 8 labeled findings correct so far)
+
 Flags loose equality operators `==` and `!=`.
 
 **Why:** loose equality converts its operands before comparing, with rules few people remember:
@@ -13827,6 +14642,8 @@ the same type.
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: error-handling, suspicious
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Flags error objects that are created and immediately discarded: a statement consisting only of
 `new Error(…)` or `new SomethingError(…)`.
 
@@ -13852,6 +14669,8 @@ const err = new Error('later');         // compliant: the error is kept
 **Functions should not be called with more arguments than they declare**
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: suspicious
+
+Measured precision: not enough labeled findings yet (3 of 3 labeled findings correct so far)
 
 Flags calls that pass more arguments than the called function declares, when the
 function is defined in the same file.
@@ -13881,6 +14700,8 @@ ignored.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~60 min · Tags: brain-overload, size
 
+Measured precision: not enough labeled findings yet (9 of 9 labeled findings correct so far)
+
 Flags files with more than `max_lines` lines of code (default 1000; blank and comment-only lines are not counted).
 
 Very large files tend to mix responsibilities, are slow to navigate and review, and cause frequent merge conflicts.
@@ -13898,6 +14719,8 @@ Very large files tend to mix responsibilities, are slow to navigate and review, 
 **FIXME, XXX and HACK comments should be resolved**
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~20 min · Tags: todo
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Flags comments containing `FIXME`, `XXX` or `HACK` markers.
 
@@ -13917,6 +14740,8 @@ total = total * 1.1; // FIXME rounding is wrong for negative amounts
 **Promises should be awaited, returned, or handled**
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~5 min · Tags: async, promise
+
+Measured precision: **96%** (29 of 30 labeled findings correct)
 
 Flags promises that are created and then ignored: a statement that calls an `async`
 function defined in the same file, or a `.then(onFulfilled)` / `.finally(…)` chain without a
@@ -13951,6 +14776,8 @@ promises and are ignored.
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: suspicious
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Flags `for` loops whose counter moves away from the bound in the loop condition, such as
 `for (let i = 0; i < n; i--)`.
 
@@ -13976,6 +14803,8 @@ literal.
 **For-loop conditions should not test for equality with a bound the counter can skip** (incubating)
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: suspicious
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Flags a `for` loop that stops when its counter becomes *equal* to the bound (`i != n`) while the
 counter can jump over the bound: it is also changed inside the loop body, it moves by a step that
@@ -14009,6 +14838,8 @@ Steps that are not literals (`i += step`) and loops whose counter is not updated
 **A for loop's header should govern its iteration** (incubating)
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~10 min · Tags: loops, confusing
+
+Measured precision: too few findings to measure (4 of 4 labeled findings correct, every finding reviewed)
 
 Flags `for` loops whose header does not govern the loop: the update clause changes none of
 the variables the condition tests, or the body assigns a new value to the loop counter.
@@ -14049,6 +14880,8 @@ conditions that call functions or use `this`, and conditions whose values the bo
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~20 min · Tags: brain-overload, size
 
+Measured precision: not enough labeled findings yet (3 of 3 labeled findings correct so far)
+
 Flags functions with more than `max_lines` lines of code (default 80; blank and comment-only lines are not counted).
 
 Long functions usually do several things at once. They are harder to name, to understand and to reuse, and changes to them are riskier.
@@ -14074,6 +14907,8 @@ importFile(path) { save(transform(validate(parse(path)))); notify(path); }
 **Getters should return a value**
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: suspicious
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Flags getters (`get name() { … }` in classes and object literals, and `get` functions in
 `Object.defineProperty` descriptors) that never return a value.
@@ -14111,6 +14946,8 @@ a body, and getters that use a bare `return;` while declaring a return type that
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: suspicious, copy-paste
 
+Measured precision: too few findings to measure (2 of 2 labeled findings correct, every finding reviewed)
+
 Flags logical operators, `^`, division, and remainder whose two operands are the same expression:
 `a.id || a.id`, `isReady && isReady`, `size / size`, `mask ^ mask`.
 
@@ -14138,6 +14975,8 @@ compared; calls are never assumed to return the same value twice. Comparisons ar
 **Results of string and array methods that return a new value should be used** (incubating)
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: suspicious, unused
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Flags a statement that calls a string or array method which returns a new value and changes
 nothing — `name.trim();`, `list.concat(more);`, `text.replace(/x/g, '');` — so the result is lost.
@@ -14170,6 +15009,8 @@ call (a `replace` with a function as replacement is skipped for the same reason)
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: redundant, readability
 
+Measured precision: **100%** (39 of 39 labeled findings correct)
+
 Flags a local variable that is declared with a value and then returned or thrown by the very
 next statement, and used nowhere else.
 
@@ -14200,6 +15041,8 @@ anywhere else, and pairs separated by a comment.
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: suspicious
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Flags the `in` operator used on a primitive value (`'a' in 'abc'`) or used to look for a value in
 an array (`'admin' in ['admin', 'owner']`).
 
@@ -14227,6 +15070,8 @@ reported; a numeric or unknown key may be a deliberate index test.
 **Parameters and loop or catch variables should not be overwritten before they are read** (incubating)
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: suspicious, unused
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Flags a parameter, a caught error, or a `for…of` / `for…in` loop variable that is assigned a new
 value before its incoming value is ever read: `function scale(size) { size = 10; … }`.
@@ -14263,6 +15108,8 @@ used by nested functions are skipped.
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: suspicious
 
+Measured precision: too few findings to measure (4 of 4 labeled findings correct, every finding reviewed)
+
 Flags `indexOf` results tested with `> 0` (or `0 <`).
 
 **Why:** `indexOf` returns `-1` when the value is missing and `0` when it is the very first
@@ -14289,6 +15136,8 @@ mean "a separator after a non-empty prefix" on purpose, and calls with a start p
 **Regular expressions built from literals should be valid**
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: regex, suspicious
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Flags `new RegExp(…)` and `RegExp(…)` calls whose pattern or flags, given as literals, are not a
 valid regular expression.
@@ -14319,6 +15168,8 @@ Only string literals (and template literals without substitutions) are checked, 
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: regex, suspicious
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Flags replacement strings of `replace` / `replaceAll` that refer to a capture group the regular
 expression does not have: `$3` when the pattern has two groups, `$1` when it has none, or
 `$<name>` when no group has that name.
@@ -14348,6 +15199,8 @@ substitutions) is checked.
 **A function should not return the same value on every path** (incubating)
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~10 min · Tags: suspicious, confusing
+
+Measured precision: too few findings to measure (2 of 2 labeled findings correct, every finding reviewed)
 
 Flags a function with several `return` statements that all return the same literal value
 (`true`, `0`, `'ok'`, `null`, …) and that cannot end without one of them.
@@ -14390,6 +15243,8 @@ generators, and functions with a single `return`.
 **Source code should not contain invisible or bidirectional control characters** (incubating)
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: unicode, confusing, security
+
+Measured precision: too few findings to measure (2 of 2 labeled findings correct, every finding reviewed)
 
 Flags characters in the source that a reader cannot see but the engine does:
 
@@ -14435,6 +15290,8 @@ is just text and is not reported.
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: react, jsx
 
+Measured precision: too few findings to measure (2 of 2 labeled findings correct, every finding reviewed)
+
 Flags JSX elements created in a list without a `key` prop: elements of an array
 literal made only of JSX, and elements returned from the callback of `.map()`, `.flatMap()`, or
 `Array.from(items, callback)`.
@@ -14468,6 +15325,8 @@ from a hook).
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~10 min · Tags: react, jsx
 
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
+
 Flags JSX `key` props computed only from the index parameter of an array callback
 (`items.map((item, i) => <Row key={i} />)`), including `String(i)`, `i.toString()`, `` `${i}` ``,
 and `'row-' + i`.
@@ -14495,6 +15354,8 @@ Only React/Preact files are checked. Keys that combine the index with other valu
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: react, jsx, suspicious
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Flags a JSX element that sets the same prop more than once
 (`<input value={a} value={b} />`).
 
@@ -14518,6 +15379,8 @@ exactly (case-sensitive; `xlink:href` style names included). Values coming from 
 **Numbers should not be used as '&&' conditions in rendered JSX** (incubating)
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: react, suspicious
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Flags conditional rendering with `&&` whose condition is a number: `{items.length && <List />}`,
 `{count && <Badge />}` where `count` is declared as a number.
@@ -14547,6 +15410,8 @@ renderers, such as prompt builders, may not print numbers).
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: react, performance
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Flags JSX `key` props computed from a fresh random or time-based value on every render:
 `Math.random()`, `Date.now()`, `new Date()`, `crypto.randomUUID()`, and the id generators of the
 `uuid`, `nanoid`, `cuid`, and lodash `uniqueId` packages.
@@ -14575,6 +15440,8 @@ reported too: change the key only when a remount is wanted (for example, from a 
 **Functions should not be nested too deeply**
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~20 min · Tags: complexity, readability
+
+Measured precision: **100%** (32 of 32 labeled findings correct)
 
 Flags a function nested more than `max` (default 4) levels deep, counting the function itself
 (with the default, a fifth function inside four enclosing ones): callback pyramids, closures
@@ -14624,6 +15491,8 @@ hooks.
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: suspicious
 
+Measured precision: **100%** (8 of 8 labeled findings correct, every finding reviewed)
+
 Flags `const sorted = list.sort()` (likewise `reverse`, `fill` and `copyWithin`) when `list` is used
 again afterwards.
 
@@ -14655,6 +15524,8 @@ its result is the removed elements, which is exactly what it is used for.
 **An if should not be laid out as if it were an else branch** (incubating)
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: confusing, braces
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Flags two layouts that make an `if` read differently from how it runs:
 
@@ -14707,6 +15578,8 @@ line too, and the inner `if` must sit at another column.
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: suspicious, confusing
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Flags a statement that is indented like the body of the brace-less `if`, `else`, `for` or `while`
 above it, although it is not part of that body and always runs.
 
@@ -14738,6 +15611,8 @@ statements on the same line are left alone.
 **Exported bindings should not be mutable**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~5 min · Tags: conventions, modules
+
+Measured precision: **100%** (26 of 26 labeled findings correct, every finding reviewed)
 
 Flags exported bindings that can be reassigned: `export let` and `export var`, and
 `export { name }` of a module-level `let` or `var` that the module assigns again.
@@ -14771,6 +15646,8 @@ Off by default: part of the opt-in `conventions` set.
 **Public static fields should not hold shared mutable containers**
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~10 min · Tags: design, encapsulation
+
+Measured precision: **100%** (40 of 40 labeled findings correct)
 
 Flags public `static` fields of exported TypeScript classes that are not `readonly` and hold a
 mutable container: an array or object literal, or a new `Map`, `Set`, `WeakMap`, `WeakSet`,
@@ -14818,6 +15695,8 @@ shared default; list them in `allow` where a project accepts the convention.
 **Names should follow the casing convention of their kind**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~2 min · Tags: conventions, naming
+
+Measured precision: **100%** (20 of 20 labeled findings correct)
 
 Flags declared names whose casing does not match the convention of their kind: classes,
 interfaces, type aliases, enums and type parameters in PascalCase; functions, methods,
@@ -14899,6 +15778,8 @@ Off by default: part of the opt-in `conventions` set.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~1 min · Tags: readability
 
+Measured precision: **100%** (41 of 41 labeled findings correct)
+
 Flags a negated equality test that the opposite operator states directly: `!(a === b)` is
 `a !== b`, `!(a == b)` is `a != b`, and the reverse.
 
@@ -14922,6 +15803,8 @@ Off by default: this is a readability preference.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: user-experience
 
+Measured precision: not enough labeled findings yet (7 of 7 labeled findings correct so far)
+
 Flags calls to the browser's blocking dialogs: `alert(…)`, `confirm(…)`, and
 `prompt(…)`, also through `window.`, `self.`, or `globalThis.`.
 
@@ -14944,6 +15827,8 @@ const ok = await dialog.confirm('Delete?'); // compliant
 **Array literals should be used instead of the 'Array' constructor**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: convention
+
+Measured precision: not enough labeled findings yet (2 of 2 labeled findings correct so far)
 
 Flags `Array(…)` and `new Array(…)` called with zero arguments or with two or more
 arguments.
@@ -14969,6 +15854,8 @@ const slots = new Array(size);  // compliant
 **Array elements should not be removed with 'delete'**
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: suspicious
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Flags `delete array[index]` on a value that is declared as an array.
 
@@ -14998,6 +15885,8 @@ delete cache[key];            // compliant: not an array
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~10 min · Tags: async, error-handling
 
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
+
 Flags `new Promise(async (resolve, reject) => { … })` — an `async` function passed as the
 executor of a promise.
 
@@ -15025,6 +15914,8 @@ const data = new Promise((resolve, reject) => { // compliant
 **Lexical declarations in 'case' clauses should be wrapped in a block**
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: pitfall, switch
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Flags `let`, `const`, `class`, and function declarations placed directly in a
 `case` or `default` clause, without braces around the clause body.
@@ -15055,6 +15946,8 @@ switch (action.type) {
 **Assertions should not run after a test's 'done' callback is called** (incubating)
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: tests, suspicious
+
+Measured precision: too few findings to measure (3 of 3 labeled findings correct, every finding reviewed)
 
 Flags assertions (and further `done` calls) that run after a callback-style test has called
 `done()`: statements after `done()` in the same block, or after an `if (…) done(…)` without
@@ -15097,6 +15990,8 @@ is harmless.
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: suspicious
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Flags comparisons with negative zero, such as `x === -0` or `x < -0`.
 
 **Why:** comparison operators treat `-0` and `+0` as the same value, so `x === -0` is also true
@@ -15117,6 +16012,8 @@ if (x === 0) {}           // compliant
 **Case labels should hold a single value** (incubating)
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: switch, suspicious
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Flags a `case` label that tries to list several values with a comma or a logical operator:
 `case 'a', 'b':` or `case 'a' || 'b':`.
@@ -15156,6 +16053,8 @@ holds a whole condition.
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: suspicious
 
+Measured precision: not enough labeled findings yet (6 of 6 labeled findings correct so far)
+
 Flags an assignment used directly as the condition of an `if`, `while`, `do … while`,
 `for`, or `? :` expression, unless it is wrapped in an extra pair of parentheses.
 
@@ -15183,6 +16082,8 @@ In a `for` header a single pair of parentheses is enough, since the header itsel
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: typescript, confusing
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Flags a non-null assertion written directly before `==`, `===`, or `=`
 (`a! == b`, `a?.b! === c`, `a! = b`).
 
@@ -15207,6 +16108,8 @@ if (user.id != otherId) {}      // compliant: the intended "not equal"
 **Console calls should be removed**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: logging
+
+Measured precision: not enough labeled findings yet (9 of 9 labeled findings correct so far)
 
 Flags calls to `console` methods (`console.log`, `console.debug`, …) outside test files.
 
@@ -15238,6 +16141,8 @@ logger.debug('user', user);  // compliant
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: suspicious
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Flags assignments, compound assignments (`+=`), and increments of a variable declared with
 `const`.
 
@@ -15268,6 +16173,8 @@ fine and not reported: only the binding itself is constant.
 **Conditions should not be constant**
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: suspicious
+
+Measured precision: **100%** (6 of 6 labeled findings correct, every finding reviewed)
 
 Flags `if` statements and `? :` expressions whose condition is a constant — a literal, an
 object or function literal, `typeof x`, `void x`, `undefined`, or an operator applied only to such
@@ -15301,6 +16208,8 @@ Loop conditions such as `while (true)` are idiomatic infinite loops and are only
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~1 min · Tags: suspicious
 
+Measured precision: too few findings to measure (every finding reviewed)
+
 Flags `debugger` statements.
 
 **Why:** a `debugger` statement pauses execution whenever developer tools are open. It is a
@@ -15321,6 +16230,8 @@ function total(items) {
 **delete should not be applied to variables** (incubating)
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: suspicious
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Flags `delete` applied to a plain variable name: `delete cache;`.
 
@@ -15348,6 +16259,8 @@ global object (created by an assignment in another script), which `delete` does 
 **Class members should not be declared twice**
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: suspicious
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Flags class members (methods, fields, accessors) declared more than once with the same
 name in the same class body.
@@ -15377,6 +16290,8 @@ literals.
 **Regular expression alternatives should not be repeated or hidden by earlier ones** (incubating)
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: regex, suspicious
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Flags an alternative of a regular expression that can never be the one that matches: it repeats
 an earlier alternative of the same group (`/(png|jpg|png)/`), or, at the top level of the
@@ -15411,6 +16326,8 @@ later may be spliced into a bigger pattern, and `test` or `search` give the same
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: suspicious
 
+Measured precision: not enough labeled findings yet (1 of 1 labeled findings correct so far)
+
 Flags `else if` conditions that can never be true because an earlier condition of the same
 `if … else if` chain already covers them.
 
@@ -15439,6 +16356,8 @@ re-evaluates state is not reported.
 **Object literal keys should be unique**
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: suspicious
+
+Measured precision: too few findings to measure (every finding reviewed)
 
 Flags object literals that define the same key more than once.
 
@@ -15469,6 +16388,8 @@ Spread elements and computed keys that are not literals are ignored.
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: suspicious
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Flags `case` labels of a `switch` that repeat an earlier label of the same `switch`.
 
 **Why:** `switch` runs the first matching `case`, so a repeated label can never be reached. The
@@ -15496,6 +16417,8 @@ other side-effect-free expressions; labels that call functions are not compared.
 **Enum members should have distinct values**
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: typescript, suspicious
+
+Measured precision: too few findings to measure (3 of 3 labeled findings correct, every finding reviewed)
 
 Flags enum members initialized with the same literal value as an earlier member
 of the same enum.
@@ -15532,6 +16455,8 @@ enum Color {
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: imports, redundant
 
+Measured precision: **100%** (40 of 40 labeled findings correct)
+
 Flags a second `import` declaration from the same module when the two could be written as one.
 
 **Why:** the module is loaded once either way, but two declarations split the names taken from it
@@ -15560,6 +16485,8 @@ either). Side-effect imports (`import './polyfill'`), imports with different att
 **String literals should not be duplicated**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: duplication
+
+Measured precision: not enough labeled findings yet (6 of 6 labeled findings correct so far)
 
 Flags a string literal that appears several times in the same file (by default:
 at least 10 characters long, 3 or more times).
@@ -15596,6 +16523,8 @@ log(REFUSED);
 **Branches should not have identical bodies**
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~10 min · Tags: duplication, suspicious
+
+Measured precision: not enough labeled findings yet (7 of 7 labeled findings correct so far)
 
 Flags branches of an `if` / `else if` chain, and cases of a `switch`, whose bodies are
 identical to an earlier branch.
@@ -15635,6 +16564,8 @@ compared.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~2 min · Tags: readability
 
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
+
 Flags an `else` block that follows an `if` whose branch always ends with `return`.
 
 **Why:** when the `if` branch returns, the code after it only runs in the other case anyway. The
@@ -15667,6 +16598,8 @@ function sign(n) {    // compliant
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: suspicious
 
+Measured precision: not enough labeled findings yet (8 of 8 labeled findings correct so far)
+
 Flags empty block statements: empty `if`/`else` branches, loop bodies, `try`, `catch`,
 and `finally` blocks, stand-alone `{}` blocks, and `switch` statements without cases.
 
@@ -15694,6 +16627,8 @@ try {
 **Regular expressions should not contain stray empty alternatives** (incubating)
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: regex, suspicious
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Flags an empty alternative in a regular expression that makes it match where it should not: a
 stray `|` at the start or end of the whole pattern (`/foo|/`), or a doubled `||` between two
@@ -15723,6 +16658,8 @@ writing "optional" and is not reported. Only regular expression literals are che
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: regex, suspicious
 
+Measured precision: too few findings to measure (1 of 1 labeled findings correct, every finding reviewed)
+
 Flags an empty character class `[]` in a regular expression literal.
 
 **Why:** `[]` is valid syntax but matches no character at all, so any regular expression that
@@ -15743,6 +16680,8 @@ const any = /[^]/;         // compliant: the negated empty class matches any cha
 **Functions should not be empty**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: suspicious
+
+Measured precision: not enough labeled findings yet (8 of 8 labeled findings correct so far)
 
 Flags functions, methods, and arrow functions with an empty body `{}` that contains
 no comment.
@@ -15775,6 +16714,8 @@ const noop = () => {};          // compliant: the name documents it
 **Interfaces should not be empty**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: typescript, redundant
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Flags interfaces that declare no members and extend at most one other type.
 
@@ -15823,6 +16764,8 @@ type NonNullish<T> = T & {};                 // compliant
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: suspicious
 
+Measured precision: **100%** (10 of 10 labeled findings correct, every finding reviewed)
+
 Flags destructuring patterns that bind nothing: `const {} = obj`, `const [] = list`,
 `function f({}) {}`, or a nested `{ a: {} }`.
 
@@ -15848,6 +16791,8 @@ parameter and require it to be a destructuring pattern even when it names none.
 **Strings should not be evaluated as code**
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~15 min · Tags: security
+
+Measured precision: not enough labeled findings yet (6 of 6 labeled findings correct so far)
 
 Flags code that compiles strings at run time: `eval(…)`, `Function(…)` /
 `new Function(…)`, and `setTimeout` / `setInterval` called with a string instead of a function
@@ -15876,6 +16821,8 @@ setTimeout(refresh, 1000);              // compliant
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: error-handling
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Flags assignments to the parameter of a `catch` clause (`catch (e) { e = … }`).
 
 **Why:** after the assignment, the caught exception is gone: later code in the handler — logging,
@@ -15900,6 +16847,8 @@ try { run(); } catch (err) {
 **Focused tests should not be committed**
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~1 min · Tags: tests, suspicious
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Flags focused tests in test files: `.only` on `describe`, `it`, `test`, `context`,
 `suite`, or `specify` (including `test.only.each`), and the Jasmine shortcuts `fdescribe` and `fit`.
@@ -15927,6 +16876,8 @@ is imported (from Jest, Vitest, Mocha, Playwright, …).
 **Avoid the any type**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~5 min · Tags: typescript
+
+Measured precision: not enough labeled findings yet (13 of 13 labeled findings correct so far)
 
 Flags explicit `any` in TypeScript type positions.
 
@@ -15963,6 +16914,8 @@ function handle(value: unknown) {}   // compliant
 **Built-in prototypes should not be extended**
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~15 min · Tags: pitfall, globals
+
+Measured precision: **100%** (6 of 6 labeled findings correct, every finding reviewed)
 
 Flags code that adds or replaces properties on the prototypes of built-in objects:
 `Array.prototype.last = …`, `Object.defineProperty(String.prototype, 'x', …)`,
@@ -16005,7 +16958,9 @@ temporary override itself is still reported.
 
 **Redundant boolean conversions should be removed**
 
-Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: redundant
+Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: redundant · Fix available (`mote fix`)
+
+Measured precision: **100%** (8 of 8 labeled findings correct, every finding reviewed)
 
 Flags `!!x` and `Boolean(x)` where the result is used in a place that already
 converts its value to a boolean: the condition of `if`, `while`, `do … while`, `for`, or `?:`,
@@ -16025,11 +16980,17 @@ if (user) {}                // compliant
 const hasUser = !!user;     // compliant: stores a boolean
 ```
 
+**Fix available.** `mote fix` removes the `!!` or the `Boolean(…)` call around the value (in
+parentheses where the context needs them): converting to a boolean has no side effect, and the
+context converts the value the same way.
+
 ### js/no-extra-non-null-assertion
 
 **Non-null assertions should not be doubled or combined with optional chaining**
 
-Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: typescript, suspicious
+Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: typescript, suspicious · Fix available (`mote fix`)
+
+Measured precision: **100%** (5 of 5 labeled findings correct, every finding reviewed)
 
 Flags non-null assertions that are redundant or contradict the code around them:
 a doubled assertion (`value!!`) and an assertion immediately followed by optional chaining
@@ -16051,11 +17012,17 @@ const size = cache!.size;       // compliant
 const name = user?.name;        // compliant
 ```
 
+**Fix available.** `mote fix` deletes the reported `!`. Non-null assertions are erased when
+TypeScript compiles, so the program runs the same; with the optional chaining kept, a `null`
+value still short-circuits as before.
+
 ### js/no-extraneous-class
 
 **Classes should not be used as namespaces for static members**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~10 min · Tags: conventions, classes
+
+Measured precision: **100%** (20 of 20 labeled findings correct)
 
 Flags classes that only hold static members and are used as a namespace.
 
@@ -16092,6 +17059,8 @@ Off by default: part of the opt-in `conventions` set.
 **Switch cases should not fall through unintentionally**
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: suspicious
+
+Measured precision: **100%** (5 of 5 labeled findings correct, every finding reviewed)
 
 Flags `switch` cases that run into the next case because they do not end with `break`,
 `return`, `throw`, or `continue`.
@@ -16130,6 +17099,8 @@ reported. The finding is reported on the case that is fallen into.
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: suspicious
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Flags `for (… in …)` loops over an array: an array literal, `Object.keys(…)` /
 `Object.values(…)` / `Object.entries(…)`, `Array.from(…)`, or a variable declared or initialized as
 an array.
@@ -16161,6 +17132,8 @@ either.
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: suspicious
 
+Measured precision: too few findings to measure (every finding reviewed)
+
 Flags assignments to the name of a function declaration (`function f() {}` … `f = …`),
 including the name of a named function expression inside its own body.
 
@@ -16185,6 +17158,8 @@ handler = () => {};         // compliant: an ordinary variable
 **Built-in globals should not be reassigned** (incubating)
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: suspicious
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Flags assignments to built-in globals of the language: `undefined = 0`, `NaN = …`,
 `Object = …`, `Promise = MyPromise`, `JSON = …`, and the other standard objects and functions
@@ -16213,6 +17188,8 @@ when the built-in is missing (`if (typeof Promise === 'undefined') Promise = …
 **Functions should not have identical implementations**
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~15 min · Tags: duplication
+
+Measured precision: not enough labeled findings yet (3 of 3 labeled findings correct so far)
 
 Flags a function, method, or arrow function whose body is identical to the body of
 another function in the same file. Bodies are compared structurally, so formatting, comments,
@@ -16255,6 +17232,8 @@ const orderValue = totalPrice;      // compliant
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: modules, suspicious
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Flags writes to an imported binding (`import { count } from './a'; count = 1;`) and to a
 property of a namespace import (`import * as utils from './u'; utils.helper = …;`).
 
@@ -16289,6 +17268,8 @@ reported, because many test setups compile modules to CommonJS on purpose to all
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~1 min · Tags: typescript, redundant, conventions
 
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
+
 Flags explicit primitive type annotations on variables, parameters with a default
 value, and class properties whose initializer is a literal of exactly that type
 (`let count: number = 0`).
@@ -16320,6 +17301,8 @@ class Timer { readonly limit: number = 5; } // compliant: would infer the litera
 **Loops with a constant true condition should have a reachable exit** (incubating)
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~10 min · Tags: suspicious
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Flags a `while (true)`, `do … while (true)` or `for (;;)` loop that contains no way out: no
 `break` or `continue` that leaves it, no `return`, no `throw`, and no call to `process.exit`.
@@ -16358,6 +17341,8 @@ rule only reports loops that cannot end.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~10 min · Tags: confusing, control-flow
 
+Measured precision: **100%** (10 of 10 labeled findings correct, every finding reviewed)
+
 Flags labeled statements (`outer: for (…)`), on loops and on any other statement.
 
 **Why:** labels exist for `break label` and `continue label` jumps across several levels of
@@ -16391,6 +17376,8 @@ wrong language rather than a label.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: redundant
 
+Measured precision: not enough labeled findings yet (1 of 1 labeled findings correct so far)
+
 Flags stand-alone `{ … }` blocks nested directly in another block, a function
 body, or the top level, when they do not declare anything scoped to the block.
 
@@ -16423,6 +17410,8 @@ function run() {
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: readability
 
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
+
 Flags an `else` block whose only statement is an `if` statement.
 
 **Why:** `else { if (…) … }` adds a level of braces and indentation for nothing; `else if` says
@@ -16451,6 +17440,8 @@ if (a) {            // compliant
 **Functions scheduled from a loop should not capture a variable shared by all iterations** (incubating)
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~10 min · Tags: closure, async
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Flags a function created inside a loop and scheduled to run later — a timer, a promise
 callback, an event handler, a function stored in an array or a property — that reads a loop
@@ -16489,6 +17480,8 @@ followed by a statement ending the loop (`break`, `return`, `throw`). Loop varia
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: suspicious
 
+Measured precision: not enough labeled findings yet (2 of 2 labeled findings correct so far)
+
 Flags number literals whose written value cannot be stored exactly as a JavaScript number
 (a 64-bit float), so the program silently uses a different value.
 
@@ -16519,6 +17512,8 @@ are always reported.
 **Numbers should be named constants**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~5 min · Tags: readability, conventions
+
+Measured precision: **100%** (68 of 68 labeled findings correct)
 
 Flags numeric literals ("magic numbers") used directly in expressions, conditions and calls
 instead of through a named constant.
@@ -16560,6 +17555,8 @@ noisy on most code bases.
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: regex, suspicious
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Flags a character class (`[…]`) that lists a character made of several code points as if it
 were one: an emoji or other character outside the Basic Multilingual Plane without the `u` flag,
 a letter followed by a combining accent, an emoji with a skin-tone modifier or variation selector,
@@ -16588,6 +17585,8 @@ base character are not reported. Only regular expression literals are checked.
 **Constructors should be declared correctly**
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: typescript, suspicious
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Flags constructor declarations in the wrong place: a `constructor` method in an
 interface, a construct signature `new (): I` in an interface `I` that returns the interface itself,
@@ -16623,6 +17622,8 @@ class Widget {
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: async, promise
 
+Measured precision: too few findings to measure (3 of 3 labeled findings correct, every finding reviewed)
+
 Flags promises used where a plain value is expected: a call of an `async` function tested as a
 condition, spread into an array or object, or an `async` callback given to an array method that
 expects a plain answer (`filter`, `some`, `every`, `find`, `findIndex`, `sort`) or ignores what
@@ -16657,6 +17658,8 @@ in the same file (and never reassigned), and `async` function literals passed as
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~10 min · Tags: typescript, confusing
 
+Measured precision: **100%** (6 of 6 labeled findings correct, every finding reviewed)
+
 Flags enums that mix string members with numeric members.
 
 **Why:** numeric and string enum members behave differently at runtime: numeric members get a
@@ -16690,6 +17693,8 @@ enum Level {
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: readability
 
+Measured precision: not enough labeled findings yet (8 of 8 labeled findings correct so far)
+
 Flags chained assignments such as `a = b = c` and `const a = b = c`.
 
 **Why:** a chain hides an assignment in the middle of an expression. It is easy to misread
@@ -16712,6 +17717,8 @@ b = 0;
 **String literals should not be continued with a backslash line break** (incubating)
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~2 min · Tags: conventions
+
+Measured precision: too few findings to measure (1 of 1 labeled findings correct, every finding reviewed)
 
 Flags string literals continued on the next line with a backslash at the end of the line.
 
@@ -16742,6 +17749,8 @@ Off by default: part of the opt-in `conventions` set.
 **ES modules should be used instead of namespaces**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~15 min · Tags: typescript, modules, conventions
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Flags TypeScript `namespace` (and legacy `module Name`) declarations.
 
@@ -16775,6 +17784,8 @@ declare module 'untyped-lib' {           // compliant
 **Components should not be defined inside other components**
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~15 min · Tags: react, performance
+
+Measured precision: too few findings to measure (1 of 1 labeled findings correct, every finding reviewed)
 
 Flags React components defined inside the body of another component: a capitalized
 function that returns JSX, declared directly in a component and then rendered as `<Inner />` or
@@ -16811,6 +17822,8 @@ components created inside hooks such as `useMemo` or `useCallback`.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: readability
 
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
+
 Flags a conditional (ternary) expression used directly as the condition or a
 branch of another conditional expression.
 
@@ -16836,6 +17849,8 @@ function labelFor(n) {                                     // compliant
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: suspicious
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Flags `new Symbol(…)` and `new BigInt(…)`.
 
 **Why:** `Symbol` and `BigInt` are functions that create primitive values, but they are not
@@ -16860,6 +17875,8 @@ Only the globals are checked: a local class or import named `Symbol` is not repo
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: suspicious
 
+Measured precision: not enough labeled findings yet (2 of 2 labeled findings correct so far)
+
 Flags `new String(…)`, `new Number(…)`, and `new Boolean(…)`.
 
 **Why:** these create wrapper *objects*, not primitive values. They behave surprisingly:
@@ -16883,6 +17900,8 @@ const count = Number(input);       // compliant
 **Non-null assertions should not be used**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~5 min · Tags: typescript, conventions
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Flags the TypeScript non-null assertion operator (`value!`).
 
@@ -16914,6 +17933,8 @@ const label = user?.name ?? 'anonymous'; // compliant
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: suspicious
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Flags the built-in namespace objects `Math`, `JSON`, `Reflect`, `Atomics`, and `Intl` called as
 functions (`Math()`) or constructors (`new JSON()`).
 
@@ -16939,6 +17960,8 @@ Only the globals are checked: a local variable or import named `Math` or `Intl` 
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~1 min · Tags: conventions
 
+Measured precision: too few findings to measure (4 of 4 labeled findings correct, every finding reviewed)
+
 Flags `new Object()` and `Object()` called without arguments.
 
 **Why:** both create an empty plain object, exactly like the literal `{}`, but longer and less
@@ -16963,6 +17986,8 @@ Off by default: part of the opt-in `conventions` set.
 **Function parameters should not be reassigned**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~5 min · Tags: confusing
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Flags assignments to a function parameter: `param = …`, `param += …`, `param++`,
 destructuring assignments, and `for (param of …)`.
@@ -16992,6 +18017,8 @@ function greet(name = 'guest') {   // compliant
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: suspicious, objects
 
+Measured precision: not enough labeled findings yet (9 of 9 labeled findings correct so far)
+
 Flags calls of `hasOwnProperty`, `isPrototypeOf`, and `propertyIsEnumerable` made
 directly on an object: `obj.hasOwnProperty('id')`.
 
@@ -17015,6 +18042,8 @@ if (Object.prototype.hasOwnProperty.call(config, 'port')) {} // compliant
 **Functions should not be redeclared**
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: suspicious, pitfall
+
+Measured precision: too few findings to measure (every finding reviewed)
 
 Flags a function declared twice in the same scope, and a function and a `var` with a
 value sharing one name.
@@ -17048,6 +18077,8 @@ wrong.
 **Boolean literals should not be used redundantly**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: redundant
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Flags boolean literals that add nothing: a ternary that picks between `true` and
 `false` (`c ? true : false`), an `if` that returns `true` in one branch and `false` in the other
@@ -17097,6 +18128,8 @@ function isEmpty(list) {
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: typescript, types, redundant
 
+Measured precision: **100%** (39 of 39 labeled findings correct)
+
 Flags members of TypeScript union (`A | B`) and intersection (`A & B`) types that add nothing:
 the same member written twice, `any` or `unknown` in a union (they swallow every other member),
 `never` in a union (it contributes no values), `any` or `unknown` in an intersection, and a literal
@@ -17130,6 +18163,8 @@ usually the point of writing it).
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: typescript, modules
 
+Measured precision: not enough labeled findings yet (8 of 8 labeled findings correct so far)
+
 Flags CommonJS `require()` calls and `import x = require('x')` in TypeScript
 files.
 
@@ -17156,6 +18191,8 @@ const lazy = await import('./heavy');  // compliant
 **Assignments should not be made in 'return' statements**
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~2 min · Tags: confusing
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Flags assignments inside a `return` statement or in the expression body of an arrow
 function, unless the assignment is wrapped in its own parentheses.
@@ -17184,6 +18221,8 @@ items.forEach(i => (total += i));  // compliant: explicit
 **Variables and properties should not be assigned to themselves**
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: suspicious
+
+Measured precision: not enough labeled findings yet (1 of 1 labeled findings correct so far)
 
 Flags assignments whose target and value are the same: `x = x`, `[a, b] = [a, b]`,
 `({ a } = { a })`, and property self-assignments such as `this.name = this.name` when they are
@@ -17218,6 +18257,8 @@ setter or decorated field with that name.
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: suspicious
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Flags comparisons whose two operands are the same side-effect-free expression, such as
 `x === x`, `a.length < a.length`, or `item.id !== item.id`.
 
@@ -17239,6 +18280,8 @@ if (x !== x) {}                    // flagged: use Number.isNaN(x)
 **A module should not import itself** (incubating)
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: modules, suspicious
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Flags an `import` or `export … from` whose relative path points back at the file itself:
 `import { helper } from './utils'` inside `utils.ts`.
@@ -17265,6 +18308,8 @@ extension; `./dir` and `./dir/index` resolve to `dir/index.*`.
 **State setters should not be called with the current state value**
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: react, suspicious
+
+Measured precision: **100%** (5 of 5 labeled findings correct, every finding reviewed)
 
 Flags a React state setter called with the state variable it belongs to:
 `setItems(items)` for `const [items, setItems] = useState(…)`.
@@ -17293,6 +18338,8 @@ argument is the state variable itself (not a shadowing parameter of the same nam
 **State setters should not be called unconditionally during render** (incubating)
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~10 min · Tags: react
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Flags a React state setter called unconditionally while a component renders: a statement
 `setCount(…)` directly in the body of the component that declared `[count, setCount] =
@@ -17329,6 +18376,8 @@ got from `useState` / `useReducer` imported from React or Preact (or called as `
 **Built-in global names should not be redeclared**
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: suspicious, confusing
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Flags variables, parameters, functions, classes, catch parameters, and imports named
 `undefined`, `NaN`, `Infinity`, `eval`, or `arguments`.
@@ -17368,6 +18417,8 @@ var interface = load();              // flagged: a syntax error in strict code
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: suspicious
 
+Measured precision: too few findings to measure (1 of 1 labeled findings correct, every finding reviewed)
+
 Flags array literals with holes — consecutive commas such as `[1, , 3]` or a leading
 comma `[, a]`.
 
@@ -17391,6 +18442,8 @@ A trailing comma (`[1, 2,]`) is not a hole, and holes in destructuring patterns
 **Template placeholders should not appear in ordinary strings**
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: suspicious
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Flags ordinary `'…'` or `"…"` strings that contain a template placeholder such as `${name}`
 where `name` is a variable in scope (or `this`).
@@ -17424,6 +18477,8 @@ syntax that happens to share the name.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: style
 
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
+
 Flags `this` being stored in a variable (`const self = this`, `that = this`).
 
 **Why:** copying `this` into a variable was the pre-ES2015 way to reach the outer `this` from a
@@ -17455,6 +18510,8 @@ const { items, total } = this;           // compliant: destructuring
 **'this' should not be used before super() in a derived constructor** (incubating)
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: classes, suspicious
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Flags `this` or `super.member` used in the constructor of a derived class before `super()` has
 been called.
@@ -17492,6 +18549,8 @@ later, and a nested `function` or class has its own `this`.
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: error-handling
 
+Measured precision: not enough labeled findings yet (6 of 6 labeled findings correct so far)
+
 Flags `throw` statements whose value is certainly not an `Error`: a string, number,
 boolean, `null`, `undefined`, template literal, object or array literal, arithmetic or string
 concatenation, or a function.
@@ -17517,6 +18576,8 @@ throw error;                             // compliant: may be an Error
 **Variables that are read should be assigned**
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: suspicious, unused
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Flags `let` and `var` variables that are declared without a value, never assigned
 anywhere, and yet read.
@@ -17546,6 +18607,8 @@ classic scripts (another script may assign them).
 **Variables should be declared before they are assigned**
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: suspicious, globals
+
+Measured precision: not enough labeled findings yet (2 of 2 labeled findings correct so far)
 
 Flags assignments to a name that is declared nowhere: not in the file, not as a known
 browser or Node.js global, and not in a `/* global … */` comment.
@@ -17587,6 +18650,8 @@ Files using `with` or direct `eval` are skipped.
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: suspicious
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Flags a line that starts with `(`, `[` or a template literal and is therefore glued to the
 expression on the line above: a call, an index, or a tagged template instead of a new statement.
 
@@ -17621,6 +18686,8 @@ IIFE laid out that way on purpose).
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~1 min · Tags: react, suspicious
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Flags HTML-style attribute names on built-in elements in React JSX: `class`, `for`, lowercase event
 handlers such as `onclick`, and lowercase or dashed spellings such as `tabindex`, `maxlength` or
 `stroke-width`, where React expects `className`, `htmlFor`, `onClick`, `tabIndex`, `maxLength`,
@@ -17650,7 +18717,9 @@ fixed table of known misspellings are not reported.
 
 **Type parameters should not be constrained to 'any' or 'unknown'**
 
-Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: typescript, redundant
+Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: typescript, redundant · Fix available (`mote fix`)
+
+Measured precision: **100%** (9 of 9 labeled findings correct, every finding reviewed)
 
 Flags type parameters constrained to `any` or `unknown` (`<T extends unknown>`).
 
@@ -17668,11 +18737,17 @@ function first<T>(items: T[]): T {}                   // compliant
 function byId<T extends { id: string }>(items: T[]) {} // compliant: a real constraint
 ```
 
+**Fix available.** `mote fix` deletes `extends unknown` / `extends any`: an unconstrained
+type parameter accepts the same types (TypeScript treats `extends any` like `extends unknown`
+since 3.9), and types do not exist at run time.
+
 ### js/no-unreachable
 
 **Unreachable code should be removed**
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: suspicious, unused
+
+Measured precision: too few findings to measure (every finding reviewed)
 
 Flags statements that can never run because they follow a `return`, `throw`, `break`, or
 `continue` in the same block (directly, or after an `if`/`else` or `try` whose every path leaves).
@@ -17705,6 +18780,8 @@ normally.
 **Loops should be able to run more than one iteration** (incubating)
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: suspicious, loops
+
+Measured precision: too few findings to measure (1 of 1 labeled findings correct, every finding reviewed)
 
 Flags `for`, `while`, and `do … while` loops whose body always leaves the loop during the first
 iteration, through `return`, `throw`, or `break`.
@@ -17746,6 +18823,8 @@ first case while debugging`).
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~10 min · Tags: error-handling
 
+Measured precision: too few findings to measure (3 of 3 labeled findings correct, every finding reviewed)
+
 Flags `return`, `throw`, `break`, and `continue` statements that leave a `finally` block.
 
 **Why:** a `finally` block runs after the `try` or `catch` has already decided how to finish —
@@ -17785,6 +18864,8 @@ Jumps that stay inside the `finally` block (a `break` of a loop inside it, a `th
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: typescript, types
 
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
+
 Flags the built-in `Function` type used in TypeScript type positions.
 
 **Why:** `Function` accepts any function-like value — including classes — and calling a value of
@@ -17809,6 +18890,8 @@ A local type or class that happens to be named `Function` is not reported.
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: suspicious
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Flags `!` applied to the left operand of `in` or `instanceof` without parentheses, as in
 `!key in obj` or `!value instanceof Date`.
 
@@ -17830,6 +18913,8 @@ if (!(value instanceof Date)) {}    // compliant
 **Optional chains should not be used where undefined throws**
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: null-handling, suspicious
+
+Measured precision: too few findings to measure (2 of 2 labeled findings correct, every finding reviewed)
 
 Flags an optional chain (`a?.b`) whose result is used where `undefined` throws: spread into an
 array or argument list, destructured, iterated with `for…of`, called or constructed after
@@ -17869,6 +18954,8 @@ already reads without `?.` (`if (a.kind === 1) { … a?.b … }`), and elements 
 **Expressions should not be evaluated only to be discarded**
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: suspicious, unused
+
+Measured precision: not enough labeled findings yet (1 of 1 labeled findings correct so far)
 
 Flags expression statements that compute a value and throw it away without any possible
 effect: `a === b;`, `x;`, `total + tax;`, `'text';` outside the directive prologue, `[a, b];`.
@@ -17910,6 +18997,8 @@ as `ready && start();` and `cache || load();`, for codebases that prefer an expl
 **Private class members should be used** (incubating)
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: unused, dead-code
+
+Measured precision: **90%** (9 of 10 labeled findings correct, every finding reviewed)
 
 Flags private class members that nothing uses: `#name` fields, methods and accessors,
 and TypeScript `private` fields, methods and accessors.
@@ -17961,7 +19050,9 @@ files are meant to call it.
 
 **Unused declarations should be removed**
 
-Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: unused
+Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: unused · Fix available (`mote fix`)
+
+Measured precision: not enough labeled findings yet (3 of 3 labeled findings correct so far)
 
 Flags variables, functions, classes, imports, types, enums, and parameters that are
 declared but never used.
@@ -18010,6 +19101,15 @@ that are not overloaded or decorated. Public methods (a subclass or an interface
 signature) and type parameters of classes, interfaces, and type aliases (an unused one can
 deliberately tag a type) are left alone.
 
+**Fix available** for unused imports: `mote fix` deletes the unused name from its import
+(`import { a, b } from 'x'` → `import { a } from 'x'`); the module is imported as before. When
+no name of a JavaScript import is used, the import is kept for the module's side effects
+(`import 'x';`), as it ran the module before. A TypeScript import whose names are all unused is
+deleted only when it is `import type` (always erased); otherwise it is reported but not fixed,
+since whether TypeScript keeps it for its side effects depends on the compiler settings
+(`verbatimModuleSyntax`). Imports with comments, `import x = require(…)` and other
+declarations are not rewritten.
+
 **Parameters**
 
 | Name | Default | Description |
@@ -18021,6 +19121,8 @@ deliberately tag a type) are left alone.
 **Variables should not be used before their declaration** (incubating)
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: suspicious, scope
+
+Measured precision: too few findings to measure (1 of 1 labeled findings correct, every finding reviewed)
 
 Flags a `let`, `const`, or `class` binding that is used before its declaration has run, in the
 same function: `print(total); const total = 1;` or `const size = size + 1;`.
@@ -18055,6 +19157,8 @@ and never reported.
 **Values assigned to variables should be read**
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: unused, suspicious
+
+Measured precision: not enough labeled findings yet (9 of 9 labeled findings correct so far)
 
 Flags values stored in a local variable that can never be read: the variable is
 assigned again before anything reads it, or the function ends (or returns) first.
@@ -18112,6 +19216,8 @@ function next(ids) {
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: exceptions, redundant
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Flags a `catch` clause whose only statement throws the caught value again, unchanged:
 `catch (e) { throw e; }`.
 
@@ -18148,6 +19254,8 @@ different value or a wrapper, and destructured catch parameters.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: redundant
 
+Measured precision: **100%** (32 of 32 labeled findings correct)
+
 Flags `+` between two string (or template) literals on the same line.
 
 **Why:** joining two literals produces a constant the author could simply have written as one
@@ -18168,6 +19276,8 @@ const long = 'first part of a long sentence ' +
 **Useless constructors should be removed**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: redundant
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Flags class constructors that do exactly what the implicit default constructor
 would do: an empty constructor in a class without `extends`, or a constructor in a derived class
@@ -18203,6 +19313,8 @@ class Square extends Shape {
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: redundant, modules
 
+Measured precision: too few findings to measure (1 of 1 labeled findings correct, every finding reviewed)
+
 Flags `export {}` in a file that already imports or exports something else.
 
 **Why:** an empty `export {}` has exactly one purpose: turning a file without any `import` or
@@ -18229,7 +19341,9 @@ export {};                     // compliant: makes this file a module
 
 **Unnecessary escape characters should be removed**
 
-Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: redundant, regex
+Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: redundant, regex · Fix available (`mote fix`)
+
+Measured precision: **100%** (34 of 34 labeled findings correct)
 
 Flags backslashes that do not change the meaning of the next character in strings, template
 literals, and regular expression literals: `'\:'`, `` `\"` ``, `/\#/`, `/[\.]/`.
@@ -18257,11 +19371,20 @@ strings (backslashes are not escapes there), and regular expressions with the `u
 (where an unnecessary escape is already a syntax error, or required by the syntax). Inside
 character classes, `\-`, `\^`, `\[`, `\]`, `\/`, and `\\` are never reported.
 
+**Fix available.** `mote fix` deletes the backslash: the literal keeps its value (an unknown
+escape stands for the character itself), and for a regular expression the pattern matches the
+same. In strings and templates, a backslash before a character that is special in regular
+expressions (`\d`, `\s`, `\w`, `\.`, `\(` …) is reported but not removed: the author may
+have meant a literal backslash (`'\\d'`), which only a person can tell. Directives such as
+`'use strict'` are never rewritten.
+
 ### js/no-useless-rename
 
 **Values should not be renamed to the same name**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: redundant
+
+Measured precision: not enough labeled findings yet (1 of 1 labeled findings correct so far)
 
 Flags renames to the same name: `{ a: a }` in destructuring,
 `import { a as a }`, and `export { a as a }`.
@@ -18282,7 +19405,9 @@ import { readFile as read } from 'fs';       // compliant: a real rename
 
 **A bare 'return' should not end a function, nor 'continue' a loop body**
 
-Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: redundant
+Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: redundant · Fix available (`mote fix`)
+
+Measured precision: not enough labeled findings yet (2 of 2 labeled findings correct so far)
 
 Flags a bare `return;` that is the last statement of a function body, and a `continue;`
 that is the last statement of a loop body.
@@ -18317,11 +19442,16 @@ function save(item) {
 }
 ```
 
+**Fix available.** `mote fix` deletes the statement: control reaches the end of the function (or
+of the loop body) the same way without it.
+
 ### js/no-var
 
 **Use let or const instead of var**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: es2015, style
+
+Measured precision: not enough labeled findings yet (8 of 8 labeled findings correct so far)
 
 Flags `var` declarations.
 
@@ -18348,6 +19478,8 @@ requires `var` there.
 **Primitive types should be used instead of wrapper object types**
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: typescript
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Flags the built-in wrapper object types `String`, `Number`, `Boolean`, `BigInt`,
 `Symbol`, and `Object` used as types.
@@ -18377,6 +19509,8 @@ let options: object = {};                  // compliant
 **Values that are not functions should not be called** (incubating)
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: suspicious
+
+Measured precision: too few findings to measure (2 of 2 labeled findings correct, every finding reviewed)
 
 Flags calls and `new` expressions that always throw a `TypeError` because the callee is not a
 function or not a constructor: a literal called like a function (`'text'()`, `[a, b]()`,
@@ -18411,6 +19545,8 @@ the same file whose binding is never reassigned.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~1 min · Tags: conventions, declarations
 
+Measured precision: **100%** (22 of 22 labeled findings correct)
+
 Flags `var`, `let` and `const` statements that declare more than one variable.
 
 **Why:** one name per statement is easier to read, to annotate with a type or a comment, to
@@ -18437,6 +19573,8 @@ Off by default: part of the opt-in `conventions` set.
 **Values should not be overwritten before they are read**
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: suspicious, copy-paste
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Flags a property or map entry that is written and then, a statement or two later,
 written again before anything could read it: `obj.a = 1; obj.a = 2;` or
@@ -18472,6 +19610,8 @@ and test files, which often assign twice on purpose to exercise setters.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: array, confusing
 
+Measured precision: **100%** (41 of 41 labeled findings correct)
+
 Flags `list.find(…)` (or `findLast`) whose result is only used as a condition:
 `if (users.find((u) => u.admin))`, `!items.find(…)`, `Boolean(list.find(…))`, or a local
 `const found = list.find(…)` that is only ever tested (`if (!found) throw …`).
@@ -18506,6 +19646,8 @@ every use in one of those positions.
 **Callbacks should be arrow functions when they do not need their own 'this'**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~2 min · Tags: conventions, es2015
+
+Measured precision: **100%** (27 of 27 labeled findings correct)
 
 Flags anonymous `function` expressions passed as callbacks when an arrow function would
 behave the same: the function does not use `this`, `arguments`, `super` or `new.target`, and is
@@ -18545,7 +19687,9 @@ Off by default: part of the opt-in `conventions` set.
 
 **'as const' should be used instead of repeating a literal type**
 
-Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: typescript, redundant
+Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: typescript, redundant · Fix available (`mote fix`)
+
+Measured precision: not enough labeled findings yet (5 of 5 labeled findings correct so far)
 
 Flags a literal type that merely repeats the literal value next to it:
 `let mode: 'dark' = 'dark'`, `'dark' as 'dark'`, `<'dark'>'dark'`, and class properties declared
@@ -18567,11 +19711,18 @@ let mode = 'dark' as const;         // compliant
 let mode: 'dark' | 'light' = 'dark'; // compliant: a wider type on purpose
 ```
 
+**Fix available.** `mote fix` writes `as const` in place of the repeated literal type (`'dark'
+as 'dark'` → `'dark' as const`), and for a variable moves it to the value (`let mode: 'dark' =
+'dark'` → `let mode = 'dark' as const`). The type is the same literal type, and types do not
+exist at run time. Class properties are reported but not rewritten.
+
 ### js/prefer-const
 
 **Variables that are never reassigned should be declared with 'const'**
 
-Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: convention
+Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~1 min · Tags: convention · Fix available (`mote fix`)
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Flags `let` declarations whose variables are never assigned again after being
 initialized, and `let x;` declarations whose only assignment follows in the same block.
@@ -18606,6 +19757,12 @@ reassigned (`let { a, b } = obj; b = 1;`) is reported too, naming the variables 
 `const` (the declaration has to be split). Top-level `let` in non-module scripts is not reported:
 another script can assign it.
 
+**Fix available.** `mote fix` replaces `let` with `const` in a declaration none of whose
+variables is ever assigned again and each of which has a value (or which heads a `for…of` /
+`for…in` loop): the bindings behave the same, `const` only forbids an assignment that never
+happens. Declarations that need moving (`let x; x = …;`) or splitting are reported but not
+fixed.
+
 **Parameters**
 
 | Name | Default | Description |
@@ -18617,6 +19774,8 @@ another script can assign it.
 **Index loops that only read the current element should be 'for…of' loops**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~2 min · Tags: conventions, es2015
+
+Measured precision: **100%** (20 of 20 labeled findings correct)
 
 Flags index loops (`for (let i = 0; i < list.length; i++)`) whose counter is only used to
 read the current element (`list[i]`).
@@ -18656,6 +19815,8 @@ Off by default: part of the opt-in `conventions` set.
 
 Severity: **MEDIUM** · Quality: reliability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: suspicious, numbers
 
+Measured precision: not enough labeled findings yet (12 of 12 labeled findings correct so far)
+
 Flags calls to the global `isNaN()` and `isFinite()` whose argument may not be a number.
 
 **Why:** both functions convert their argument to a number before testing it, and the conversion
@@ -18691,6 +19852,8 @@ a call is reported only when the argument is visibly something else: a string, o
 **Private members that are never reassigned should be readonly**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~1 min · Tags: typescript, immutability, conventions
+
+Measured precision: **100%** (39 of 39 labeled findings correct)
 
 Flags private class members (TypeScript `private` fields, parameter properties, and `#name`
 fields) that are never assigned after construction and could be declared `readonly`.
@@ -18728,6 +19891,8 @@ states a style of declaring immutability rather than finding a defect.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: es2015, convention
 
+Measured precision: not enough labeled findings yet (3 of 3 labeled findings correct so far)
+
 Flags uses of the implicit `arguments` object inside functions.
 
 **Why:** `arguments` is not a real array (no `map`, `slice`, or `forEach` without borrowing them
@@ -18755,6 +19920,8 @@ function sum(...values) {                                               // compl
 **Spread syntax should be used instead of '.apply()'**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: es2015, convention
+
+Measured precision: not enough labeled findings yet (6 of 6 labeled findings correct so far)
 
 Flags `Function.prototype.apply` calls that only exist to pass an array as the
 argument list: `fn.apply(null, args)`, `obj.method.apply(obj, args)`.
@@ -18786,6 +19953,8 @@ or a function returned by a call.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~2 min · Tags: convention, conventions
 
+Measured precision: not enough labeled findings yet (9 of 9 labeled findings correct so far)
+
 Flags string concatenation with `+` that mixes string literals with other values.
 
 **Why:** a template literal shows the resulting text in one piece, with the values in place, and
@@ -18806,6 +19975,8 @@ const sum = a + b;                     // compliant: no string literal
 **Type-testing functions should be declared as type predicates** (incubating)
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: typescript, types
+
+Measured precision: too few findings to measure (3 of 3 labeled findings correct, every finding reviewed)
 
 Flags TypeScript functions declared to return `boolean` whose whole body is a `typeof` or
 `instanceof` test of their parameter: `function isDate(v: unknown): boolean { return v instanceof
@@ -18842,6 +20013,8 @@ that callers reach through the base type, where a predicate narrows nothing).
 **Errors thrown from a catch block should keep the caught error as their cause**
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: error-handling
+
+Measured precision: not enough labeled findings yet (10 of 10 labeled findings correct so far)
 
 Flags a new built-in error (`Error`, `TypeError`, …) thrown from a `catch` block that does not
 keep the caught error as its `cause`.
@@ -18897,6 +20070,8 @@ arguments is accepted, as it was before.
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: suspicious
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Flags `reduce(fn)` and `reduceRight(fn)` without an initial value on an array that can plainly be
 empty: the result of `filter(…)`, of `Object.keys/values/entries(…)`, or an empty literal.
 
@@ -18921,6 +20096,8 @@ not reported.
 **Nested conditions should not repeat a test the enclosing if already decided** (incubating)
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: suspicious, redundant
+
+Measured precision: too few findings to measure (1 of 1 labeled findings correct, every finding reviewed)
 
 Flags an `if` nested directly in another `if` that tests a condition the outer one already decided:
 the same condition again inside the `then` branch (always true), its negation there (always false),
@@ -18958,6 +20135,8 @@ the first statement of the branch, or follows statements that contain no calls, 
 **Regular expressions should not contain redundant syntax**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: regex, redundant, readability
+
+Measured precision: **100%** (24 of 24 labeled findings correct)
 
 Flags parts of regular expression literals that say nothing or say it the long way:
 quantifiers of exactly one (`a{1}`, `a{1,1}`), long forms of the short quantifiers (`{0,}` for `*`,
@@ -19014,6 +20193,8 @@ as a use.
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: regex, suspicious
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Flags a regular expression literal that contains a raw, invisible control character (U+0000 to
 U+001F other than tab) typed directly into the pattern.
 
@@ -19037,6 +20218,8 @@ binary protocols) is legitimate. A raw tab is not reported either.
 **Lazy quantifiers should not end a searched regular expression** (incubating)
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: regex, suspicious
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Flags a lazy quantifier (`*?`, `+?`, `??`, `{n,m}?`) at the very end of a regular expression
 literal that is searched for in a string: the pattern of `replace`, `replaceAll`, `split`,
@@ -19070,6 +20253,8 @@ whose use is not visible where they are written.
 **Regular expressions should not be too complex**
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~20 min · Tags: regex, complexity, readability
+
+Measured precision: not enough labeled findings yet (9 of 9 labeled findings correct so far)
 
 Flags regular expression literals whose structure scores above `max` (default 20).
 
@@ -19112,6 +20297,8 @@ Only literals (`/…/`) are checked.
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: generators, suspicious
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Flags generator functions (`function*`) whose body never uses `yield`.
 
 **Why:** calling a generator does not run its body; it returns an iterator, and the body only runs
@@ -19147,6 +20334,8 @@ where yielding nothing is a legitimate answer.
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: suspicious, typo
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Flags assignments written as `x =+ y`, `x =- y`, or `x =! y`: the characters of a compound
 operator (`+=`, `-=`, `!=`) typed in the wrong order.
 
@@ -19172,6 +20361,8 @@ Only the typo layout is reported: the unary operator directly after `=` and foll
 **React hooks should be called unconditionally at the top level** (incubating)
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~15 min · Tags: react, hooks
+
+Measured precision: too few findings to measure (2 of 2 labeled findings correct, every finding reviewed)
 
 Flags React hooks (`useState`, `useEffect`, any `useXxx(…)`) that are not called
 unconditionally at the top level of a function component or custom hook: calls inside an `if`, a
@@ -19219,6 +20410,8 @@ function Profile({ user }) {
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: tests, suspicious, copy-paste
 
+Measured precision: too few findings to measure (3 of 3 labeled findings correct, every finding reviewed)
+
 Flags test assertions that compare a value with itself: `expect(total).toBe(total)`,
 `assert.equal(result, result)`, `expect(a.id).to.equal(a.id)`.
 
@@ -19246,6 +20439,8 @@ subsequent calls', …)`): reading a getter twice is then the point of the test.
 **Skipped tests should say why they are skipped**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: tests
+
+Measured precision: **100%** (40 of 40 labeled findings correct)
 
 Flags skipped tests and suites (`it.skip`, `test.skip`, `describe.skip`, `xit`, `xdescribe`, …)
 with no comment saying why.
@@ -19277,6 +20472,8 @@ checked.
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: suspicious
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Flags `.sort()` and `.toSorted()` called without a compare function on arrays that are known to
 hold numbers.
 
@@ -19307,6 +20504,8 @@ result of `.map(Number)`, `.map(parseInt)`, or `.map(parseFloat)`.
 **Global or sticky regular expressions should not be reused with test()** (incubating)
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: regex, suspicious
+
+Measured precision: too few findings to measure (1 of 1 labeled findings correct, every finding reviewed)
 
 Flags `.test()` calls on a shared regular expression with the global (`g`) or sticky (`y`)
 flag: a constant such as `const WORD = /\w+/g` whose `.test()` runs again and again — in another
@@ -19359,6 +20558,8 @@ function firstKey(line) {
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: suspicious
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Flags a call that passes two arguments named like the function's parameters, but in each other's
 positions: `resize(height, width)` for `function resize(width, height)`.
 
@@ -19390,6 +20591,8 @@ deliberate mirror of the whole call), and recursive calls are not checked either
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~10 min · Tags: tests
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Flags a file named as a test (`*.test.*`, `*.spec.*`) that declares suites (`describe`) but
 registers no test case: no `it`, `test` or `specify` call anywhere in it.
 
@@ -19420,6 +20623,8 @@ an imported function at the top level or inside a suite (custom test factories s
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~30 min · Tags: tests, flaky
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Flags retries configured inside test code: `jest.retryTimes(n)`, Mocha's `this.retries(n)` and
 `it(…).retries(n)`, a `retry`/`retries` option passed to a test or suite (`it('…', { retry: 3 }, …)`),
 and Playwright's `test.describe.configure({ retries: n })`.
@@ -19449,6 +20654,8 @@ in the runner's configuration file (a CI policy, not test code), and files that 
 **Tests should contain an assertion**
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~10 min · Tags: tests
+
+Measured precision: **100%** (5 of 5 labeled findings correct, every finding reviewed)
 
 Flags test cases (`it`, `test`, `specify`) whose body contains no assertion: no `expect`,
 `assert`, `should`, verification or failure call, directly or through a helper function of the
@@ -19497,6 +20704,8 @@ callback is not written inline, and tests that call `pending()` or `skip()`.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~10 min · Tags: todo
 
+Measured precision: not enough labeled findings yet (8 of 8 labeled findings correct so far)
+
 Flags comments containing a `TODO` marker.
 
 A TODO records work that was knowingly left unfinished. Left in place, it silently becomes permanent and the missing behaviour may surprise users.
@@ -19513,6 +20722,8 @@ A TODO records work that was knowingly left unfinished. Left in place, it silent
 **Functions should not have too many parameters**
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~20 min · Tags: brain-overload
+
+Measured precision: not enough labeled findings yet (9 of 9 labeled findings correct so far)
 
 Flags functions that declare more than `max` parameters (default 7).
 
@@ -19539,6 +20750,8 @@ createUser(name, contact, address) { ... }
 **'this' should not be used at the top level of a module** (incubating)
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: suspicious, modules
+
+Measured precision: too few findings to measure (3 of 3 labeled findings correct, every finding reviewed)
 
 Flags `this` at the top level of an ES module: outside every function and class body,
 including inside arrow functions at the top level, which take `this` from the module.
@@ -19572,6 +20785,8 @@ namespaces.
 **Triple-slash reference directives should be replaced by imports** (incubating)
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: no · Remediation: ~2 min · Tags: conventions, typescript, modules
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Flags triple-slash reference directives (`/// <reference path="…" />`, and
 `/// <reference types="…" />` for a package the file also imports) in TypeScript source files.
@@ -19615,6 +20830,8 @@ Off by default: part of the opt-in `conventions` set.
 **Promises inside a try block should be awaited** (incubating)
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: async, promise, error-handling
+
+Measured precision: too few findings to measure (4 of 4 labeled findings correct, every finding reviewed)
 
 Flags a promise inside the `try` block of an `async` function that is returned or left running
 without `await`, so the surrounding `catch` never sees its rejection (and a `finally` block runs
@@ -19671,6 +20888,8 @@ values on their own, are skipped.
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~1 min · Tags: regex, suspicious
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Flags a Unicode property escape (`\p{…}`, `\P{…}`) or a code point escape (`\u{…}`) in a regular
 expression literal without the `u` or `v` flag.
 
@@ -19692,6 +20911,8 @@ never matches what it says.
 **Collections that are filled should be read**
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: unused, suspicious
+
+Measured precision: not enough labeled findings yet (7 of 7 labeled findings correct so far)
 
 Flags a local array, `Map`, or `Set` that the code fills (`push`, `add`, `set`, `a[i] = …`) but
 never reads.
@@ -19732,6 +20953,8 @@ not reported. Top-level variables of classic scripts (globals) are skipped.
 
 Severity: **MEDIUM** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~5 min · Tags: tests
 
+Measured precision: **100%** (40 of 40 labeled findings correct)
+
 Flags assertions that code throws without saying what it should throw:
 `expect(fn).toThrow()`, `toThrowError()`, `expect(p).rejects.toThrow()`, chai's
 `expect(fn).to.throw()` and `should.throw()`, and `assert.throws(fn)` / `assert.rejects(p)` with no
@@ -19761,6 +20984,8 @@ snapshot matchers. Only test files are checked.
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: suspicious
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Flags comparisons with `NaN` (`x === NaN`, `x != Number.NaN`, `x < NaN`) and `switch`
 statements that use `NaN` as the discriminant or as a `case`.
 
@@ -19780,6 +21005,8 @@ if (Number.isNaN(value)) {}   // compliant
 **A variable should not be assigned its own post-increment** (incubating)
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: suspicious
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Flags a variable assigned its own post-increment or post-decrement: `i = i++` or
 `this.count = this.count--`.
@@ -19801,6 +21028,8 @@ next = count++;       // compliant: a different variable receives the old value
 **Regex quantifiers should not make a part of the pattern ineffective** (incubating)
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: regex, suspicious
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Flags quantifiers in regular expression literals that make a part of the pattern do nothing:
 
@@ -19835,6 +21064,8 @@ Only regular expression literals are checked. Quantifiers of one or more on an a
 **Expectations should call a matcher**
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: tests, suspicious
+
+Measured precision: not enough labeled findings yet (15 of 15 labeled findings correct so far)
 
 Flags test expectations that never assert anything: `expect(value);` on its own, or a matcher
 that is named but not called, such as `expect(value).toBeTruthy;`.
@@ -19879,6 +21110,8 @@ complete (`const expectName = () => expect(user.name);`).
 
 Severity: **HIGH** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~2 min · Tags: suspicious
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Flags `typeof` comparisons against a string that `typeof` can never return, such as
 `typeof x === 'strnig'`, `typeof x == 'array'`, or `typeof x === undefined`.
 
@@ -19902,6 +21135,8 @@ if (typeof value === 'function') {}   // compliant
 **The result of a function that returns nothing should not be used** (incubating)
 
 Severity: **MEDIUM** · Quality: reliability · Kind: bug · Enabled by default: yes · Remediation: ~5 min · Tags: suspicious
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Flags code that uses the result of calling a function of the same file that never returns a value:
 `const user = loadUser(id)` when `loadUser` has no `return` with a value.
@@ -19947,6 +21182,8 @@ arrow bodies, `void f()`, and arguments of test assertions.
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: mote
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Flags suppressions that do not name the rules they silence: `mote-ignore:` without a rule list, and `NOSONAR` comments when compatibility mode is on.
 
 Blanket suppressions hide every current and future finding on the line, including real bugs.
@@ -19959,6 +21196,8 @@ Blanket suppressions hide every current and future finding on the line, includin
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: mote
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Reported when a file could not be analyzed at all: it could not be read, or the analyzer failed on it. Never fails a quality gate.
 
 **How to fix:** nothing to change in the code; please report the problem with the file attached if possible.
@@ -19968,6 +21207,8 @@ Reported when a file could not be analyzed at all: it could not be read, or the 
 **Files should parse without syntax errors**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: mote
+
+Measured precision: not enough labeled findings yet (2 of 2 labeled findings correct so far)
 
 Reported once per file whose parser had to recover from syntax errors.
 
@@ -19981,6 +21222,8 @@ Results for such files can be incomplete: rules may miss code the parser could n
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: mote
 
+Measured precision: not measured: no findings in the benchmark repositories
+
 Flags `mote-ignore` suppressions without a reason after the colon (when `suppressions.require_reason` is on, the default).
 
 A reason lets reviewers judge whether the suppression is still justified.
@@ -19992,6 +21235,8 @@ A reason lets reviewers judge whether the suppression is still justified.
 **Suppressions should suppress something**
 
 Severity: **LOW** · Quality: maintainability · Kind: code-smell · Enabled by default: yes · Remediation: ~2 min · Tags: mote
+
+Measured precision: not measured: no findings in the benchmark repositories
 
 Flags `mote-ignore` comments that did not suppress any finding.
 

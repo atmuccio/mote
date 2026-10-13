@@ -75,7 +75,11 @@ impl<'t> JavaRule<'t> for CompareToWithoutComparable {
         let (Some(param), None) = (params.next(), params.next()) else {
             return;
         };
-        let Some(pty) = param.field(Field::Type) else {
+        // A varargs parameter (`compareTo(T... o)`) is not the one of `Comparable`.
+        let Some(pty) = param
+            .field(Field::Type)
+            .filter(|_| kind(param) == "formal_parameter")
+        else {
             return;
         };
         let Some(class) = ctx.parent(node).and_then(|b| ctx.parent(b)) else {

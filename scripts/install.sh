@@ -111,7 +111,7 @@ resolve_version() {
     elif ! is_true "${INPUT_BUILD_FROM_SOURCE:-false}"; then # a source build can use the default branch
       local why="API: HTTP ${API_STATUS:-none}"
       if [ -n "$tag" ]; then why="its tag '$tag' is not a version"; fi
-      die "Could not resolve the latest release of $REPO ($why). Set 'version' to a release, e.g. 0.1.0."
+      die "Could not resolve the latest release of $REPO ($why). Set 'version' to a release, e.g. 0.2.0."
     fi
   fi
   VERSION=$v
@@ -173,7 +173,7 @@ install_from_release() {
   local asset base work expected actual found
   if [ "$VERSION" = latest ]; then
     # Asset names carry the version, so an unresolved "latest" has nothing to download.
-    warn "No concrete version of $REPO to download; set 'version' (e.g. 0.1.0)."
+    warn "No concrete version of $REPO to download; set 'version' (e.g. 0.2.0)."
     return 1
   fi
   asset=$(asset_name)

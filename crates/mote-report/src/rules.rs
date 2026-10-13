@@ -1,8 +1,10 @@
 //! Rule catalog renderers (`mote rules`, `mote rules explain`, `docs/rules.md`).
 
 use crate::markdown::cell;
+use crate::precision::{PrecisionData, PrecisionView};
 use mote_core::{ParamValue, RuleStatus};
 use mote_engine::RuleInfo;
+use serde::Serialize;
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
 use std::io::{self, Write};
@@ -73,9 +75,32 @@ pub fn write_text(rules: &[RuleInfo], w: &mut dyn Write) -> io::Result<()> {
     writeln!(w, "\n{} rules", rules.len())
 }
 
-/// The rules as a JSON array.
-pub fn write_json(rules: &[RuleInfo], w: &mut dyn Write) -> io::Result<()> {
-    serde_json::to_writer_pretty(&mut *w, rules)?;
+/// One rule in JSON outputs: its `RuleInfo` fields in order, then a `precision` object
+/// ([`PrecisionView`]) when measured precision data is given.
+#[derive(Clone, Debug, Serialize)]
+pub struct RuleJson<'a> {
+    #[serde(flatten)]
+    rule: &'a RuleInfo,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    precision: Option<PrecisionView<'a>>,
+}
+
+/// One rule as JSON (`mote rules explain --format json`, the MCP `rule` tool).
+pub fn rule_json<'a>(r: &'a RuleInfo, precision: Option<&'a PrecisionData>) -> RuleJson<'a> {
+    RuleJson {
+        rule: r,
+        precision: precision.map(|p| p.json_for(&r.id)),
+    }
+}
+
+/// The rules as a JSON array (with a `precision` object per rule when data is given).
+pub fn write_json(
+    rules: &[RuleInfo],
+    precision: Option<&PrecisionData>,
+    w: &mut dyn Write,
+) -> io::Result<()> {
+    let list: Vec<RuleJson<'_>> = rules.iter().map(|r| rule_json(r, precision)).collect();
+    serde_json::to_writer_pretty(&mut *w, &list)?;
     writeln!(w)
 }
 
@@ -114,7 +139,7 @@ fn params_table(r: &RuleInfo, s: &mut String) {
     s.push('\n');
 }
 
-fn rule_section(r: &RuleInfo, heading: &str, s: &mut String) {
+fn rule_section(r: &RuleInfo, heading: &str, precision: Option<String>, s: &mut String) {
     let _ = writeln!(s, "{heading} {}\n", r.id);
     let _ = writeln!(s, "**{}**{}\n", r.name, status_note(r));
     let mut meta = format!(
@@ -128,7 +153,13 @@ fn rule_section(r: &RuleInfo, heading: &str, s: &mut String) {
     if !r.tags.is_empty() {
         meta.push_str(&format!(" · Tags: {}", r.tags.join(", ")));
     }
+    if r.fixable {
+        meta.push_str(" · Fix available (`mote fix`)");
+    }
     let _ = writeln!(s, "{meta}\n");
+    if let Some(line) = precision {
+        let _ = writeln!(s, "{line}\n");
+    }
     let desc = r.description.trim();
     if !desc.is_empty() {
         // Demote headings inside descriptions so they nest under the rule heading (not inside
@@ -150,14 +181,18 @@ fn rule_section(r: &RuleInfo, heading: &str, s: &mut String) {
 }
 
 /// One rule as Markdown (`mote rules explain --format markdown`).
-pub fn explain_markdown(r: &RuleInfo) -> String {
+pub fn explain_markdown(r: &RuleInfo, precision: Option<&PrecisionData>) -> String {
     let mut s = String::new();
-    rule_section(r, "#", &mut s);
+    rule_section(r, "#", precision.map(|p| p.line(&r.id, true, true)), &mut s);
     s
 }
 
 /// One rule as text (`mote rules explain`).
-pub fn explain_text(r: &RuleInfo, w: &mut dyn Write) -> io::Result<()> {
+pub fn explain_text(
+    r: &RuleInfo,
+    precision: Option<&PrecisionData>,
+    w: &mut dyn Write,
+) -> io::Result<()> {
     writeln!(w, "{} — {}{}", r.id, r.name, status_note(r))?;
     writeln!(
         w,
@@ -171,6 +206,15 @@ pub fn explain_text(r: &RuleInfo, w: &mut dyn Write) -> io::Result<()> {
     )?;
     if !r.tags.is_empty() {
         writeln!(w, "Tags: {}", r.tags.join(", "))?;
+    }
+    if r.fixable {
+        writeln!(
+            w,
+            "Fix available: `mote fix` shows the rewrite of its findings, `mote fix --write` applies it"
+        )?;
+    }
+    if let Some(p) = precision {
+        writeln!(w, "{}", p.line(&r.id, true, false))?;
     }
     if !r.params.is_empty() {
         writeln!(w, "\nParameters:")?;
@@ -196,8 +240,9 @@ pub fn explain_text(r: &RuleInfo, w: &mut dyn Write) -> io::Result<()> {
     )
 }
 
-/// The full catalog as a Markdown document (`docs/rules.md`).
-pub fn render_markdown(rules: &[RuleInfo]) -> String {
+/// The full catalog as a Markdown document (`docs/rules.md`); with precision data, an
+/// introduction to the measurement and a precision line per rule.
+pub fn render_markdown(rules: &[RuleInfo], precision: Option<&PrecisionData>) -> String {
     let mut by_lang: BTreeMap<&str, Vec<&RuleInfo>> = BTreeMap::new();
     for r in rules {
         by_lang.entry(r.language.as_str()).or_default().push(r);
@@ -231,6 +276,13 @@ and enablement in `.mote.yaml` (`mote config explain <file>` shows the effective
         );
     }
     s.push('\n');
+    if let Some(p) = precision {
+        let _ = writeln!(
+            s,
+            "{}",
+            p.intro_markdown(rules.iter().map(|r| r.id.as_str()))
+        );
+    }
     for l in &langs {
         let list = &by_lang[l];
         let _ = writeln!(s, "## {}\n", language_name(l));
@@ -251,7 +303,12 @@ and enablement in `.mote.yaml` (`mote config explain <file>` shows the effective
         }
         s.push('\n');
         for r in list.iter() {
-            rule_section(r, "###", &mut s);
+            rule_section(
+                r,
+                "###",
+                precision.map(|p| p.line(&r.id, false, true)),
+                &mut s,
+            );
         }
     }
     while s.ends_with("\n\n") {
@@ -271,19 +328,90 @@ mod tests {
         let mut out = Vec::new();
         write_text(&rules, &mut out).unwrap();
         assert_snapshot("rules.txt", &String::from_utf8(out).unwrap());
-        let md = render_markdown(&rules);
+        let md = render_markdown(&rules, None);
         assert_snapshot("rules.md", &md);
         assert!(md.contains("[`java/self-assignment`](#javaself-assignment)"));
         assert!(md.contains("| `threshold` | `15` | Maximum allowed. |"));
         let mut out = Vec::new();
-        write_json(&rules, &mut out).unwrap();
+        write_json(&rules, None, &mut out).unwrap();
         let v: Vec<RuleInfo> = serde_json::from_slice(&out).unwrap();
         assert_eq!(v, rules);
         let mut out = Vec::new();
-        explain_text(&rules[3], &mut out).unwrap();
+        explain_text(&rules[3], None, &mut out).unwrap();
         let t = String::from_utf8(out).unwrap();
         assert!(t.starts_with("java/self-assignment — Self-assignment"));
         assert!(t.contains("threshold (default 15)"));
-        assert!(explain_markdown(&rules[3]).starts_with("# java/self-assignment"));
+        assert!(!t.contains("Measured precision"));
+        assert!(explain_markdown(&rules[3], None).starts_with("# java/self-assignment"));
+    }
+
+    #[test]
+    fn catalog_with_precision() {
+        let rules = with_base().rules;
+        let data = crate::precision::tests::sample();
+        // JSON: the RuleInfo fields are unchanged, `precision` is added.
+        let mut out = Vec::new();
+        write_json(&rules, Some(&data), &mut out).unwrap();
+        let v: Vec<RuleInfo> = serde_json::from_slice(&out).unwrap();
+        assert_eq!(v, rules);
+        let raw: Vec<serde_json::Value> = serde_json::from_slice(&out).unwrap();
+        assert_eq!(raw[2]["id"], "java/empty-catch-block");
+        assert_eq!(raw[2]["precision"]["state"], "measured");
+        assert_eq!(raw[2]["precision"]["tp"], 59);
+        assert_eq!(raw[0]["precision"]["state"], "not-measured-yet");
+        let one = |p| serde_json::to_value(rule_json(&rules[4], p)).unwrap();
+        assert_eq!(one(Some(&data))["precision"]["state"], "too-few-labels");
+        assert!(one(None).get("precision").is_none());
+        // Without data the bytes are those of the plain RuleInfo list (field order kept).
+        let mut plain = Vec::new();
+        serde_json::to_writer_pretty(&mut plain, &rules).unwrap();
+        plain.push(b'\n');
+        let mut none = Vec::new();
+        write_json(&rules, None, &mut none).unwrap();
+        assert_eq!(
+            String::from_utf8(none).unwrap(),
+            String::from_utf8(plain).unwrap()
+        );
+        assert!(String::from_utf8(out.clone())
+            .unwrap()
+            .contains("\"fixable\": false,\n    \"precision\": {\n      \"state\""));
+        // Text: one line after the metadata.
+        let mut out = Vec::new();
+        explain_text(&rules[2], Some(&data), &mut out).unwrap();
+        let t = String::from_utf8(out).unwrap();
+        // After the metadata (and tags), before the description.
+        let line = t
+            .lines()
+            .position(|l| l == "Measured precision: 98% (59 of 60 labeled findings correct, measured 2026-10-12 on 34 open-source repositories)")
+            .unwrap_or_else(|| panic!("{t}"));
+        assert!(line >= 2 && t.lines().nth(line + 1) == Some(""), "{t}");
+        let md = explain_markdown(&rules[2], Some(&data));
+        assert!(
+            md.contains("\n\nMeasured precision: **98%** (59 of 60 labeled findings correct, measured 2026-10-12 on 34 open-source repositories)\n\n"),
+            "{md}"
+        );
+        // Catalog: the introduction before the first language, a short line per rule.
+        let md = render_markdown(&rules, Some(&data));
+        let intro = md.find("## Measured precision").expect("intro");
+        assert!(intro < md.find("## Java").unwrap(), "{md}");
+        assert!(
+            md.contains("Of the 5 rules listed here: 2 with a measured precision"),
+            "{md}"
+        );
+        assert!(
+            md.contains("\n\nMeasured precision: **98%** (59 of 60 labeled findings correct)\n\n"),
+            "{md}"
+        );
+        assert!(
+            md.contains(
+                "Measured precision: not measured: no findings in the benchmark repositories"
+            ),
+            "{md}"
+        );
+        assert!(
+            md.contains("Measured precision: not measured yet: the rule is newer than the last measurement (2026-10-12)"),
+            "{md}"
+        );
+        assert!(!render_markdown(&rules, None).contains("Measured precision"));
     }
 }

@@ -28,6 +28,8 @@ const INSTRUCTIONS: &str = "Mote finds bugs, code smells, complexity and duplica
 Flow: `scan` (returns scan_id + counts) → `summary` or `work_units` (disjoint file sets, one per \
 parallel fixer; no file is in two units) → `findings` (per unit, paginated) → edit → `verify` \
 (re-analyzes only those files: each prior finding is fixed/still_present, plus introduced ones). \
+Findings with a `fix` have a mechanical, behaviour-preserving rewrite: `fixes` returns the edits and \
+a unified diff per file (nothing is written; apply it, then `verify`). \
 Finding ids are stable while the flagged code is unchanged. `rule` explains a rule and how to fix \
 it; `explain_config` shows the effective rules for a file. With `base` (e.g. origin/main) findings \
 are classified new/unchanged/worsened and new_only focuses on new code.";

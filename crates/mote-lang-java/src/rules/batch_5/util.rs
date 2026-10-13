@@ -30,12 +30,11 @@ pub(super) struct FieldIds {
     pub key: u16,
     pub operand: u16,
     pub dimensions: u16,
-    pub element: u16,
     pub constructor: u16,
 }
 
 pub(super) static F: LazyLock<FieldIds> = LazyLock::new(|| {
-    let lang = tree_sitter::Language::new(tree_sitter_java::LANGUAGE);
+    let lang = tree_sitter::Language::new(tree_sitter_java_orchard::LANGUAGE);
     let id = |n: &str| lang.field_id_for_name(n).map_or(0, |f| f.get());
     FieldIds {
         name: id("name"),
@@ -58,7 +57,6 @@ pub(super) static F: LazyLock<FieldIds> = LazyLock::new(|| {
         key: id("key"),
         operand: id("operand"),
         dimensions: id("dimensions"),
-        element: id("element"),
         constructor: id("constructor"),
     }
 });
@@ -271,7 +269,7 @@ mod word_tests {
                    void x() { é x; xé; x } }";
         let mut parser = tree_sitter::Parser::new();
         parser
-            .set_language(&tree_sitter_java::LANGUAGE.into())
+            .set_language(&tree_sitter_java_orchard::LANGUAGE.into())
             .unwrap();
         let tree = parser.parse(src, None).unwrap();
         let file = mote_core::SourceFile {
@@ -325,12 +323,16 @@ impl<'t> Mods<'t> {
 
     /// The keyword modifier `kw` is present.
     pub(super) fn has(self, kw: &str) -> bool {
-        self.children().any(|c| !c.is_named() && kind(c) == kw)
+        self.children()
+            .filter_map(syntax::modifier_keyword)
+            .any(|c| kind(c) == kw)
     }
 
     /// The keyword token `kw`, if present (for reporting).
     pub(super) fn keyword(self, kw: &str) -> Option<Node<'t>> {
-        self.children().find(|c| !c.is_named() && kind(*c) == kw)
+        self.children()
+            .filter_map(syntax::modifier_keyword)
+            .find(|c| kind(*c) == kw)
     }
 
     /// Any annotation is present.

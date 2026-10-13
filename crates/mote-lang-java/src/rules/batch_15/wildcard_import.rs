@@ -41,8 +41,8 @@ import static java.util.Objects.requireNonNull;
 
 Parameter `allow_static` accepts static on-demand imports, which some teams allow for
 assertion and matcher libraries in tests. The rule is off by default: it is part of the
-`conventions` profile. Module imports (`import module java.base;`, Java 25) are not reported
-yet: the parser does not read that syntax."#,
+`conventions` profile. Module imports (`import module java.base;`, Java 25) are a different
+declaration, made to import the API of a whole module at once, and are not reported."#,
     ..RuleMeta::new(
         "java/wildcard-import",
         "java",

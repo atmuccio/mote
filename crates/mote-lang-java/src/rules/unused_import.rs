@@ -1,5 +1,6 @@
 //! `java/unused-import` — a file-level rule: collects uses during the walk, reports in `finish`.
 
+use crate::kinds::{k, K};
 use crate::prelude::*;
 use rustc_hash::FxHashMap;
 
@@ -12,7 +13,10 @@ pub static META: RuleMeta = RuleMeta {
     description: r#"Detects imports that serve no purpose:
 
 * single-type imports whose name is never used in the file (Javadoc references such as
-  `{@link Foo}`, `@see Foo`, and `@throws FooException` count as uses);
+  `{@link Foo}`, `@see Foo`, and `@throws FooException` count as uses, and so do the links and
+  tags of Java 23 Markdown documentation comments, `/// [Foo]`, `[Foo#bar(Baz)]`, `[text][Foo]`,
+  whatever release the file is compiled for: whether `///` is documentation depends on the JDK
+  that runs javadoc, not on the compile target, and counting a use can only remove a finding);
 * the same import written twice;
 * imports of `java.lang` classes, which are always visible;
 * imports of classes from the file's own package.
@@ -31,7 +35,16 @@ import java.lang.String;    // implicit
 import java.util.Map;       // used below
 ```
 
-Wildcard imports are never reported as unused."#,
+Wildcard imports and module imports (`import module java.base;`, Java 25) are never reported
+as unused: which of their names a file uses cannot be told from the file alone.
+
+**Fix available.** `mote fix` deletes the import (its whole line when nothing else is on it).
+That never changes what the code means: an unused name resolves nowhere, a duplicate or an
+import of the file's own package names a type that is visible anyway, and `import java.lang.*;`
+repeats the implicit import. An explicit `import java.lang.X;` whose name *is* used is reported
+but not fixed: it takes precedence over a type `X` of the file's own package or of a wildcard
+import, so deleting it could make `X` mean another class."#,
+    fixable: true,
     ..RuleMeta::new("java/unused-import", "java", "Unused or redundant import")
 };
 
@@ -114,6 +127,52 @@ impl<'t> UnusedImport<'t> {
             }
         }
     }
+
+    /// Mark type names referenced from the links of a Markdown documentation line:
+    /// `[Foo]`, `[Foo#bar(Baz)]`, `[java.util.List]` (its first segment), `[text][Foo]`.
+    /// Inline links to URLs (`[text](https://…)`) reference no program element.
+    fn scan_markdown_links(&mut self, text: &str) {
+        let mut rest = text;
+        while let Some(open) = rest.find('[') {
+            let after = &rest[open + 1..];
+            let Some(close) = after.find(']') else {
+                return;
+            };
+            let label = &after[..close];
+            rest = &after[close + 1..];
+            if rest.starts_with('(') {
+                continue;
+            }
+            // `[text][ref]` (or the collapsed `[ref][]`): the reference is in the second pair.
+            let mut reference = label;
+            if let Some(second) = rest.strip_prefix('[') {
+                if let Some(end) = second.find(']') {
+                    if end > 0 {
+                        reference = &second[..end];
+                    }
+                    rest = &second[end + 1..];
+                }
+            }
+            self.mark_reference(reference);
+        }
+    }
+
+    /// Mark the type and the parameter types of a reference `Type#member(Param, Other)`.
+    fn mark_reference(&mut self, reference: &str) {
+        let reference = reference.trim().trim_matches('`');
+        let (head, params) = match reference.split_once('(') {
+            Some((head, tail)) => (head, tail.split(')').next()),
+            None => (reference, None),
+        };
+        let ty = head.split('#').next().unwrap_or("");
+        if let Some(first) = ty.split('.').next() {
+            self.mark(first.trim());
+        }
+        for p in params.into_iter().flat_map(|p| p.split(',')) {
+            let p = p.trim().split(['<', '[', ' ', '.']).next().unwrap_or("");
+            self.mark(p);
+        }
+    }
 }
 
 impl<'t> JavaRule<'t> for UnusedImport<'t> {
@@ -122,7 +181,12 @@ impl<'t> JavaRule<'t> for UnusedImport<'t> {
     }
 
     fn kinds(&self) -> &'static [&'static str] {
-        &["identifier", "type_identifier", "block_comment"]
+        &[
+            "identifier",
+            "type_identifier",
+            "block_comment",
+            "line_comment",
+        ]
     }
 
     fn check(&mut self, node: Node<'t>, ctx: &Ctx<'t>) {
@@ -131,19 +195,37 @@ impl<'t> JavaRule<'t> for UnusedImport<'t> {
         if self.unused == 0 || node.start_byte() < ctx.header_end() {
             return;
         }
-        if kind(node) == "block_comment" {
-            let text = ctx.text(node);
-            if text.starts_with("/**") {
-                self.scan_javadoc(text);
+        match k(node) {
+            K::BlockComment => {
+                let text = ctx.text(node);
+                if text.starts_with("/**") {
+                    self.scan_javadoc(text);
+                }
             }
-        } else {
-            self.mark(ctx.text(node));
+            K::LineComment => {
+                // A line of a Markdown documentation comment (Java 23): its links and tags
+                // count on any release (`DocUse::Silences`).
+                let text = ctx.text(node);
+                if doc::is_markdown_text(text) && ctx.markdown_docs(DocUse::Silences) {
+                    self.scan_javadoc(text);
+                    self.scan_markdown_links(text);
+                }
+            }
+            _ => self.mark(ctx.text(node)),
         }
     }
 
     fn finish(&mut self, ctx: &Ctx<'t>) {
         self.init(ctx);
         let package = ctx.package_name();
+        let remove = |imp: &Import<'t>| {
+            vec![fix::delete_span(
+                ctx.source(),
+                imp.node.start_byte(),
+                imp.node.end_byte(),
+            )]
+        };
+        const REMOVE: &str = "Remove the import";
         let mut seen: Vec<(&str, bool, bool)> = Vec::new();
         for imp in ctx.imports() {
             let key = (imp.path, imp.is_static, imp.is_wildcard);
@@ -154,19 +236,25 @@ impl<'t> JavaRule<'t> for UnusedImport<'t> {
                 ctx.emit(
                     imp.node,
                     format!("Remove this duplicate import of `{}`", imp.path),
-                );
+                )
+                .fix(REMOVE, remove(imp));
                 continue;
             }
             seen.push(key);
             if !imp.is_static {
                 if imp.qualifier() == "java.lang" || (imp.is_wildcard && imp.path == "java.lang") {
-                    ctx.emit(
+                    let emitted = ctx.emit(
                         imp.node,
                         format!(
                             "Remove this import of `{}`: java.lang is imported implicitly",
                             imp.path
                         ),
                     );
+                    // A used `java.lang.X` import shadows a same-package or wildcard-imported
+                    // `X`: only the on-demand form and unused names are safe to delete.
+                    if imp.is_wildcard || self.wanted.get(imp.simple_name()) == Some(&false) {
+                        emitted.fix(REMOVE, remove(imp));
+                    }
                     continue;
                 }
                 if package.is_some_and(|p| p == imp.qualifier()) {
@@ -176,7 +264,8 @@ impl<'t> JavaRule<'t> for UnusedImport<'t> {
                             "Remove this import of `{}` from the file's own package",
                             imp.path
                         ),
-                    );
+                    )
+                    .fix(REMOVE, remove(imp));
                     continue;
                 }
             }
@@ -184,7 +273,8 @@ impl<'t> JavaRule<'t> for UnusedImport<'t> {
                 ctx.emit(
                     imp.node,
                     format!("Remove this unused import of `{}`", imp.path),
-                );
+                )
+                .fix(REMOVE, remove(imp));
             }
         }
     }

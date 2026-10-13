@@ -1,0 +1,61 @@
+import java.util.List;
+
+abstract class ModifierOrder {
+    public static final int LIMIT = 10;                       // expect: modifier-order
+    public static final int GOOD = 1;
+    public static String name;                                // expect: modifier-order
+    private static final long serialVersionUID = 1L;
+    private final List<String> items = List.of();             // expect: modifier-order
+    transient volatile int counter;
+    transient volatile int other;                             // expect: modifier-order
+
+    public synchronized void reset() {                        // expect: modifier-order
+    }
+
+    public synchronized void fine() {
+    }
+
+    protected abstract void hook();                           // expect: modifier-order
+
+    @Override
+    public final String toString() {
+        return "x";
+    }
+
+    @Deprecated public final void old() {                     // expect: modifier-order
+    }
+
+    public @Deprecated static void annotationBetween() {      // annotations anywhere are fine
+    }
+
+    abstract static class Inner {                             // expect: modifier-order
+    }
+
+    abstract static class InnerFine {
+    }
+
+    interface Api {
+        public default void run() {                           // expect: modifier-order
+        }
+
+        public default void ok() {
+        }
+
+        static void util() {
+        }
+    }
+
+    void locals() {
+        final int x = 1;
+        @SuppressWarnings("unused") final int y = 2;
+    }
+}
+
+abstract sealed class Shape permits Circle {                  // expect: modifier-order
+}
+
+final class Circle extends Shape {
+}
+
+abstract non-sealed class Open extends Shape {                // expect: modifier-order
+}

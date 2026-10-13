@@ -46,7 +46,15 @@ Either the tag has something to say, or it can go.
 A description may continue on the following lines; it is empty only when the next tag or the
 end of the comment comes first. Lines inside `<pre>` blocks and inside inline tags such as
 `{@code …}` are not read as tags. Other block tags (`@see`, `@since`, `@author`, custom tags)
-are not checked. The rule is off by default: it is part of the `conventions` profile."#,
+are not checked.
+
+Since Java 23 a run of `///` lines is a documentation comment too (Markdown syntax), with the
+same block tags. Such runs are read only when the file's Java release is known to be 23 or
+later (`java.release`, or the build file): in older code, and when the release is unknown,
+`///` may be an ordinary comment. In them, lines of fenced code blocks (```` ``` ```` or `~~~`) are
+not read as tags, and a line starting with `*` is a list item, not a margin.
+
+The rule is off by default: it is part of the `conventions` profile."#,
     ..RuleMeta::new(
         "java/javadoc-empty-tag",
         "java",
@@ -81,8 +89,74 @@ fn contains_ignore_case(haystack: &str, needle: &str) -> bool {
         .any(|w| w.eq_ignore_ascii_case(needle.as_bytes()))
 }
 
-impl JavadocEmptyTag {
-    fn report<'t>(ctx: &Ctx<'t>, tag: Option<Tag<'_>>) {
+/// Reads the content lines of one doc comment, in order, and reports its empty tags.
+#[derive(Default)]
+struct Scanner<'s> {
+    current: Option<Tag<'s>>,
+    in_pre: bool,
+    braces: i64,
+}
+
+impl<'s> Scanner<'s> {
+    /// One content line (margin removed, blanks trimmed) starting at source offset `at`;
+    /// `code`: a line of a fenced code block of a Markdown comment (never a tag, braces not
+    /// counted).
+    fn line(&mut self, ctx: &Ctx<'_>, at: usize, content: &'s str, code: bool) {
+        let reading_tags = !self.in_pre && !code && self.braces == 0;
+        if reading_tags && content.starts_with('@') {
+            let word_len = content[1..]
+                .bytes()
+                .take_while(u8::is_ascii_alphabetic)
+                .count();
+            if word_len > 0 {
+                Self::report(ctx, self.current.take());
+                let name = &content[1..1 + word_len];
+                let mut rest = &content[1 + word_len..];
+                let mut end = at + 1 + word_len;
+                if checked(name) == Some(true) {
+                    // Skip the documented name (`x`, `<T>`, `IOException`).
+                    let ws = rest.len() - rest.trim_start().len();
+                    let word = rest[ws..]
+                        .find(char::is_whitespace)
+                        .unwrap_or(rest.len() - ws);
+                    end += ws + word;
+                    rest = &rest[ws + word..];
+                }
+                self.current = Some(Tag {
+                    start: at,
+                    end,
+                    name,
+                    described: !rest.trim().is_empty(),
+                });
+            }
+        } else if let Some(tag) = self.current.as_mut() {
+            if !content.is_empty() {
+                tag.described = true;
+            }
+        }
+        if code {
+            return;
+        }
+        if contains_ignore_case(content, "<pre") {
+            self.in_pre = true;
+        }
+        if contains_ignore_case(content, "</pre") {
+            self.in_pre = false;
+        }
+        for b in content.bytes() {
+            match b {
+                b'{' => self.braces += 1,
+                b'}' => self.braces = (self.braces - 1).max(0),
+                _ => {}
+            }
+        }
+    }
+
+    fn finish(mut self, ctx: &Ctx<'_>) {
+        Self::report(ctx, self.current.take());
+    }
+
+    fn report(ctx: &Ctx<'_>, tag: Option<Tag<'_>>) {
         let Some(tag) = tag else {
             return;
         };
@@ -96,16 +170,9 @@ impl JavadocEmptyTag {
     }
 }
 
-impl<'t> JavaRule<'t> for JavadocEmptyTag {
-    fn meta(&self) -> &'static RuleMeta {
-        &META
-    }
-
-    fn kinds(&self) -> &'static [&'static str] {
-        &["block_comment"]
-    }
-
-    fn check(&mut self, node: Node<'t>, ctx: &Ctx<'t>) {
+impl JavadocEmptyTag {
+    /// A `/** … */` comment.
+    fn javadoc<'t>(node: Node<'t>, ctx: &Ctx<'t>) {
         let text = ctx.text(node);
         if !text.contains('@') || !util::is_doc_comment(text) || !text.ends_with("*/") {
             return;
@@ -114,9 +181,7 @@ impl<'t> JavaRule<'t> for JavadocEmptyTag {
             return;
         };
         let base = node.start_byte() + 3;
-        let mut current: Option<Tag<'t>> = None;
-        let mut in_pre = false;
-        let mut braces: i64 = 0;
+        let mut scanner = Scanner::default();
         let mut line_start = 0;
         for line in inner.split('\n') {
             let line_off = line_start;
@@ -126,53 +191,57 @@ impl<'t> JavaRule<'t> for JavadocEmptyTag {
             let after_stars = after_ws.trim_start_matches('*');
             let content = after_stars.trim_start();
             let content_off = line_off + (line.len() - content.len());
-            let content = content.trim_end();
-            let reading_tags = !in_pre && braces == 0;
-            if reading_tags && content.starts_with('@') {
-                let word_len = content[1..]
-                    .bytes()
-                    .take_while(u8::is_ascii_alphabetic)
-                    .count();
-                if word_len > 0 {
-                    Self::report(ctx, current.take());
-                    let name = &content[1..1 + word_len];
-                    let mut rest = &content[1 + word_len..];
-                    let mut end = content_off + 1 + word_len;
-                    if checked(name) == Some(true) {
-                        // Skip the documented name (`x`, `<T>`, `IOException`).
-                        let ws = rest.len() - rest.trim_start().len();
-                        let word = rest[ws..]
-                            .find(char::is_whitespace)
-                            .unwrap_or(rest.len() - ws);
-                        end += ws + word;
-                        rest = &rest[ws + word..];
-                    }
-                    current = Some(Tag {
-                        start: base + content_off,
-                        end: base + end,
-                        name,
-                        described: !rest.trim().is_empty(),
-                    });
-                }
-            } else if let Some(tag) = current.as_mut() {
-                if !content.is_empty() {
-                    tag.described = true;
-                }
-            }
-            if contains_ignore_case(content, "<pre") {
-                in_pre = true;
-            }
-            if contains_ignore_case(content, "</pre") {
-                in_pre = false;
-            }
-            for b in content.bytes() {
-                match b {
-                    b'{' => braces += 1,
-                    b'}' => braces = (braces - 1).max(0),
-                    _ => {}
-                }
-            }
+            scanner.line(ctx, base + content_off, content.trim_end(), false);
         }
-        Self::report(ctx, current);
+        scanner.finish(ctx);
+    }
+
+    /// A run of `///` lines (Java 23), read from its first line when the release is known to
+    /// read it as documentation. Markdown has no `*` margin (`* x` is a list item), and fenced
+    /// code blocks hold code, not tags.
+    fn markdown<'t>(line: Node<'t>, ctx: &Ctx<'t>) {
+        let src = ctx.source();
+        if !doc::is_markdown_text(ctx.text(line))
+            || !ctx.markdown_docs(DocUse::Reports)
+            || !doc::starts_line(src, line)
+            || !doc::starts_run(ctx, line)
+        {
+            return;
+        }
+        let Some(parent) = ctx.parent(line) else {
+            return;
+        };
+        let comment = DocComment::Markdown(doc::run_from(src, parent, line));
+        let lines = comment.lines(src);
+        if !lines.iter().any(|(_, l)| l.contains('@')) {
+            return;
+        }
+        let mut scanner = Scanner::default();
+        let mut fence = doc::Fence::default();
+        for (off, text) in lines {
+            let code = fence.code(text);
+            let content = text.trim_start();
+            let at = off + (text.len() - content.len());
+            scanner.line(ctx, at, content.trim_end(), code);
+        }
+        scanner.finish(ctx);
+    }
+}
+
+impl<'t> JavaRule<'t> for JavadocEmptyTag {
+    fn meta(&self) -> &'static RuleMeta {
+        &META
+    }
+
+    fn kinds(&self) -> &'static [&'static str] {
+        &["block_comment", "line_comment"]
+    }
+
+    fn check(&mut self, node: Node<'t>, ctx: &Ctx<'t>) {
+        if kind(node) == "line_comment" {
+            Self::markdown(node, ctx);
+        } else {
+            Self::javadoc(node, ctx);
+        }
     }
 }

@@ -173,14 +173,16 @@ fn candidate<'t>(decl: Node<'t>, ty: Node<'t>, ctx: &Ctx<'t>) -> Option<Candidat
             continue;
         }
         let cbody = m.field(Field::Body)?;
-        let Some(first) = syntax::first_named_child(cbody) else {
+        // Since Java 22 (flexible constructor bodies) statements may precede `super(...)`.
+        let Some(call) =
+            named_children(cbody).find(|c| kind(*c) == "explicit_constructor_invocation")
+        else {
             continue;
         };
-        if kind(first) == "explicit_constructor_invocation"
-            && first
-                .field(Field::Constructor)
-                .is_some_and(|c| kind(c) == "super")
-            && !only_names(ctx, first)
+        if call
+            .field(Field::Constructor)
+            .is_some_and(|c| kind(c) == "super")
+            && !only_names(ctx, call)
         {
             return None;
         }

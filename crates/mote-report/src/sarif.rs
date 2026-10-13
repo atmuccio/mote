@@ -156,7 +156,45 @@ pub struct SarifResult {
     pub suppressions: Vec<Suppression>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub related_locations: Vec<SarifLocation>,
+    /// The finding's fix (`mote fix`), when its rule offers one.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub fixes: Vec<SarifFix>,
     pub properties: ResultProperties,
+}
+
+/// A proposed fix (SARIF `fix`): one artifact change, the finding's file.
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SarifFix {
+    pub description: Message,
+    pub artifact_changes: Vec<ArtifactChange>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ArtifactChange {
+    pub artifact_location: ArtifactLocation,
+    pub replacements: Vec<Replacement>,
+}
+
+/// Replace `deleted_region` (empty for an insertion) with `inserted_content` (absent for a
+/// deletion).
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Replacement {
+    pub deleted_region: EditRegion,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub inserted_content: Option<Message>,
+}
+
+/// A region with every bound explicit: an omitted end would stretch it to the end of the line.
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EditRegion {
+    pub start_line: u32,
+    pub start_column: u32,
+    pub end_line: u32,
+    pub end_column: u32,
 }
 
 #[derive(Serialize)]
@@ -447,6 +485,37 @@ fn result(f: &Finding, rule_index: usize, prefix: &str) -> SarifResult {
             .enumerate()
             .map(|(i, l)| related(prefix, i, l))
             .collect(),
+        fixes: f
+            .fix
+            .iter()
+            .filter(|_| f.suppressed.is_none())
+            .map(|fix| SarifFix {
+                description: Message {
+                    text: fix.description.clone(),
+                },
+                artifact_changes: vec![ArtifactChange {
+                    artifact_location: ArtifactLocation {
+                        uri: encode_uri(&repo_path(prefix, &f.path)),
+                        uri_base_id: "%SRCROOT%",
+                    },
+                    replacements: fix
+                        .edits
+                        .iter()
+                        .map(|e| Replacement {
+                            deleted_region: EditRegion {
+                                start_line: e.range.start_line,
+                                start_column: e.range.start_col,
+                                end_line: e.range.end_line,
+                                end_column: e.range.end_col,
+                            },
+                            inserted_content: (!e.replacement.is_empty()).then(|| Message {
+                                text: e.replacement.clone(),
+                            }),
+                        })
+                        .collect(),
+                }],
+            })
+            .collect(),
         properties: ResultProperties {
             id: f.id.clone(),
             quality: f.quality.as_str(),
@@ -519,6 +588,7 @@ pub fn build(scan: &ScanResult, opts: &SarifOptions) -> Log {
             description: String::new(),
             remediation_minutes: 0,
             origin: mote_engine::registry::RuleOrigin::Plugin,
+            fixable: false,
         });
     }
     let (kept, total) = selected(scan, opts);

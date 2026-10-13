@@ -1,0 +1,7 @@
+export function View() {
+  return (
+    <div title="a\:b" data-x='\d'>
+      {'inside:braces'} {/* expect: no-useless-escape */}
+    </div>
+  );
+}
